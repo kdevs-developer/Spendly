@@ -1,12 +1,16 @@
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
-    // Chat images: only signed-in users, images only, max 8 MB.
+    // Chat images are named <time>_<uid>.jpg. Signed-in users can read them, upload images up to 8 MB under
+    // their own uid, and delete their own (used by "Delete all my data").
     match /chats/{chatId}/{file} {
       allow read: if request.auth != null;
-      allow write: if request.auth != null
+      allow create: if request.auth != null
         && request.resource.size < 8 * 1024 * 1024
-        && request.resource.contentType.matches('image/.*');
+        && request.resource.contentType.matches('image/.*')
+        && file.matches('.*_' + request.auth.uid + '\\.jpg');
+      allow delete: if request.auth != null
+        && file.matches('.*_' + request.auth.uid + '\\.jpg');
     }
     match /{allPaths=**} { allow read, write: if false; }
   }

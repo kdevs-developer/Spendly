@@ -8,3 +8,9 @@ app/build/
 functions/node_modules/
 # Download this from your Firebase console and put it in app/
 # app/google-services.json
+
+# Signing details and keys never go in version control
+keystore.properties
+*.keystore
+*.jks
+app/release/

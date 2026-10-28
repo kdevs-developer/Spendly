@@ -31,9 +31,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import com.kdevs.spendly.R
 import com.kdevs.spendly.data.Biometric
 import com.kdevs.spendly.data.Prefs
 import com.kdevs.spendly.data.findFragmentActivity
+import com.kdevs.spendly.data.str
 import com.kdevs.spendly.ui.components.Hint
 import com.kdevs.spendly.ui.components.PrimaryButton
 import com.kdevs.spendly.ui.theme.Bg
@@ -46,7 +48,10 @@ import kotlinx.coroutines.delay
  * is gone, and the system prompt then opens by itself. Unlock asks again after a failure.
  */
 @Composable
-fun LockScreen(active: Boolean, onUnlocked: () -> Unit) {
+fun LockScreen(
+    active: Boolean,
+    onUnlocked: () -> Unit,
+) {
     val ctx = LocalContext.current
     var failed by remember { mutableStateOf(false) }
     var waiting by remember { mutableStateOf(false) }
@@ -62,14 +67,17 @@ fun LockScreen(active: Boolean, onUnlocked: () -> Unit) {
         if (waiting) return
         waiting = true
         failed = false
-        Biometric.prompt(activity, "Unlock Spendly", "Confirm it is you") { ok ->
+        Biometric.prompt(activity, str(R.string.unlock_spendly), str(R.string.confirm_it_is_you)) { ok ->
             waiting = false
             if (ok) onUnlocked() else failed = true
         }
     }
 
     LaunchedEffect(active) {
-        if (active) { delay(200); ask() }
+        if (active) {
+            delay(200)
+            ask()
+        }
     }
 
     Column(
@@ -84,14 +92,14 @@ fun LockScreen(active: Boolean, onUnlocked: () -> Unit) {
             Icon(Icons.Filled.Lock, null, tint = Color.White, modifier = Modifier.size(44.dp))
         }
         Spacer(Modifier.height(24.dp))
-        Text("Spendly is locked", style = MaterialTheme.typography.titleLarge, color = Ink)
+        Text(str(R.string.spendly_is_locked), style = MaterialTheme.typography.titleLarge, color = Ink)
         Spacer(Modifier.height(8.dp))
-        Hint("Use your fingerprint, face or screen lock to open it.", center = true)
+        Hint(str(R.string.use_your_fingerprint_face_or_screen), center = true)
         Spacer(Modifier.height(28.dp))
-        PrimaryButton("Unlock", { ask() }, busy = waiting)
+        PrimaryButton(str(R.string.unlock), { ask() }, busy = waiting)
         if (failed) {
             Spacer(Modifier.height(12.dp))
-            Hint("That did not work. Tap Unlock to try again.", center = true)
+            Hint(str(R.string.that_did_not_work_tap_unlock), center = true)
         }
     }
 }

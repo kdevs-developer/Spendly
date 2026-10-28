@@ -4,7 +4,6 @@ import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
 import androidx.compose.runtime.*
 import androidx.navigation.NavBackStackEntry
-import androidx.navigation.NavController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -28,36 +27,77 @@ object Routes {
     const val SETTINGS = "settings"
 
     fun txnAdd(kind: String = "expense") = "txn/add/$kind"
+
     fun txnEdit(id: String) = "txn/edit/$id"
+
     fun txnDetail(id: String) = "txn/$id"
+
     const val TRANSFER = "transfer"
 
     const val ACCOUNT_TYPE = "account/type"
-    fun accountEdit(id: String, type: String = "-") = "account/edit/${id.ifBlank { "-" }}/$type"
+
+    fun accountEdit(
+        id: String,
+        type: String = "-",
+    ) = "account/edit/${id.ifBlank { "-" }}/$type"
+
     fun accountDetail(id: String) = "account/$id"
 
     const val FILTER = "filter"
     const val SELECT = "select"
     const val BULK = "bulk"
     const val REPORT_FILTER = "reportFilter"
+
     fun reportCategory(id: String) = "report/category/$id"
 
-    fun categoryPicker(kind: String, slot: String = "category") = "pick/category/$kind/$slot"
-    fun categoryEdit(id: String, kind: String = "expense") = "category/edit/${id.ifBlank { "-" }}/$kind"
-    fun subEdit(id: String, parentId: String) = "category/sub/${id.ifBlank { "-" }}/$parentId"
-    fun colorPicker(current: String, locked: String = "") = "pick/color/${current.ifBlank { "-" }}/${locked.ifBlank { "-" }}"
-    fun iconPicker(group: String, current: String) = "pick/icon/$group/${current.ifBlank { "-" }}"
-    fun accountPicker(slot: String, exclude: String = "") = "pick/account/$slot/${exclude.ifBlank { "-" }}"
+    fun categoryPicker(
+        kind: String,
+        slot: String = "category",
+    ) = "pick/category/$kind/$slot"
+
+    fun categoryEdit(
+        id: String,
+        kind: String = "expense",
+    ) = "category/edit/${id.ifBlank { "-" }}/$kind"
+
+    fun subEdit(
+        id: String,
+        parentId: String,
+    ) = "category/sub/${id.ifBlank { "-" }}/$parentId"
+
+    fun colorPicker(
+        current: String,
+        locked: String = "",
+    ) = "pick/color/${current.ifBlank { "-" }}/${locked.ifBlank { "-" }}"
+
+    fun iconPicker(
+        group: String,
+        current: String,
+    ) = "pick/icon/$group/${current.ifBlank { "-" }}"
+
+    fun accountPicker(
+        slot: String,
+        exclude: String = "",
+    ) = "pick/account/$slot/${exclude.ifBlank { "-" }}"
+
     fun datePicker(millis: Long) = "pick/date/$millis"
 
     const val BUDGETS = "budgets"
+
     fun budgetEdit(id: String) = "budget/${id.ifBlank { "-" }}"
+
     const val GOALS = "goals"
+
     fun goalEdit(id: String) = "goal/${id.ifBlank { "-" }}"
+
     fun goalAdd(id: String) = "goal/add/$id"
+
     const val TEMPLATES = "templates"
+
     fun templateEdit(id: String) = "template/${id.ifBlank { "-" }}"
+
     const val RECURRING = "recurring"
+
     fun recurringEdit(id: String) = "recurring/${id.ifBlank { "-" }}"
 
     const val NEW_CHAT = "chat/new"
@@ -65,29 +105,54 @@ object Routes {
     const val REQUESTS = "chat/requests"
     const val BLOCKED = "chat/blocked"
     const val CREATE_GROUP = "chat/createGroup"
+
     fun chat(id: String) = "chat/$id"
+
     fun chatInfo(id: String) = "chat/info/$id"
-    fun messageActions(chatId: String, msgId: String) = "chat/actions/$chatId/$msgId"
-    fun image(chatId: String, msgId: String) = "chat/image/$chatId/$msgId"
+
+    fun messageActions(
+        chatId: String,
+        msgId: String,
+    ) = "chat/actions/$chatId/$msgId"
+
+    fun image(
+        chatId: String,
+        msgId: String,
+    ) = "chat/image/$chatId/$msgId"
+
     fun splits(chatId: String) = "chat/splits/$chatId"
+
     fun addSplit(chatId: String) = "chat/addSplit/$chatId"
+
     fun settle(chatId: String) = "chat/settle/$chatId"
+
     fun addMembers(chatId: String) = "chat/addMembers/$chatId"
-    fun reportUser(chatId: String, uid: String) = "chat/report/$chatId/$uid"
+
+    fun reportUser(
+        chatId: String,
+        uid: String,
+    ) = "chat/report/$chatId/$uid"
 
     const val EDIT_NAME = "settings/name"
+    const val DELETE_ACCOUNT = "settings/delete"
 }
 
 fun String.arg(): String = if (this == "-") "" else this
 
 /** Reads a value a picker screen left for us (see NavController.setPicked) and hands it over once. */
 @Composable
-fun <T : Any> NavBackStackEntry.Picked(key: String, onPicked: (T) -> Unit) {
+fun <T : Any> NavBackStackEntry.Picked(
+    key: String,
+    onPicked: (T) -> Unit,
+) {
     val handle = savedStateHandle
     val flow = remember(handle, key) { handle.getStateFlow<T?>(key, null) }
     val v by flow.collectAsState()
     LaunchedEffect(v) {
-        v?.let { onPicked(it); handle.remove<T>(key) }
+        v?.let {
+            onPicked(it)
+            handle.remove<T>(key)
+        }
     }
 }
 
@@ -103,14 +168,30 @@ private val popExit: AnimatedContentTransitionScope<NavBackStackEntry>.() -> Exi
 private val tabEnter: AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition = { fadeIn(tween(200)) }
 private val tabExit: AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition = { fadeOut(tween(200)) }
 
-private fun androidx.navigation.NavGraphBuilder.tab(route: String, content: @Composable (NavBackStackEntry) -> Unit) =
-    composable(route, enterTransition = tabEnter, exitTransition = tabExit, popEnterTransition = tabEnter, popExitTransition = tabExit) { content(it) }
+private fun androidx.navigation.NavGraphBuilder.tab(
+    route: String,
+    content: @Composable (NavBackStackEntry) -> Unit,
+) = composable(route, enterTransition = tabEnter, exitTransition = tabExit, popEnterTransition = tabEnter, popExitTransition = tabExit) {
+    content(it)
+}
 
 private fun androidx.navigation.NavGraphBuilder.screen(
-    route: String, args: List<String> = emptyList(), content: @Composable (NavBackStackEntry) -> Unit,
+    route: String,
+    args: List<String> = emptyList(),
+    content: @Composable (NavBackStackEntry) -> Unit,
 ) = composable(
-    route, arguments = args.map { navArgument(it) { type = NavType.StringType; defaultValue = "-" } },
-    enterTransition = enter, exitTransition = exit, popEnterTransition = popEnter, popExitTransition = popExit,
+    route,
+    arguments =
+        args.map {
+            navArgument(it) {
+                type = NavType.StringType
+                defaultValue = "-"
+            }
+        },
+    enterTransition = enter,
+    exitTransition = exit,
+    popEnterTransition = popEnter,
+    popExitTransition = popExit,
 ) { content(it) }
 
 private fun NavBackStackEntry.s(name: String) = (arguments?.getString(name) ?: "-").arg()
@@ -134,8 +215,12 @@ fun SpendlyNav() {
         if (uid != null) {
             runCatching { Repo.ensureProfile() }
             runCatching { Repo.runRecurring() }
-            runCatching { Repo.syncAccepted() }
         }
+    }
+    // When a friend accepts, our pending request disappears from this list. That is the moment to add them.
+    val outgoing by Repo.outgoingRequests.collectAsState()
+    LaunchedEffect(uid, outgoing.size) {
+        if (uid != null) runCatching { Repo.syncAccepted() }
     }
 
     NavHost(nav, startDestination = start) {
@@ -153,6 +238,7 @@ fun SpendlyNav() {
         tab(Routes.CHATS) { ChatListScreen(nav) }
         screen(Routes.SETTINGS) { SettingsScreen(nav) }
         screen(Routes.EDIT_NAME) { EditNameScreen(nav) }
+        screen(Routes.DELETE_ACCOUNT) { DeleteAccountScreen(nav) }
 
         // ----- Transactions -----
         screen("txn/add/{kind}", listOf("kind")) { e -> TxnFormScreen(nav, e, id = "", kind = e.s("kind").ifBlank { "expense" }) }

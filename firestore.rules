@@ -14,25 +14,45 @@ service cloud.firestore {
       }
     }
 
-    // Friend code lookup: code -> uid + display name.
+    // Friend code lookup: code -> uid + display name. Reading one code is allowed, listing all of them is not,
+    // otherwise any signed-in user could download every user's id and name.
     match /userCodes/{code} {
-      allow read: if signedIn();
+      allow get: if signedIn();
+      allow list: if false;
       allow create: if signedIn() && request.resource.data.uid == request.auth.uid;
       allow update, delete: if signedIn() && resource.data.uid == request.auth.uid;
     }
 
-    // Friend requests live in the receiver's inbox; the sender may create one.
+    // Friend requests. The sender creates (or re-sends) a pending request; only the receiver can answer it,
+    // and an answer may change nothing but the status. Either side can delete it.
     match /requests/{reqId} {
-      allow create: if signedIn() && request.resource.data.from == request.auth.uid;
-      allow read, update, delete: if signedIn()
+      allow create: if signedIn()
+        && request.resource.data.from == request.auth.uid
+        && request.resource.data.to != request.auth.uid
+        && request.resource.data.status == 'pending';
+      allow read: if signedIn()
+        && (resource.data.from == request.auth.uid || resource.data.to == request.auth.uid);
+      allow update: if signedIn() && (
+        (resource.data.to == request.auth.uid
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status'])
+          && request.resource.data.status in ['accepted', 'declined'])
+        || (resource.data.from == request.auth.uid
+          && request.resource.data.from == request.auth.uid
+          && request.resource.data.status == 'pending')
+      );
+      allow delete: if signedIn()
         && (resource.data.from == request.auth.uid || resource.data.to == request.auth.uid);
     }
 
     match /chats/{chatId} {
       allow read: if isMember(resource.data);
-      allow create: if signedIn() && request.auth.uid in request.resource.data.members;
-      // Members may rename, add members, or leave (remove themselves).
-      allow update: if isMember(resource.data);
+      allow create: if signedIn()
+        && request.auth.uid in request.resource.data.members
+        && request.resource.data.createdBy == request.auth.uid;
+      // Members may rename, add members, or leave (remove themselves). Type and creator never change.
+      allow update: if isMember(resource.data)
+        && request.resource.data.type == resource.data.type
+        && request.resource.data.createdBy == resource.data.createdBy;
       allow delete: if false;
 
       match /messages/{msgId} {
@@ -54,7 +74,9 @@ service cloud.firestore {
       }
 
       match /splits/{splitId} {
-        allow read, create, update: if isMember(get(/databases/$(database)/documents/chats/$(chatId)).data);
+        allow read, create: if isMember(get(/databases/$(database)/documents/chats/$(chatId)).data);
+        allow update: if isMember(get(/databases/$(database)/documents/chats/$(chatId)).data)
+          && resource.data.createdBy == request.auth.uid;
         allow delete: if isMember(get(/databases/$(database)/documents/chats/$(chatId)).data)
           && resource.data.createdBy == request.auth.uid;
       }

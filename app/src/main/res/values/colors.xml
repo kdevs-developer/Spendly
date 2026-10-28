@@ -1,9 +1,63 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- Brand (never changes with the theme) -->
     <color name="ic_launcher_background">#1D4ED8</color>
     <color name="brand_primary">#1D4ED8</color>
     <color name="brand_dark">#1E3A8A</color>
     <color name="brand_light">#2563EB</color>
     <color name="app_bg">#F5F7FB</color>
     <color name="notification_accent">#1D4ED8</color>
+
+    <!-- App theme: each colour has a light and a dark value (Settings > Appearance picks which one draws) -->
+    <color name="primary_light">#1D4ED8</color>
+    <color name="primary_dark">#5B8CFF</color>
+    <color name="primary_container_light">#DBE6FD</color>
+    <color name="primary_container_dark">#1E2B52</color>
+    <color name="bg_light">#F5F7FB</color>
+    <color name="bg_dark">#0B1220</color>
+    <color name="surface_light">#FFFFFF</color>
+    <color name="surface_dark">#151D30</color>
+    <color name="ink_light">#0F172A</color>
+    <color name="ink_dark">#F1F5F9</color>
+    <color name="muted_light">#475569</color>
+    <color name="muted_dark">#A3B1C6</color>
+    <color name="faint_light">#94A3B8</color>
+    <color name="faint_dark">#6B7A93</color>
+    <color name="line_light">#EDF1F7</color>
+    <color name="line_dark">#252F47</color>
+    <color name="track_light">#E5EAF3</color>
+    <color name="track_dark">#222C45</color>
+    <color name="field_border_light">#D8DFEC</color>
+    <color name="field_border_dark">#36435F</color>
+    <color name="danger_light">#C62828</color>
+    <color name="danger_dark">#E5534B</color>
+    <color name="danger_bg_light">#FDE7E7</color>
+    <color name="danger_bg_dark">#3A1D22</color>
+    <color name="success_light">#15803D</color>
+    <color name="success_dark">#22A559</color>
+    <color name="warn_light">#B45309</color>
+    <color name="warn_dark">#D97706</color>
+
+    <!-- Account, category and accent colours, and gradient ends -->
+    <color name="swatch_blue">#1D4ED8</color>
+    <color name="swatch_purple">#7E22CE</color>
+    <color name="swatch_green">#15803D</color>
+    <color name="swatch_orange">#C2410C</color>
+    <color name="swatch_pink">#BE185D</color>
+    <color name="swatch_teal">#0F766E</color>
+    <color name="swatch_red">#C62828</color>
+    <color name="swatch_slate">#475569</color>
+    <color name="swatch_amber">#B45309</color>
+    <color name="swatch_deep_orange">#EA580C</color>
+    <color name="swatch_sky">#0369A1</color>
+    <color name="swatch_teal_dark">#115E59</color>
+
+    <!-- Photo viewer, read receipts and QR code -->
+    <color name="read_receipt">#93C5FD</color>
+    <color name="viewer_bg">#0B0F14</color>
+    <color name="viewer_text">#CBD5E1</color>
+    <color name="viewer_surface">#111827</color>
+    <color name="viewer_danger">#FCA5A5</color>
+    <color name="qr_dark">#0F172A</color>
+    <color name="qr_light">#FFFFFF</color>
 </resources>

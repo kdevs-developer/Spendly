@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Values that were numbers inside the code. Change them here. -->
+    <integer name="app_lock_after_seconds">30</integer>   <!-- biometric lock asks again after this long away -->
+    <integer name="welcome_slide_seconds">4</integer>     <!-- welcome carousel moves on by itself after this long -->
+</resources>

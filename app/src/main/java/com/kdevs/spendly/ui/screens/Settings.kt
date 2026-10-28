@@ -8,17 +8,19 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.kdevs.spendly.R
 import com.kdevs.spendly.data.Biometric
 import com.kdevs.spendly.data.Prefs
 import com.kdevs.spendly.data.Repo
 import com.kdevs.spendly.data.ThemeMode
+import com.kdevs.spendly.data.clr
 import com.kdevs.spendly.data.findFragmentActivity
+import com.kdevs.spendly.data.str
 import com.kdevs.spendly.nav.Routes
 import com.kdevs.spendly.ui.components.*
 import com.kdevs.spendly.ui.theme.*
@@ -29,7 +31,8 @@ fun SettingsScreen(nav: NavController) {
     val uid by Repo.uidFlow.collectAsState()
     var confirmOut by remember { mutableStateOf(false) }
     var confirmDelete by remember { mutableStateOf(false) }
-    val saver = rememberSaver(); val scope = rememberCoroutineScope()
+    val saver = rememberSaver()
+    val scope = rememberCoroutineScope()
     val ctx = LocalContext.current
     var bioNote by remember { mutableStateOf<String?>(null) }
 
@@ -38,81 +41,269 @@ fun SettingsScreen(nav: NavController) {
         bioNote = null
         val activity = ctx.findFragmentActivity() ?: return
         if (!Biometric.available(ctx)) {
-            if (want) bioNote = "Set up a fingerprint, face or screen lock in your phone settings first."
-            else Prefs.updateBiometric(false)
+            if (want) {
+                bioNote = str(R.string.set_up_a_fingerprint_face_or)
+            } else {
+                Prefs.updateBiometric(false)
+            }
             return
         }
-        Biometric.prompt(activity, if (want) "Turn on biometric lock" else "Turn off biometric lock", "Confirm it is you") { ok ->
+        Biometric.prompt(
+            activity,
+            if (want) str(R.string.turn_on_biometric_lock) else str(R.string.turn_off_biometric_lock),
+            str(R.string.confirm_it_is_you),
+        ) { ok ->
             if (ok) Prefs.updateBiometric(want)
         }
     }
 
-    ScreenScaffold("Settings", { nav.popBackStack() }) {
+    ScreenScaffold(str(R.string.settings), { nav.popBackStack() }) {
         Card {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(14.dp),
+            ) {
                 Avatar(profile.name.ifBlank { "S" }, "blue", 56.dp)
                 Column(Modifier.weight(1f)) {
-                    Text(profile.name.ifBlank { "Spendly user" }, fontWeight = FontWeight.ExtraBold, color = Ink, fontSize = 18.sp)
-                    Text(Repo.email.ifBlank { "Guest account" }, color = Muted, fontSize = 13.sp)
-                    if (profile.code.isNotBlank()) Text("Friend code ${profile.code}", color = Primary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    Text(
+                        profile.name.ifBlank { str(R.string.spendly_user) },
+                        fontWeight = FontWeight.ExtraBold,
+                        color = Ink,
+                        fontSize = 18.sp,
+                    )
+                    Text(
+                        Repo.email.ifBlank { str(R.string.guest_account) },
+                        color = Muted,
+                        fontSize = 13.sp,
+                    )
+                    if (profile.code.isNotBlank()) {
+                        Text(
+                            str(R.string.friend_code_2, profile.code),
+                            color = Primary,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                        )
+                    }
                 }
             }
         }
-        SectionTitle("Appearance")
+        SectionTitle(str(R.string.appearance))
         Card {
-            SegmentedControl(ThemeMode.values().map { it.label }, Prefs.themeMode.ordinal, { Prefs.setTheme(ThemeMode.values()[it]) })
+            SegmentedControl(
+                ThemeMode.values().map { it.label },
+                Prefs.themeMode.ordinal,
+                { Prefs.setTheme(ThemeMode.values()[it]) },
+            )
             Spacer(Modifier.height(8.dp))
-            Hint("System follows your phone. Light and Dark stay as you choose.")
+            Hint(str(R.string.system_follows_your_phone_light_and))
         }
-        SectionTitle("Security")
+        SectionTitle(str(R.string.security))
         Card(padding = 12.dp) {
-            SettingRow("Fingerprint, face or screen lock", "Biometric lock", icon = Icons.Filled.Fingerprint, iconColor = Success,
-                trailing = { Switch(checked = Prefs.biometric, onCheckedChange = { toggleBiometric(it) }) }, divider = false)
+            SettingRow(
+                str(R.string.fingerprint_face_or_screen_lock),
+                str(R.string.biometric_lock),
+                icon = Icons.Filled.Fingerprint,
+                iconColor = Success,
+                trailing = {
+                    Switch(
+                        checked = Prefs.biometric,
+                        onCheckedChange = { toggleBiometric(it) },
+                    )
+                },
+                divider = false,
+            )
         }
-        bioNote?.let { Text(it, color = Danger, fontWeight = FontWeight.SemiBold, fontSize = 13.sp) }
-        SectionTitle("Your space")
-        Card(padding = 12.dp) {
-            SettingRow("Your name", profile.name, icon = Icons.Filled.Person, iconColor = Primary, onClick = { nav.navigate(Routes.EDIT_NAME) })
-            SettingRow("Categories", icon = Icons.Filled.Category, iconColor = Color(0xFF7E22CE), onClick = { nav.navigate(Routes.categoryPicker("expense", "manage")) })
-            SettingRow("Income categories", icon = Icons.Filled.Savings, iconColor = Success, onClick = { nav.navigate(Routes.categoryPicker("income", "manage")) })
-            SettingRow("Budgets", icon = Icons.Filled.DonutLarge, iconColor = Color(0xFF0F766E), onClick = { nav.navigate(Routes.BUDGETS) })
-            SettingRow("Savings goals", icon = Icons.Filled.Flag, iconColor = Color(0xFFC2410C), onClick = { nav.navigate(Routes.GOALS) })
-            SettingRow("Templates", icon = Icons.Filled.ContentCopy, iconColor = Color(0xFF0F766E), onClick = { nav.navigate(Routes.TEMPLATES) })
-            SettingRow("Recurring", icon = Icons.Filled.Repeat, iconColor = Color(0xFFBE185D), onClick = { nav.navigate(Routes.RECURRING) }, divider = false)
+        bioNote?.let {
+            Text(
+                it,
+                color = Danger,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 13.sp,
+            )
         }
-        SectionTitle("Chat")
+        SectionTitle(str(R.string.your_space))
         Card(padding = 12.dp) {
-            SettingRow("Friends and requests", icon = Icons.Filled.People, iconColor = Primary, onClick = { nav.navigate(Routes.REQUESTS) })
-            SettingRow("Blocked people", icon = Icons.Filled.Block, iconColor = Danger, onClick = { nav.navigate(Routes.BLOCKED) }, divider = false)
+            SettingRow(
+                str(R.string.your_name),
+                profile.name,
+                icon = Icons.Filled.Person,
+                iconColor = Primary,
+                onClick = { nav.navigate(Routes.EDIT_NAME) },
+            )
+            SettingRow(
+                str(R.string.categories),
+                icon = Icons.Filled.Category,
+                iconColor = clr(R.color.swatch_purple),
+                onClick = { nav.navigate(Routes.categoryPicker("expense", "manage")) },
+            )
+            SettingRow(
+                str(R.string.income_categories),
+                icon = Icons.Filled.Savings,
+                iconColor = Success,
+                onClick = { nav.navigate(Routes.categoryPicker("income", "manage")) },
+            )
+            SettingRow(
+                str(R.string.budgets),
+                icon = Icons.Filled.DonutLarge,
+                iconColor = clr(R.color.swatch_teal),
+                onClick = { nav.navigate(Routes.BUDGETS) },
+            )
+            SettingRow(
+                str(R.string.savings_goals),
+                icon = Icons.Filled.Flag,
+                iconColor = clr(R.color.swatch_orange),
+                onClick = { nav.navigate(Routes.GOALS) },
+            )
+            SettingRow(
+                str(R.string.templates),
+                icon = Icons.Filled.ContentCopy,
+                iconColor = clr(R.color.swatch_teal),
+                onClick = { nav.navigate(Routes.TEMPLATES) },
+            )
+            SettingRow(
+                str(R.string.recurring),
+                icon = Icons.Filled.Repeat,
+                iconColor = clr(R.color.swatch_pink),
+                onClick = { nav.navigate(Routes.RECURRING) },
+                divider = false,
+            )
         }
-        SectionTitle("About")
+        SectionTitle(str(R.string.chat))
         Card(padding = 12.dp) {
-            SettingRow("Privacy Policy", icon = Icons.Filled.PrivacyTip, iconColor = Muted, onClick = { nav.navigate(Routes.PRIVACY) })
-            SettingRow("Terms of Service", icon = Icons.Filled.Description, iconColor = Muted, onClick = { nav.navigate(Routes.TERMS) })
-            SettingRow("Version", "1.0", icon = Icons.Filled.Info, iconColor = Muted, divider = false)
+            SettingRow(
+                str(R.string.friends_and_requests),
+                icon = Icons.Filled.People,
+                iconColor = Primary,
+                onClick = { nav.navigate(Routes.REQUESTS) },
+            )
+            SettingRow(
+                str(R.string.blocked_people),
+                icon = Icons.Filled.Block,
+                iconColor = Danger,
+                onClick = { nav.navigate(Routes.BLOCKED) },
+                divider = false,
+            )
+        }
+        SectionTitle(str(R.string.about))
+        Card(padding = 12.dp) {
+            SettingRow(
+                str(R.string.privacy_policy),
+                icon = Icons.Filled.PrivacyTip,
+                iconColor = Muted,
+                onClick = { nav.navigate(Routes.PRIVACY) },
+            )
+            SettingRow(
+                str(R.string.terms_of_service),
+                icon = Icons.Filled.Description,
+                iconColor = Muted,
+                onClick = { nav.navigate(Routes.TERMS) },
+            )
+            SettingRow(
+                str(R.string.version),
+                "1.0",
+                icon = Icons.Filled.Info,
+                iconColor = Muted,
+                divider = false,
+            )
         }
         saver.error?.let { Text(it, color = Danger, fontWeight = FontWeight.SemiBold) }
-        SecondaryButton("Sign out", { confirmOut = true })
-        SecondaryButton("Delete all my data", { confirmDelete = true }, danger = true)
-        Hint("Deleting removes every account, transaction, chat entry and your login. This cannot be undone.", center = true)
+        SecondaryButton(str(R.string.sign_out), { confirmOut = true })
+        SecondaryButton(str(R.string.delete_all_my_data), { confirmDelete = true }, danger = true)
+        Hint(str(R.string.deleting_removes_every_account_transac), center = true)
     }
-    if (confirmOut) ConfirmDialog("Sign out?", "Your data stays safe in your account.", "Sign out", { Repo.signOut() }, { confirmOut = false })
-    if (confirmDelete) ConfirmDialog("Delete everything?", "All your data and your login will be removed for good.", "Delete", {
-        saver.run(scope, onDone = {}) { Repo.deleteEverything() }
-    }, { confirmDelete = false }, danger = true)
+    if (confirmOut) {
+        ConfirmDialog(
+            str(R.string.sign_out_2),
+            str(R.string.your_data_stays_safe_in_your),
+            str(R.string.sign_out),
+            { Repo.signOut() },
+            { confirmOut = false },
+        )
+    }
+    if (confirmDelete) {
+        ConfirmDialog(
+            str(R.string.delete_everything),
+            str(R.string.all_your_data_and_your_login),
+            str(R.string.spendly_continue),
+            {
+                confirmDelete = false
+                nav.navigate(Routes.DELETE_ACCOUNT)
+            },
+            { confirmDelete = false },
+            danger = true,
+        )
+    }
+}
+
+/** Last step before everything is removed: confirms it is really the account owner, then deletes. */
+@Composable
+fun DeleteAccountScreen(nav: NavController) {
+    var password by remember { mutableStateOf("") }
+    val saver = rememberSaver()
+    val scope = rememberCoroutineScope()
+    val ctx = LocalContext.current
+    ScreenScaffold(str(R.string.delete_my_data), { if (!saver.busy) nav.popBackStack() }) {
+        Hint(str(R.string.this_removes_your_accounts_transaction))
+        when {
+            Repo.usesPassword -> {
+                Hint(str(R.string.enter_your_password_to_confirm_it))
+                androidx.compose.material3.OutlinedTextField(
+                    value = password,
+                    onValueChange = { password = it },
+                    label = { Text(str(R.string.password)) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
+                    visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation(),
+                    colors =
+                        androidx.compose.material3.OutlinedTextFieldDefaults.colors(
+                            focusedContainerColor = Surface,
+                            unfocusedContainerColor = Surface,
+                            unfocusedBorderColor = FieldBorder,
+                        ),
+                )
+            }
+
+            !Repo.isGuest -> Hint(str(R.string.google_will_ask_you_to_pick))
+        }
+        saver.error?.let {
+            Text(
+                it,
+                color = Danger,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 13.sp,
+            )
+        }
+        if (saver.busy) Hint(str(R.string.deleting_keep_the_app_open_and), center = true)
+        SecondaryButton(str(R.string.delete_everything_2), {
+            saver.run(scope, onDone = {}) {
+                Repo.reauthenticate(password.ifEmpty { null }, ctx)
+                Repo.deleteEverything()
+            }
+        }, danger = true)
+    }
 }
 
 @Composable
 fun EditNameScreen(nav: NavController) {
     val profile by Repo.profile.collectAsState()
     var name by remember(profile.name) { mutableStateOf(profile.name) }
-    val saver = rememberSaver(); val scope = rememberCoroutineScope()
-    ScreenScaffold("Your name", { nav.popBackStack() }, bottomBar = {
-        SavedBar("Save", saver, name.isNotBlank() && name.trim() != profile.name, onSave = {
-            saver.run(scope, onDone = { nav.popBackStack() }) { Repo.updateProfileName(name.trim()) }
-        })
+    val saver = rememberSaver()
+    val scope = rememberCoroutineScope()
+    ScreenScaffold(str(R.string.your_name), { nav.popBackStack() }, bottomBar = {
+        SavedBar(
+            str(R.string.save),
+            saver,
+            name.isNotBlank() && name.trim() != profile.name,
+            onSave = {
+                saver.run(
+                    scope,
+                    onDone = { nav.popBackStack() },
+                ) { Repo.updateProfileName(name.trim()) }
+            },
+        )
     }) {
-        Hint("This is the name your friends see in chat.")
-        AppTextField(name, { name = it }, "Display name")
+        Hint(str(R.string.this_is_the_name_your_friends))
+        AppTextField(name, { name = it }, str(R.string.display_name))
     }
 }

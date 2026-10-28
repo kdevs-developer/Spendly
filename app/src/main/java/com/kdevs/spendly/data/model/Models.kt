@@ -9,7 +9,7 @@ import com.google.firebase.firestore.ServerTimestamp
 data class Account(
     @DocumentId val id: String = "",
     val name: String = "",
-    val type: String = "bank",          // bank | wallet | cash | card
+    val type: String = "bank", // bank | wallet | cash | card
     val icon: String = "bank",
     val colorKey: String = "blue",
     val openingPaise: Long = 0,
@@ -22,16 +22,16 @@ data class Category(
     val name: String = "",
     val icon: String = "other",
     val colorKey: String = "slate",
-    val parentId: String = "",          // empty = top-level category
-    val kind: String = "expense",       // expense | income
+    val parentId: String = "", // empty = top-level category
+    val kind: String = "expense", // expense | income
 )
 
 data class Txn(
     @DocumentId val id: String = "",
-    val kind: String = "expense",       // expense | income | transfer
+    val kind: String = "expense", // expense | income | transfer
     val amountPaise: Long = 0,
     val accountId: String = "",
-    val toAccountId: String = "",       // transfers only
+    val toAccountId: String = "", // transfers only
     val categoryId: String = "",
     val subcategoryId: String = "",
     val note: String = "",
@@ -40,7 +40,7 @@ data class Txn(
 
 data class Budget(
     @DocumentId val id: String = "",
-    val categoryId: String = "",        // empty = overall monthly budget
+    val categoryId: String = "", // empty = overall monthly budget
     val limitPaise: Long = 0,
 )
 
@@ -71,13 +71,13 @@ data class Recurring(
     val amountPaise: Long = 0,
     val accountId: String = "",
     val categoryId: String = "",
-    val every: String = "monthly",      // daily | weekly | monthly | yearly
+    val every: String = "monthly", // daily | weekly | monthly | yearly
     val nextMillis: Long = 0,
     val active: Boolean = true,
 )
 
 data class Friend(
-    @DocumentId val id: String = "",    // friend's uid
+    @DocumentId val id: String = "", // friend's uid
     val name: String = "",
     val code: String = "",
 )
@@ -86,19 +86,22 @@ data class FriendRequest(
     @DocumentId val id: String = "",
     val from: String = "",
     val fromName: String = "",
+    val fromCode: String = "", // sender's friend code, so the receiver need not read the sender's profile
     val to: String = "",
-    val status: String = "pending",     // pending | accepted | declined
+    val toName: String = "", // receiver's name and code, copied from the lookup document when sending
+    val toCode: String = "",
+    val status: String = "pending", // pending | accepted | declined
 )
 
 data class Chat(
     @DocumentId val id: String = "",
-    val type: String = "direct",        // direct | group | split
+    val type: String = "direct", // direct | group | split
     val name: String = "",
     val members: List<String> = emptyList(),
     val memberNames: Map<String, String> = emptyMap(),
     val lastMessage: String = "",
     @ServerTimestamp val lastAt: Timestamp? = null,
-    val typing: Map<String, Long> = emptyMap(),   // uid -> last typing millis
+    val typing: Map<String, Long> = emptyMap(), // uid -> last typing millis
     val createdBy: String = "",
 )
 
@@ -106,12 +109,12 @@ data class Message(
     @DocumentId val id: String = "",
     val senderId: String = "",
     val senderName: String = "",
-    val type: String = "text",          // text | image | system
+    val type: String = "text", // text | image | system
     val text: String = "",
     val imageUrl: String = "",
     val replyToId: String = "",
     val replyPreview: String = "",
-    val reactions: Map<String, String> = emptyMap(),  // uid -> reaction key
+    val reactions: Map<String, String> = emptyMap(), // uid -> reaction key
     val readBy: List<String> = emptyList(),
     val deleted: Boolean = false,
     @ServerTimestamp val createdAt: Timestamp? = null,
@@ -119,13 +122,13 @@ data class Message(
 
 data class SplitEntry(
     @DocumentId val id: String = "",
-    val kind: String = "expense",       // expense | settlement
+    val kind: String = "expense", // expense | settlement
     val description: String = "",
     val totalPaise: Long = 0,
     val paidBy: String = "",
-    val settleTo: String = "",          // settlements only
-    val splitType: String = "equal",    // equal | exact | percent | shares
-    val owed: Map<String, Long> = emptyMap(),  // uid -> paise owed
+    val settleTo: String = "", // settlements only
+    val splitType: String = "equal", // equal | exact | percent | shares
+    val owed: Map<String, Long> = emptyMap(), // uid -> paise owed
     val dateMillis: Long = 0,
     val createdBy: String = "",
 )

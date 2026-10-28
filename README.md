@@ -33,5 +33,8 @@ Android expense tracker. Kotlin, Jetpack Compose, Firebase. Money is whole paise
 - Pickers return their result with `NavController.setPicked` and the receiving screen reads it with `Picked`.
 - Account types have their own default icon and colour. Colours include four gradients stored as keys (`g_sunset`, ...).
 
+## Editing text and colours
+All words are in `res/values/strings.xml`, colours in `colors.xml`, timings in `config.xml`. Kotlin reads them with `str(R.string.name)` and `clr(R.color.name)`. See FIXES_AND_AUDIT.md for this round of fixes.
+
 ## Not verified
 This project was written without an Android SDK, so it has not been compiled. Expect a few small compile fixes on the first sync.

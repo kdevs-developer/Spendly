@@ -7,10 +7,10 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -32,16 +32,19 @@ import androidx.compose.ui.graphics.vector.PathParser
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.kdevs.spendly.R
+import com.kdevs.spendly.data.str
 import com.kdevs.spendly.ui.theme.Brand
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-private val RupeeParts = listOf(
-    "M42,40H66",
-    "M42,49H66",
-    "M42,40H52a9,9 0 0 1 0,18H42L60,74",
-)
+private val RupeeParts =
+    listOf(
+        "M42,40H66",
+        "M42,49H66",
+        "M42,40H52a9,9 0 0 1 0,18H42L60,74",
+    )
 
 /**
  * Animated splash: the coin ring draws in, the rupee mark draws in, the coin fills white,
@@ -67,7 +70,10 @@ fun SplashOverlay(onFinished: () -> Unit) {
         fill.animateTo(1f, tween(350))
         coroutineScope {
             launch { word.animateTo(1f, tween(500, easing = FastOutSlowInEasing)) }
-            launch { delay(250); tag.animateTo(1f, tween(500, easing = FastOutSlowInEasing)) }
+            launch {
+                delay(250)
+                tag.animateTo(1f, tween(500, easing = FastOutSlowInEasing))
+            }
         }
         delay(450)
         alpha.animateTo(0f, tween(400))
@@ -88,8 +94,12 @@ fun SplashOverlay(onFinished: () -> Unit) {
             withTransform({ scale(s, s, Offset.Zero) }) {
                 drawCircle(Color.White.copy(alpha = fill.value), radius = 30f, center = Offset(54f, 54f))
                 drawArc(
-                    color = Color.White, startAngle = -90f, sweepAngle = 360f * ring.value, useCenter = false,
-                    topLeft = Offset(24f, 24f), size = Size(60f, 60f),
+                    color = Color.White,
+                    startAngle = -90f,
+                    sweepAngle = 360f * ring.value,
+                    useCenter = false,
+                    topLeft = Offset(24f, 24f),
+                    size = Size(60f, 60f),
                     style = Stroke(width = 3f, cap = StrokeCap.Round),
                 )
                 var remain = lengths.sum() * rupee.value
@@ -107,13 +117,28 @@ fun SplashOverlay(onFinished: () -> Unit) {
         }
         Spacer(Modifier.height(20.dp))
         Text(
-            "Spendly", color = Color.White, fontSize = 28.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 0.5.sp,
-            modifier = Modifier.graphicsLayer { this.alpha = word.value; translationY = (1f - word.value) * 24f },
+            str(R.string.spendly),
+            color = Color.White,
+            fontSize = 28.sp,
+            fontWeight = FontWeight.ExtraBold,
+            letterSpacing = 0.5.sp,
+            modifier =
+                Modifier.graphicsLayer {
+                    this.alpha = word.value
+                    translationY = (1f - word.value) * 24f
+                },
         )
         Spacer(Modifier.height(4.dp))
         Text(
-            "Know where it goes", color = Color.White.copy(alpha = 0.75f), fontSize = 13.sp, fontWeight = FontWeight.Medium,
-            modifier = Modifier.graphicsLayer { this.alpha = tag.value; translationY = (1f - tag.value) * 16f },
+            str(R.string.know_where_it_goes),
+            color = Color.White.copy(alpha = 0.75f),
+            fontSize = 13.sp,
+            fontWeight = FontWeight.Medium,
+            modifier =
+                Modifier.graphicsLayer {
+                    this.alpha = tag.value
+                    translationY = (1f - tag.value) * 16f
+                },
         )
     }
 }

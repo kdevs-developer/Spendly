@@ -1,5 +1,6 @@
 package com.kdevs.spendly.data
 
+import com.kdevs.spendly.R
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.time.Instant
@@ -10,16 +11,27 @@ import kotlin.math.abs
 
 private val zone: ZoneId get() = ZoneId.systemDefault()
 
-fun formatPaise(paise: Long, withSign: Boolean = false): String {
+fun formatPaise(
+    paise: Long,
+    withSign: Boolean = false,
+): String {
     val neg = paise < 0
     val a = abs(paise)
     val s = (a / 100).toString()
-    val grouped = if (s.length <= 3) s else {
-        val head = s.dropLast(3).reversed().chunked(2).joinToString(",").reversed()
-        "$head,${s.takeLast(3)}"
-    }
+    val grouped =
+        if (s.length <= 3) {
+            s
+        } else {
+            val head = s.dropLast(3).reversed().chunked(2).joinToString(",").reversed()
+            "$head,${s.takeLast(3)}"
+        }
     val frac = if (a % 100 == 0L) "" else "." + (a % 100).toString().padStart(2, '0')
-    val sign = when { neg -> "-"; withSign && paise > 0 -> "+"; else -> "" }
+    val sign =
+        when {
+            neg -> "-"
+            withSign && paise > 0 -> "+"
+            else -> ""
+        }
     return "$sign₹$grouped$frac"
 }
 
@@ -32,30 +44,36 @@ fun parseRupees(text: String): Long? {
     }.getOrNull()
 }
 
-fun paiseToField(paise: Long): String =
-    if (paise == 0L) "" else BigDecimal(paise).movePointLeft(2).stripTrailingZeros().toPlainString()
+fun paiseToField(paise: Long): String = if (paise == 0L) "" else BigDecimal(paise).movePointLeft(2).stripTrailingZeros().toPlainString()
 
 fun toLocalDate(millis: Long): LocalDate = Instant.ofEpochMilli(millis).atZone(zone).toLocalDate()
+
 fun LocalDate.startMillis(): Long = atStartOfDay(zone).toInstant().toEpochMilli()
+
 fun todayMillis(): Long = LocalDate.now().startMillis()
+
 fun monthStart(d: LocalDate = LocalDate.now()): Long = d.withDayOfMonth(1).startMillis()
+
 fun nextMonthStart(d: LocalDate = LocalDate.now()): Long = d.withDayOfMonth(1).plusMonths(1).startMillis()
 
 fun dayLabel(millis: Long): String {
     val d = toLocalDate(millis)
     val today = LocalDate.now()
     return when (d) {
-        today -> "Today"
-        today.minusDays(1) -> "Yesterday"
+        today -> str(R.string.today)
+        today.minusDays(1) -> str(R.string.yesterday)
         else -> d.format(DateTimeFormatter.ofPattern("EEE, d MMM"))
     }
 }
 
 fun fullDate(millis: Long): String = toLocalDate(millis).format(DateTimeFormatter.ofPattern("d MMM yyyy"))
-fun timeOf(millis: Long): String =
-    Instant.ofEpochMilli(millis).atZone(zone).format(DateTimeFormatter.ofPattern("h:mm a"))
 
-fun addPeriod(millis: Long, every: String): Long {
+fun timeOf(millis: Long): String = Instant.ofEpochMilli(millis).atZone(zone).format(DateTimeFormatter.ofPattern("h:mm a"))
+
+fun addPeriod(
+    millis: Long,
+    every: String,
+): Long {
     val d = toLocalDate(millis)
     return when (every) {
         "daily" -> d.plusDays(1)
@@ -65,11 +83,14 @@ fun addPeriod(millis: Long, every: String): Long {
     }.startMillis()
 }
 
-/* ---------- Split maths. Everything in whole paise; the parts always add up to the total. ---------- */
+// ---------- Split maths. Everything in whole paise; the parts always add up to the total. ----------
 
 object SplitMath {
     /** Equal split. The leftover paise go one each to the first members. */
-    fun equal(total: Long, ids: List<String>): Map<String, Long> {
+    fun equal(
+        total: Long,
+        ids: List<String>,
+    ): Map<String, Long> {
         if (ids.isEmpty()) return emptyMap()
         val base = total / ids.size
         var extra = (total % ids.size).toInt()
@@ -77,14 +98,20 @@ object SplitMath {
     }
 
     /** Percent is held in basis points (100% = 10000). Rounds down, rest goes to the first member. */
-    fun percent(total: Long, bps: Map<String, Int>): Map<String, Long> {
+    fun percent(
+        total: Long,
+        bps: Map<String, Int>,
+    ): Map<String, Long> {
         val out = bps.mapValues { (_, b) -> total * b / 10000 }.toMutableMap()
         val diff = total - out.values.sum()
         bps.keys.firstOrNull()?.let { out[it] = out.getValue(it) + diff }
         return out
     }
 
-    fun shares(total: Long, weights: Map<String, Int>): Map<String, Long> {
+    fun shares(
+        total: Long,
+        weights: Map<String, Int>,
+    ): Map<String, Long> {
         val sum = weights.values.sum()
         if (sum <= 0) return weights.mapValues { 0L }
         val out = weights.mapValues { (_, w) -> total * w / sum }.toMutableMap()
@@ -114,9 +141,11 @@ object SplitMath {
     fun simplify(balances: Map<String, Long>): List<Transfer> {
         val debtors = balances.filter { it.value < 0 }.map { it.key to -it.value }.toMutableList()
         val creditors = balances.filter { it.value > 0 }.map { it.key to it.value }.toMutableList()
-        debtors.sortByDescending { it.second }; creditors.sortByDescending { it.second }
+        debtors.sortByDescending { it.second }
+        creditors.sortByDescending { it.second }
         val out = mutableListOf<Transfer>()
-        var i = 0; var j = 0
+        var i = 0
+        var j = 0
         while (i < debtors.size && j < creditors.size) {
             val pay = minOf(debtors[i].second, creditors[j].second)
             if (pay > 0) out += Transfer(debtors[i].first, creditors[j].first, pay)

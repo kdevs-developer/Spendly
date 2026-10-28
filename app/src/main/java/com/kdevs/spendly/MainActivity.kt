@@ -1,7 +1,6 @@
 package com.kdevs.spendly
 
 import android.content.res.Configuration
-import android.graphics.Color as AndroidColor
 import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
 import android.os.SystemClock
@@ -22,10 +21,12 @@ import androidx.fragment.app.FragmentActivity
 import com.kdevs.spendly.data.Biometric
 import com.kdevs.spendly.data.Prefs
 import com.kdevs.spendly.data.Repo
+import com.kdevs.spendly.data.Res
 import com.kdevs.spendly.nav.SpendlyNav
 import com.kdevs.spendly.ui.screens.LockScreen
 import com.kdevs.spendly.ui.splash.SplashOverlay
 import com.kdevs.spendly.ui.theme.SpendlyTheme
+import android.graphics.Color as AndroidColor
 
 // FragmentActivity (it extends ComponentActivity) is what the system biometric prompt needs.
 class MainActivity : FragmentActivity() {
@@ -52,18 +53,25 @@ class MainActivity : FragmentActivity() {
             DisposableEffect(dark) {
                 this@MainActivity.enableEdgeToEdge(
                     statusBarStyle = SystemBarStyle.auto(AndroidColor.TRANSPARENT, AndroidColor.TRANSPARENT) { dark },
-                    navigationBarStyle = SystemBarStyle.auto(
-                        AndroidColor.argb(0xE6, 0xFF, 0xFF, 0xFF), AndroidColor.argb(0x80, 0x1B, 0x1B, 0x1B),
-                    ) { dark },
+                    navigationBarStyle =
+                        SystemBarStyle.auto(
+                            AndroidColor.argb(0xE6, 0xFF, 0xFF, 0xFF),
+                            AndroidColor.argb(0x80, 0x1B, 0x1B, 0x1B),
+                        ) { dark },
                 )
-                window.setBackgroundDrawable(ColorDrawable(if (dark) 0xFF0B1220.toInt() else 0xFFF5F7FB.toInt()))
+                window.setBackgroundDrawable(ColorDrawable(Res.colorInt(if (dark) R.color.bg_dark else R.color.bg_light)))
                 onDispose { }
             }
             SpendlyTheme {
                 var showSplash by rememberSaveable { mutableStateOf(true) }
                 Box(Modifier.fillMaxSize()) {
                     SpendlyNav()
-                    if (locked && uid != null) LockScreen(active = !showSplash) { locked = false; leftAt = 0L }
+                    if (locked && uid != null) {
+                        LockScreen(active = !showSplash) {
+                            locked = false
+                            leftAt = 0L
+                        }
+                    }
                     if (showSplash) SplashOverlay { showSplash = false }
                 }
             }
@@ -82,9 +90,11 @@ class MainActivity : FragmentActivity() {
 
     override fun onStart() {
         super.onStart()
-        // Coming back after more than 30 seconds away asks again.
+        // Coming back after more than app_lock_after_seconds (res/values/config.xml) away asks again.
         if (leftAt != 0L && Prefs.biometric && Repo.isSignedIn &&
-            SystemClock.elapsedRealtime() - leftAt > 30_000L && Biometric.available(this)
-        ) locked = true
+            SystemClock.elapsedRealtime() - leftAt > Res.integer(R.integer.app_lock_after_seconds) * 1000L && Biometric.available(this)
+        ) {
+            locked = true
+        }
     }
 }

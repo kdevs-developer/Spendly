@@ -7,11 +7,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.core.content.edit
+import com.kdevs.spendly.R
 
 enum class ThemeMode(val label: String) {
-    SYSTEM("System"),
-    LIGHT("Light"),
-    DARK("Dark")
+    SYSTEM(str(R.string.system)),
+    LIGHT(str(R.string.light)),
+    DARK(str(R.string.dark)),
 }
 
 /**
@@ -20,7 +21,6 @@ enum class ThemeMode(val label: String) {
  * The values are Compose state, so screens update immediately.
  */
 object Prefs {
-
     private lateinit var sp: SharedPreferences
 
     var themeMode by mutableStateOf(ThemeMode.SYSTEM)
@@ -35,23 +35,26 @@ object Prefs {
     var systemDark by mutableStateOf(false)
 
     val isDark: Boolean
-        get() = when (themeMode) {
-            ThemeMode.DARK -> true
-            ThemeMode.LIGHT -> false
-            ThemeMode.SYSTEM -> systemDark
-        }
+        get() =
+            when (themeMode) {
+                ThemeMode.DARK -> true
+                ThemeMode.LIGHT -> false
+                ThemeMode.SYSTEM -> systemDark
+            }
 
     fun init(ctx: Context) {
-        sp = ctx.applicationContext.getSharedPreferences(
-            "spendly_prefs",
-            Context.MODE_PRIVATE
-        )
-
-        themeMode = runCatching {
-            ThemeMode.valueOf(
-                sp.getString("theme", ThemeMode.SYSTEM.name).orEmpty()
+        sp =
+            ctx.applicationContext.getSharedPreferences(
+                "spendly_prefs",
+                Context.MODE_PRIVATE,
             )
-        }.getOrDefault(ThemeMode.SYSTEM)
+
+        themeMode =
+            runCatching {
+                ThemeMode.valueOf(
+                    sp.getString("theme", ThemeMode.SYSTEM.name).orEmpty(),
+                )
+            }.getOrDefault(ThemeMode.SYSTEM)
 
         biometric = sp.getBoolean("biometric", false)
     }

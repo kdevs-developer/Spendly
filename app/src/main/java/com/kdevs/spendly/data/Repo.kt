@@ -9,16 +9,27 @@ import androidx.credentials.exceptions.GetCredentialCancellationException
 import androidx.credentials.exceptions.NoCredentialException
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
-import com.google.firebase.auth.GoogleAuthProvider
+import com.google.firebase.FirebaseNetworkException
+import com.google.firebase.FirebaseTooManyRequestsException
 import com.google.firebase.Timestamp
+import com.google.firebase.auth.AuthCredential
+import com.google.firebase.auth.EmailAuthProvider
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
+import com.google.firebase.auth.FirebaseAuthInvalidUserException
+import com.google.firebase.auth.FirebaseAuthRecentLoginRequiredException
+import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.auth.userProfileChangeRequest
 import com.google.firebase.firestore.CollectionReference
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.FirebaseFirestoreException
 import com.google.firebase.firestore.Query
+import com.google.firebase.firestore.SetOptions
+import com.google.firebase.firestore.Source
 import com.google.firebase.messaging.FirebaseMessaging
 import com.google.firebase.storage.FirebaseStorage
+import com.kdevs.spendly.R
 import com.kdevs.spendly.data.model.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -29,6 +40,7 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withTimeout
 import kotlin.random.Random
 
 /**
@@ -43,25 +55,35 @@ object Repo {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private lateinit var appContext: Context
 
-    fun init(ctx: Context) { appContext = ctx.applicationContext }
+    fun init(ctx: Context) {
+        appContext = ctx.applicationContext
+    }
 
     // ---------- Auth ----------
-    val uidFlow: StateFlow<String?> = callbackFlow<String?> {
-        val l = FirebaseAuth.AuthStateListener { trySend(it.currentUser?.uid) }
-        FirebaseAuth.getInstance().addAuthStateListener(l)
-        awaitClose { FirebaseAuth.getInstance().removeAuthStateListener(l) }
-    }.stateIn(scope, SharingStarted.Eagerly, FirebaseAuth.getInstance().currentUser?.uid)
+    val uidFlow: StateFlow<String?> =
+        callbackFlow<String?> {
+            val l = FirebaseAuth.AuthStateListener { trySend(it.currentUser?.uid) }
+            FirebaseAuth.getInstance().addAuthStateListener(l)
+            awaitClose { FirebaseAuth.getInstance().removeAuthStateListener(l) }
+        }.stateIn(scope, SharingStarted.Eagerly, FirebaseAuth.getInstance().currentUser?.uid)
 
     val uid: String get() = auth.currentUser?.uid.orEmpty()
     val isSignedIn: Boolean get() = auth.currentUser != null
     val email: String get() = auth.currentUser?.email.orEmpty()
 
-    suspend fun signIn(email: String, password: String) {
+    suspend fun signIn(
+        email: String,
+        password: String,
+    ) {
         auth.signInWithEmailAndPassword(email.trim(), password).await()
         onSignedIn(null)
     }
 
-    suspend fun signUp(name: String, email: String, password: String) {
+    suspend fun signUp(
+        name: String,
+        email: String,
+        password: String,
+    ) {
         val r = auth.createUserWithEmailAndPassword(email.trim(), password).await()
         r.user?.updateProfile(userProfileChangeRequest { displayName = name.trim() })?.await()
         onSignedIn(name.trim())
@@ -69,52 +91,161 @@ object Repo {
 
     suspend fun signInGuest() {
         auth.signInAnonymously().await()
-        onSignedIn("Guest")
+        onSignedIn(str(R.string.guest))
     }
 
     /**
-     * Google account sign in through the system account sheet. Returns false when the person
-     * closed the sheet (nothing to show), and throws a short message for real problems.
+     * Opens the system Google account sheet and returns a Firebase credential for the chosen account.
+     * Returns null when the person closed the sheet (nothing to show), and throws a short message for real problems.
      */
-    suspend fun signInWithGoogle(context: android.content.Context): Boolean {
+    private suspend fun fetchGoogleCredential(context: android.content.Context): AuthCredential? {
         val resId = appContext.resources.getIdentifier("default_web_client_id", "string", appContext.packageName)
-        if (resId == 0) error("Google sign-in is not set up yet. Turn on Google in Firebase Authentication, add your SHA-1, and download google-services.json again.")
-        val option = GetGoogleIdOption.Builder()
-            .setFilterByAuthorizedAccounts(false)
-            .setServerClientId(appContext.getString(resId))
-            .build()
+        if (resId == 0) error(str(R.string.google_sign_in_is_not_set))
+        val option =
+            GetGoogleIdOption.Builder()
+                .setFilterByAuthorizedAccounts(false)
+                .setServerClientId(appContext.getString(resId))
+                .build()
         val request = GetCredentialRequest.Builder().addCredentialOption(option).build()
-        val result = try {
-            CredentialManager.create(context).getCredential(context, request)
-        } catch (e: GetCredentialCancellationException) {
-            return false
-        } catch (e: NoCredentialException) {
-            error("No Google account found on this phone. Add one in your phone settings and try again.")
-        }
+        val result =
+            try {
+                CredentialManager.create(context).getCredential(context, request)
+            } catch (e: GetCredentialCancellationException) {
+                return null
+            } catch (e: NoCredentialException) {
+                error(str(R.string.no_google_account_found_on_this))
+            }
         val cred = result.credential
         if (cred !is CustomCredential || cred.type != GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
-            error("Google sign-in did not return an account. Please try again.")
+            error(str(R.string.google_sign_in_did_not_return))
         }
         val token = GoogleIdTokenCredential.createFrom(cred.data).idToken
-        auth.signInWithCredential(GoogleAuthProvider.getCredential(token, null)).await()
+        return GoogleAuthProvider.getCredential(token, null)
+    }
+
+    /** Google account sign in. Returns false when the person closed the sheet. */
+    suspend fun signInWithGoogle(context: android.content.Context): Boolean {
+        val credential = fetchGoogleCredential(context) ?: return false
+        auth.signInWithCredential(credential).await()
         onSignedIn(null)
         return true
     }
 
-    suspend fun resetPassword(email: String) { auth.sendPasswordResetEmail(email.trim()).await() }
+    /** Which login methods this account uses: "password", "google.com", or empty for a guest. */
+    val signInMethods: List<String> get() = auth.currentUser?.providerData.orEmpty().map { it.providerId }.filter { it != "firebase" }
+    val isGuest: Boolean get() = auth.currentUser?.isAnonymous == true
+    val usesPassword: Boolean get() = "password" in signInMethods
 
-    fun signOut() { auth.signOut() }
+    /**
+     * Asks Firebase to send the reset email. Firebase answers "ok" even when the address has no account
+     * (email enumeration protection), so the screen must not promise that a mail exists.
+     */
+    suspend fun resetPassword(email: String) {
+        try {
+            auth.sendPasswordResetEmail(email.trim()).await()
+        } catch (e: FirebaseAuthInvalidCredentialsException) {
+            error(str(R.string.that_email_address_does_not_look))
+        } catch (e: FirebaseAuthInvalidUserException) {
+            error(str(R.string.no_account_uses_that_email))
+        } catch (e: FirebaseTooManyRequestsException) {
+            error(str(R.string.too_many_attempts_wait_a_few))
+        } catch (e: FirebaseNetworkException) {
+            error(str(R.string.no_internet_connection))
+        }
+    }
 
-    /** Deletes all the user's data, then the login itself. */
+    fun signOut() {
+        auth.signOut()
+    }
+
+    /** True while the delete flow runs, so the profile repair below does not rebuild what was just removed. */
+    @Volatile private var deleting = false
+
+    /**
+     * Firebase only lets an account be deleted shortly after a fresh sign-in. Call this first and the
+     * delete below cannot stop half way. Password accounts pass their password; Google accounts pass null
+     * and get the Google sheet; guests need nothing.
+     */
+    suspend fun reauthenticate(
+        password: String?,
+        context: Context,
+    ) {
+        val user = auth.currentUser ?: error(str(R.string.you_are_signed_out))
+        if (user.isAnonymous) return
+        val credential: AuthCredential =
+            when {
+                "password" in signInMethods -> {
+                    val mail = user.email ?: error(str(R.string.this_account_has_no_email))
+                    if (password.isNullOrEmpty()) error(str(R.string.enter_your_password))
+                    EmailAuthProvider.getCredential(mail, password)
+                }
+                "google.com" in signInMethods -> fetchGoogleCredential(context) ?: error(str(R.string.google_confirmation_was_cancelled))
+                else -> error(str(R.string.sign_out_sign_in_again_then))
+            }
+        try {
+            user.reauthenticate(credential).await()
+        } catch (e: FirebaseAuthInvalidCredentialsException) {
+            error(str(R.string.those_details_do_not_match_this))
+        } catch (e: FirebaseAuthInvalidUserException) {
+            error(str(R.string.those_details_do_not_match_this))
+        }
+    }
+
+    /**
+     * Removes everything the person owns, then the login. Needs the internet, because a delete that is only
+     * queued on the phone would "finish" without touching the server. Call [reauthenticate] first.
+     * What stays: messages already sent in other people's chats, and split entries other members rely on.
+     */
     suspend fun deleteEverything() {
         val u = uid
-        listOf("accounts", "categories", "txns", "budgets", "goals", "templates", "recurring", "friends", "hidden").forEach { c ->
-            val snap = db.collection("users").document(u).collection(c).get().await()
-            snap.documents.forEach { it.reference.delete().await() }
+        if (u.isBlank()) return
+        val cm = appContext.getSystemService(Context.CONNECTIVITY_SERVICE) as android.net.ConnectivityManager
+        val online =
+            cm.activeNetwork?.let {
+                cm.getNetworkCapabilities(it)?.hasCapability(android.net.NetworkCapabilities.NET_CAPABILITY_INTERNET)
+            } == true
+        if (!online) error(str(R.string.connect_to_the_internet_to_delete))
+        deleting = true
+        try {
+            withTimeout(120_000) { wipe(u) }
+            runCatching { FirebaseMessaging.getInstance().deleteToken().await() }
+            try {
+                auth.currentUser?.delete()?.await()
+            } catch (e: FirebaseAuthRecentLoginRequiredException) {
+                error(str(R.string.for_your_security_confirm_your_login))
+            }
+        } finally {
+            deleting = false
         }
-        profile.value.code.takeIf { it.isNotBlank() }?.let { db.collection("userCodes").document(it.replace(" ", "")).delete().await() }
-        db.collection("users").document(u).delete().await()
-        auth.currentUser?.delete()?.await()
+    }
+
+    private suspend fun wipe(u: String) {
+        // 1. Chats: take my name off, leave, and delete the photos I uploaded.
+        val chatDocs = db.collection("chats").whereArrayContains("members", u).get(Source.SERVER).await().documents
+        for (c in chatDocs) {
+            runCatching {
+                FirebaseStorage.getInstance().reference.child("chats/${c.id}").listAll().await()
+                    .items.filter { it.name.endsWith("_$u.jpg") }.forEach { it.delete().await() }
+            }
+            c.reference.update(mapOf("members" to FieldValue.arrayRemove(u), "memberNames.$u" to "Deleted user")).await()
+        }
+        // 2. Friend requests I sent or received.
+        for (side in listOf("from", "to")) {
+            db.collection("requests").whereEqualTo(side, u).get(Source.SERVER).await().documents.forEach { it.reference.delete().await() }
+        }
+        // 3. My private collections, in batches (a batch holds at most 500 writes).
+        val me = db.collection("users").document(u)
+        for (name in listOf("accounts", "categories", "txns", "budgets", "goals", "templates", "recurring", "friends", "hidden")) {
+            me.collection(name).get(Source.SERVER).await().documents.chunked(400).forEach { part ->
+                val batch = db.batch()
+                part.forEach { batch.delete(it.reference) }
+                batch.commit().await()
+            }
+        }
+        // 4. The friend code lookup, then the profile itself.
+        val code = me.get(Source.SERVER).await().getString("code").orEmpty().replace(" ", "")
+        if (code.isNotBlank()) db.collection("userCodes").document(code).delete().await()
+        me.delete().await()
     }
 
     private suspend fun onSignedIn(name: String?) {
@@ -135,34 +266,40 @@ object Repo {
     }
 
     private suspend fun fillProfile(nameHint: String?) {
-        if (!isSignedIn) return
+        if (!isSignedIn || deleting) return
         val u = uid
         val ref = db.collection("users").document(u)
         val snap = runCatching { ref.get().await() }.getOrNull() ?: return
         val p = snap.toObject(Profile::class.java) ?: Profile()
         val user = auth.currentUser
         val typed = nameHint?.trim().orEmpty()
-        val fallback = user?.displayName?.takeIf { it.isNotBlank() }
-            ?: user?.email?.substringBefore('@')?.takeIf { it.isNotBlank() }
-            ?: if (user?.isAnonymous == true) "Guest" else "Me"
-        val name = when {
-            typed.isNotEmpty() -> typed
-            p.name.isNotBlank() -> p.name
-            else -> fallback
-        }
-        val code = p.code.ifBlank { newFriendCode() }
+        val fallback =
+            user?.displayName?.takeIf { it.isNotBlank() }
+                ?: user?.email?.substringBefore('@')?.takeIf { it.isNotBlank() }
+                ?: if (user?.isAnonymous == true) str(R.string.guest) else str(R.string.me)
+        val name =
+            when {
+                typed.isNotEmpty() -> typed
+                p.name.isNotBlank() -> p.name
+                else -> fallback
+            }
+
+        // Friends find you through the userCodes lookup document. Register it first and only then save the
+        // code on the profile, so the screen never shows a code that nobody can look up.
+        val code =
+            try {
+                claimCode(u, name, p.code).also { codeProblem.value = null }
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                codeProblem.value = friendlyFirestoreError(e)
+                null
+            }
 
         val changes = mutableMapOf<String, Any>()
         if (name != p.name) changes["name"] = name
-        if (code != p.code) changes["code"] = code
-        if (changes.isNotEmpty()) ref.set(changes, com.google.firebase.firestore.SetOptions.merge()).await()
-
-        // Friends find you through this lookup document, so keep it in step with the profile.
-        val lookup = db.collection("userCodes").document(code.replace(" ", ""))
-        val existing = runCatching { lookup.get().await() }.getOrNull()
-        if (existing == null || !existing.exists() || existing.getString("name") != name) {
-            runCatching { lookup.set(mapOf("uid" to u, "name" to name)).await() }
-        }
+        if (code != null && code != p.code) changes["code"] = code
+        if (changes.isNotEmpty()) ref.set(changes, SetOptions.merge()).await()
 
         // The starter categories are added once. "seeded" is only set after they are all in,
         // so a first run that was cut short tries again instead of leaving an empty list.
@@ -170,6 +307,39 @@ object Repo {
             seedCategories()
             ref.set(mapOf("seeded" to true), com.google.firebase.firestore.SetOptions.merge()).await()
         }
+    }
+
+    /** Set when the friend code could not be registered on the server (rules, network). Shown on Add friend. */
+    val codeProblem = MutableStateFlow<String?>(null)
+
+    private fun friendlyFirestoreError(e: Exception): String =
+        if (e is FirebaseFirestoreException) {
+            when (e.code) {
+                FirebaseFirestoreException.Code.PERMISSION_DENIED -> str(R.string.the_server_refused_this_deploy_firesto)
+                FirebaseFirestoreException.Code.UNAVAILABLE -> str(R.string.no_internet_connection_try_again_when)
+                else -> str(R.string.server_error, e.code)
+            }
+        } else {
+            e.message ?: str(R.string.something_went_wrong)
+        }
+
+    /** Registers the code for lookup and returns the code to keep. Picks a new one if someone else holds it. */
+    private suspend fun claimCode(
+        u: String,
+        name: String,
+        current: String,
+    ): String {
+        var code = current.ifBlank { newFriendCode() }
+        repeat(6) {
+            val ref = db.collection("userCodes").document(code.replace(" ", ""))
+            val snap = ref.get(Source.SERVER).await()
+            if (!snap.exists() || snap.getString("uid") == u) {
+                if (!snap.exists() || snap.getString("name") != name) ref.set(mapOf("uid" to u, "name" to name)).await()
+                return code
+            }
+            code = newFriendCode()
+        }
+        error(str(R.string.could_not_create_a_friend_code))
     }
 
     fun saveToken(token: String) {
@@ -184,22 +354,32 @@ object Repo {
     }
 
     private suspend fun seedCategories() {
-        val parents = listOf(
-            Triple("Food", "food", "orange") to listOf("Groceries" to "grocery", "Eating out" to "food", "Coffee" to "coffee"),
-            Triple("Transport", "transport", "blue") to listOf("Fuel" to "fuel", "Bus and metro" to "transport", "Flights" to "flight"),
-            Triple("Bills", "bills", "purple") to listOf("Rent" to "rent", "Internet" to "wifi", "Electricity" to "bills"),
-            Triple("Shopping", "shopping", "pink") to listOf("Clothes" to "clothes", "Gifts" to "gift"),
-            Triple("Health", "health", "red") to listOf("Doctor" to "health", "Fitness" to "fitness"),
-            Triple("Entertainment", "movie", "teal") to listOf("Movies" to "movie"),
-            Triple("Other", "other", "slate") to emptyList(),
-        )
+        val parents =
+            listOf(
+                Triple(str(R.string.food), "food", "orange") to listOf(str(R.string.groceries) to "grocery", str(R.string.eating_out) to "food", str(R.string.coffee) to "coffee"),
+                Triple(str(R.string.transport), "transport", "blue") to listOf(str(R.string.fuel) to "fuel", str(R.string.bus_and_metro) to "transport", str(R.string.flights) to "flight"),
+                Triple(str(R.string.bills), "bills", "purple") to listOf(str(R.string.rent) to "rent", str(R.string.internet) to "wifi", str(R.string.electricity) to "bills"),
+                Triple(str(R.string.shopping), "shopping", "pink") to listOf(str(R.string.clothes) to "clothes", str(R.string.gifts) to "gift"),
+                Triple(str(R.string.health), "health", "red") to listOf(str(R.string.doctor) to "health", str(R.string.fitness) to "fitness"),
+                Triple(str(R.string.entertainment), "movie", "teal") to listOf(str(R.string.movies) to "movie"),
+                Triple(str(R.string.other), "other", "slate") to emptyList(),
+            )
         val col = db.collection("users").document(uid).collection("categories")
         parents.forEach { (p, subs) ->
             val ref = col.document()
             ref.set(Category(name = p.first, icon = p.second, colorKey = p.third, kind = "expense")).await()
-            subs.forEach { (n, i) -> col.add(Category(name = n, icon = i, colorKey = p.third, parentId = ref.id, kind = "expense")).await() }
+            subs.forEach {
+                    (n, i) ->
+                col.add(Category(name = n, icon = i, colorKey = p.third, parentId = ref.id, kind = "expense")).await()
+            }
         }
-        listOf("Salary" to "salary", "Interest" to "savings", "Gifts received" to "gift", "Other income" to "other").forEach { (n, i) ->
+        listOf(
+            str(R.string.salary) to "salary",
+            str(R.string.interest) to "savings",
+            str(R.string.gifts_received) to "gift",
+            str(R.string.other_income) to "other",
+        ).forEach {
+                (n, i) ->
             col.add(Category(name = n, icon = i, colorKey = "green", kind = "income")).await()
         }
     }
@@ -207,39 +387,69 @@ object Repo {
     // ---------- Generic helpers ----------
     private fun userCol(name: String): CollectionReference = db.collection("users").document(uid).collection(name)
 
-    private inline fun <reified T : Any> live(name: String, crossinline order: (CollectionReference) -> Query = { it }): Flow<List<T>> =
+    private inline fun <reified T : Any> live(
+        name: String,
+        crossinline order: (CollectionReference) -> Query = { it },
+    ): Flow<List<T>> =
         uidFlow.flatMapLatest { u ->
-            if (u == null) flowOf(emptyList())
-            else callbackFlow {
-                val q = order(db.collection("users").document(u).collection(name))
-                val reg = q.addSnapshotListener { s, _ -> if (s != null) trySend(s.toObjects(T::class.java)) }
-                awaitClose { reg.remove() }
+            if (u == null) {
+                flowOf(emptyList())
+            } else {
+                callbackFlow {
+                    val q = order(db.collection("users").document(u).collection(name))
+                    val reg = q.addSnapshotListener { s, _ -> if (s != null) trySend(s.toObjects(T::class.java)) }
+                    awaitClose { reg.remove() }
+                }
             }
         }
 
     private fun <T> Flow<T>.hot(initial: T): StateFlow<T> = stateIn(scope, SharingStarted.Eagerly, initial)
 
     /** Save or update. A blank id creates a new document and returns its id. */
-    suspend fun put(collection: String, id: String, data: Any): String {
+    suspend fun put(
+        collection: String,
+        id: String,
+        data: Any,
+    ): String {
         val ref = if (id.isBlank()) userCol(collection).document() else userCol(collection).document(id)
         ref.set(data).await()
         return ref.id
     }
 
-    suspend fun remove(collection: String, id: String) { userCol(collection).document(id).delete().await() }
-    suspend fun removeMany(collection: String, ids: Collection<String>) {
+    suspend fun remove(
+        collection: String,
+        id: String,
+    ) {
+        userCol(collection).document(id).delete().await()
+    }
+
+    suspend fun removeMany(
+        collection: String,
+        ids: Collection<String>,
+    ) {
         val batch = db.batch()
         ids.forEach { batch.delete(userCol(collection).document(it)) }
         batch.commit().await()
     }
 
     // ---------- Money data ----------
-    val profile: StateFlow<Profile> = uidFlow.flatMapLatest { u ->
-        if (u == null) flowOf(Profile()) else callbackFlow {
-            val reg = db.collection("users").document(u).addSnapshotListener { s, _ -> trySend(s?.toObject(Profile::class.java) ?: Profile()) }
-            awaitClose { reg.remove() }
-        }
-    }.hot(Profile())
+    val profile: StateFlow<Profile> =
+        uidFlow.flatMapLatest { u ->
+            if (u == null) {
+                flowOf(Profile())
+            } else {
+                callbackFlow {
+                    val reg =
+                        db.collection("users").document(u).addSnapshotListener {
+                                s,
+                                _,
+                            ->
+                            trySend(s?.toObject(Profile::class.java) ?: Profile())
+                        }
+                    awaitClose { reg.remove() }
+                }
+            }
+        }.hot(Profile())
 
     val accounts: StateFlow<List<Account>> = live<Account>("accounts") { it.orderBy("createdAt") }.hot(emptyList())
     val categories: StateFlow<List<Category>> = live<Category>("categories").hot(emptyList())
@@ -253,7 +463,11 @@ object Repo {
         live<HiddenMsg>("hidden").map { l -> l.map { it.id } }.hot(emptyList())
 
     /** Money in an account right now: opening balance plus all its transactions. */
-    fun balanceOf(accountId: String, accounts: List<Account>, txns: List<Txn>): Long {
+    fun balanceOf(
+        accountId: String,
+        accounts: List<Account>,
+        txns: List<Txn>,
+    ): Long {
         val opening = accounts.firstOrNull { it.id == accountId }?.openingPaise ?: 0
         var b = opening
         for (t in txns) {
@@ -275,7 +489,9 @@ object Repo {
         if (used) {
             val a = accounts.value.firstOrNull { it.id == id } ?: return
             put("accounts", id, a.copy(archived = true))
-        } else remove("accounts", id)
+        } else {
+            remove("accounts", id)
+        }
     }
 
     suspend fun deleteCategory(id: String) {
@@ -295,7 +511,18 @@ object Repo {
             var next = r.nextMillis
             var guard = 0
             while (next <= now && guard++ < 60) {
-                put("txns", "", Txn(kind = r.kind, amountPaise = r.amountPaise, accountId = r.accountId, categoryId = r.categoryId, note = r.name, dateMillis = next))
+                put(
+                    "txns",
+                    "",
+                    Txn(
+                        kind = r.kind,
+                        amountPaise = r.amountPaise,
+                        accountId = r.accountId,
+                        categoryId = r.categoryId,
+                        note = r.name,
+                        dateMillis = next,
+                    ),
+                )
                 next = addPeriod(next, r.every)
             }
             put("recurring", r.id, r.copy(nextMillis = next))
@@ -305,46 +532,72 @@ object Repo {
     // ---------- Friends ----------
     data class RequestView(val id: String, val fromUid: String, val fromName: String)
 
-    val incomingRequests: StateFlow<List<FriendRequest>> = uidFlow.flatMapLatest { u ->
-        if (u == null) flowOf(emptyList()) else callbackFlow {
-            val reg = db.collection("requests").whereEqualTo("to", u).whereEqualTo("status", "pending")
-                .addSnapshotListener { s, _ -> if (s != null) trySend(s.toObjects(FriendRequest::class.java)) }
-            awaitClose { reg.remove() }
-        }
-    }.hot(emptyList())
+    val incomingRequests: StateFlow<List<FriendRequest>> =
+        uidFlow.flatMapLatest { u ->
+            if (u == null) {
+                flowOf(emptyList())
+            } else {
+                callbackFlow {
+                    val reg =
+                        db.collection("requests").whereEqualTo("to", u).whereEqualTo("status", "pending")
+                            .addSnapshotListener { s, _ -> if (s != null) trySend(s.toObjects(FriendRequest::class.java)) }
+                    awaitClose { reg.remove() }
+                }
+            }
+        }.hot(emptyList())
 
-    val outgoingRequests: StateFlow<List<FriendRequest>> = uidFlow.flatMapLatest { u ->
-        if (u == null) flowOf(emptyList()) else callbackFlow {
-            val reg = db.collection("requests").whereEqualTo("from", u).whereEqualTo("status", "pending")
-                .addSnapshotListener { s, _ -> if (s != null) trySend(s.toObjects(FriendRequest::class.java)) }
-            awaitClose { reg.remove() }
-        }
-    }.hot(emptyList())
+    val outgoingRequests: StateFlow<List<FriendRequest>> =
+        uidFlow.flatMapLatest { u ->
+            if (u == null) {
+                flowOf(emptyList())
+            } else {
+                callbackFlow {
+                    val reg =
+                        db.collection("requests").whereEqualTo("from", u).whereEqualTo("status", "pending")
+                            .addSnapshotListener { s, _ -> if (s != null) trySend(s.toObjects(FriendRequest::class.java)) }
+                    awaitClose { reg.remove() }
+                }
+            }
+        }.hot(emptyList())
 
     /** Returns null on success or a short message the screen can show. */
     suspend fun sendFriendRequest(rawCode: String): String? {
         val code = rawCode.uppercase().filter { it.isLetterOrDigit() }
-        if (code.length != 8) return "A friend code has 8 letters and numbers."
-        val doc = db.collection("userCodes").document(code).get().await()
-        if (!doc.exists()) return "No one has that code."
+        if (code.length != 8) return str(R.string.friend_code_length_hint)
+        val doc =
+            try {
+                db.collection("userCodes").document(code).get(Source.SERVER).await()
+            } catch (e: FirebaseFirestoreException) {
+                return friendlyFirestoreError(e)
+            }
+        if (!doc.exists()) return str(R.string.no_one_has_that_code)
         val other = doc.getString("uid").orEmpty()
-        if (other == uid) return "That is your own code."
-        if (friends.value.any { it.id == other }) return "Already friends."
-        if (other in profile.value.blocked) return "Unblock this person first."
+        if (other == uid) return str(R.string.that_is_your_own_code)
+        if (friends.value.any { it.id == other }) return str(R.string.already_friends)
+        if (other in profile.value.blocked) return str(R.string.unblock_this_person_first)
         val id = "${uid}_$other"
         db.collection("requests").document(id).set(
-            FriendRequest(from = uid, fromName = profile.value.name, to = other, status = "pending")
+            FriendRequest(
+                from = uid,
+                fromName = profile.value.name,
+                fromCode = profile.value.code,
+                to = other,
+                toName = doc.getString("name").orEmpty(),
+                toCode = code,
+                status = "pending",
+            ),
         ).await()
         return null
     }
 
-    suspend fun answerRequest(req: FriendRequest, accept: Boolean) {
+    suspend fun answerRequest(
+        req: FriendRequest,
+        accept: Boolean,
+    ) {
+        // Add the friend first: if the second step fails the person can simply tap Accept again.
+        if (accept) put("friends", req.from, Friend(name = req.fromName, code = req.fromCode))
         db.collection("requests").document(req.id).update("status", if (accept) "accepted" else "declined").await()
-        if (accept) {
-            val code = db.collection("users").document(req.from).get().await().getString("code").orEmpty()
-            put("friends", req.from, Friend(name = req.fromName, code = code))
-            // The sender adds us on their side when they next open the app (see syncAccepted).
-        }
+        // The sender adds us on their side as soon as they are online (see syncAccepted).
     }
 
     /** Adds friends whose requests we sent and they accepted. */
@@ -352,42 +605,75 @@ object Repo {
         val snap = db.collection("requests").whereEqualTo("from", uid).whereEqualTo("status", "accepted").get().await()
         for (d in snap.documents) {
             val other = d.getString("to").orEmpty()
+            // Another person's profile is private, so the name and code come from the request itself.
             if (friends.value.none { it.id == other }) {
-                val u = db.collection("users").document(other).get().await()
-                put("friends", other, Friend(name = u.getString("name").orEmpty(), code = u.getString("code").orEmpty()))
+                put(
+                    "friends",
+                    other,
+                    Friend(
+                        name =
+                            d.getString("toName").orEmpty().ifBlank {
+                                str(R.string.friend)
+                            },
+                        code = d.getString("toCode").orEmpty(),
+                    ),
+                )
             }
             d.reference.delete().await()
         }
     }
 
-    suspend fun removeFriend(id: String) { remove("friends", id) }
+    suspend fun removeFriend(id: String) {
+        remove("friends", id)
+    }
 
     suspend fun block(id: String) {
         db.collection("users").document(uid).update("blocked", FieldValue.arrayUnion(id)).await()
     }
+
     suspend fun unblock(id: String) {
         db.collection("users").document(uid).update("blocked", FieldValue.arrayRemove(id)).await()
     }
 
-    suspend fun report(targetUid: String, chatId: String, reason: String) {
+    suspend fun report(
+        targetUid: String,
+        chatId: String,
+        reason: String,
+    ) {
         db.collection("reports").add(
-            mapOf("reporter" to uid, "target" to targetUid, "chatId" to chatId, "reason" to reason, "at" to Timestamp.now())
+            mapOf("reporter" to uid, "target" to targetUid, "chatId" to chatId, "reason" to reason, "at" to Timestamp.now()),
         ).await()
     }
 
     // ---------- Chats ----------
-    val chats: StateFlow<List<Chat>> = uidFlow.flatMapLatest { u ->
-        if (u == null) flowOf(emptyList()) else callbackFlow {
-            val reg = db.collection("chats").whereArrayContains("members", u)
-                .addSnapshotListener { s, _ -> if (s != null) trySend(s.toObjects(Chat::class.java).sortedByDescending { it.lastAt?.toDate()?.time ?: Long.MAX_VALUE }) }
+    val chats: StateFlow<List<Chat>> =
+        uidFlow.flatMapLatest { u ->
+            if (u == null) {
+                flowOf(emptyList())
+            } else {
+                callbackFlow {
+                    val reg =
+                        db.collection("chats").whereArrayContains("members", u)
+                            .addSnapshotListener {
+                                    s,
+                                    _,
+                                ->
+                                if (s != null) {
+                                    trySend(
+                                        s.toObjects(Chat::class.java).sortedByDescending { it.lastAt?.toDate()?.time ?: Long.MAX_VALUE },
+                                    )
+                                }
+                            }
+                    awaitClose { reg.remove() }
+                }
+            }
+        }.hot(emptyList())
+
+    fun chat(id: String): Flow<Chat?> =
+        callbackFlow {
+            val reg = db.collection("chats").document(id).addSnapshotListener { s, _ -> trySend(s?.toObject(Chat::class.java)) }
             awaitClose { reg.remove() }
         }
-    }.hot(emptyList())
-
-    fun chat(id: String): Flow<Chat?> = callbackFlow {
-        val reg = db.collection("chats").document(id).addSnapshotListener { s, _ -> trySend(s?.toObject(Chat::class.java)) }
-        awaitClose { reg.remove() }
-    }
 
     suspend fun openDirectChat(friend: Friend): String {
         val id = listOf(uid, friend.id).sorted().joinToString("_")
@@ -395,15 +681,24 @@ object Repo {
         val existing = runCatching { ref.get().await() }.getOrNull()
         if (existing == null || !existing.exists()) {
             ref.set(
-                Chat(type = "direct", name = "", members = listOf(uid, friend.id),
-                    memberNames = mapOf(uid to profile.value.name, friend.id to friend.name), createdBy = uid)
+                Chat(
+                    type = "direct",
+                    name = "",
+                    members = listOf(uid, friend.id),
+                    memberNames = mapOf(uid to profile.value.name, friend.id to friend.name),
+                    createdBy = uid,
+                ),
             ).await()
         }
         return id
     }
 
     /** type is "group" or "split". */
-    suspend fun createGroup(name: String, type: String, members: List<Friend>): String {
+    suspend fun createGroup(
+        name: String,
+        type: String,
+        members: List<Friend>,
+    ): String {
         val ref = db.collection("chats").document()
         val names = mutableMapOf(uid to profile.value.name)
         members.forEach { names[it.id] = it.name }
@@ -412,7 +707,10 @@ object Repo {
         return ref.id
     }
 
-    suspend fun addMembers(chatId: String, add: List<Friend>) {
+    suspend fun addMembers(
+        chatId: String,
+        add: List<Friend>,
+    ) {
         val ref = db.collection("chats").document(chatId)
         val updates = mutableMapOf<String, Any>("members" to FieldValue.arrayUnion(*add.map { it.id }.toTypedArray()))
         add.forEach { updates["memberNames.${it.id}"] = it.name }
@@ -425,95 +723,153 @@ object Repo {
         ref.update("members", FieldValue.arrayRemove(uid)).await()
     }
 
-    suspend fun renameChat(chatId: String, name: String) {
+    suspend fun renameChat(
+        chatId: String,
+        name: String,
+    ) {
         db.collection("chats").document(chatId).update("name", name).await()
     }
 
     fun messages(chatId: String): Flow<List<Message>> =
         combine(
             callbackFlow {
-                val reg = db.collection("chats").document(chatId).collection("messages")
-                    .orderBy("createdAt").addSnapshotListener { s, _ -> if (s != null) trySend(s.toObjects(Message::class.java)) }
+                val reg =
+                    db.collection("chats").document(chatId).collection("messages")
+                        .orderBy("createdAt").addSnapshotListener { s, _ -> if (s != null) trySend(s.toObjects(Message::class.java)) }
                 awaitClose { reg.remove() }
             },
             hiddenIds,
             profile,
         ) { list, hidden, p -> list.filter { it.id !in hidden && it.senderId !in p.blocked } }
 
-    suspend fun sendText(chatId: String, text: String, replyTo: Message? = null) {
-        val msg = Message(
-            senderId = uid, senderName = profile.value.name, type = "text", text = text.trim(),
-            replyToId = replyTo?.id.orEmpty(),
-            replyPreview = replyTo?.let { if (it.type == "image") "Photo" else it.text.take(80) }.orEmpty(),
-            readBy = listOf(uid),
-        )
+    suspend fun sendText(
+        chatId: String,
+        text: String,
+        replyTo: Message? = null,
+    ) {
+        val msg =
+            Message(
+                senderId = uid,
+                senderName = profile.value.name,
+                type = "text",
+                text = text.trim(),
+                replyToId = replyTo?.id.orEmpty(),
+                replyPreview = replyTo?.let { if (it.type == "image") str(R.string.photo) else it.text.take(80) }.orEmpty(),
+                readBy = listOf(uid),
+            )
         val chatRef = db.collection("chats").document(chatId)
         chatRef.collection("messages").add(msg).await()
         chatRef.update(mapOf("lastMessage" to text.trim().take(80), "lastAt" to FieldValue.serverTimestamp(), "typing.$uid" to 0L)).await()
     }
 
-    suspend fun sendImage(chatId: String, uri: Uri) {
+    suspend fun sendImage(
+        chatId: String,
+        uri: Uri,
+    ) {
         val path = "chats/$chatId/${System.currentTimeMillis()}_$uid.jpg"
         val ref = FirebaseStorage.getInstance().reference.child(path)
         ref.putFile(uri).await()
         val url = ref.downloadUrl.await().toString()
         val chatRef = db.collection("chats").document(chatId)
         chatRef.collection("messages").add(
-            Message(senderId = uid, senderName = profile.value.name, type = "image", imageUrl = url, readBy = listOf(uid))
+            Message(senderId = uid, senderName = profile.value.name, type = "image", imageUrl = url, readBy = listOf(uid)),
         ).await()
-        chatRef.update(mapOf("lastMessage" to "Photo", "lastAt" to FieldValue.serverTimestamp())).await()
+        chatRef.update(mapOf("lastMessage" to str(R.string.photo), "lastAt" to FieldValue.serverTimestamp())).await()
     }
 
-    private suspend fun sendSystem(chatId: String, text: String) {
+    private suspend fun sendSystem(
+        chatId: String,
+        text: String,
+    ) {
         val chatRef = db.collection("chats").document(chatId)
-        chatRef.collection("messages").add(Message(senderId = uid, senderName = "", type = "system", text = text, readBy = listOf(uid))).await()
+        chatRef.collection(
+            "messages",
+        ).add(Message(senderId = uid, senderName = "", type = "system", text = text, readBy = listOf(uid))).await()
         chatRef.update(mapOf("lastMessage" to text, "lastAt" to FieldValue.serverTimestamp())).await()
     }
 
-    suspend fun react(chatId: String, msg: Message, key: String) {
+    suspend fun react(
+        chatId: String,
+        msg: Message,
+        key: String,
+    ) {
         val ref = db.collection("chats").document(chatId).collection("messages").document(msg.id)
-        if (msg.reactions[uid] == key) ref.update("reactions.$uid", FieldValue.delete()).await()
-        else ref.update("reactions.$uid", key).await()
+        if (msg.reactions[uid] == key) {
+            ref.update("reactions.$uid", FieldValue.delete()).await()
+        } else {
+            ref.update("reactions.$uid", key).await()
+        }
     }
 
-    suspend fun markRead(chatId: String, msgs: List<Message>) {
+    suspend fun markRead(
+        chatId: String,
+        msgs: List<Message>,
+    ) {
         val unread = msgs.filter { it.senderId != uid && uid !in it.readBy && it.type != "system" }
         if (unread.isEmpty()) return
         val batch = db.batch()
         unread.forEach {
-            batch.update(db.collection("chats").document(chatId).collection("messages").document(it.id), "readBy", FieldValue.arrayUnion(uid))
+            batch.update(
+                db.collection("chats").document(chatId).collection("messages").document(it.id),
+                "readBy",
+                FieldValue.arrayUnion(uid),
+            )
         }
         batch.commit().await()
     }
 
-    fun setTyping(chatId: String, typing: Boolean) {
+    fun setTyping(
+        chatId: String,
+        typing: Boolean,
+    ) {
         db.collection("chats").document(chatId).update("typing.$uid", if (typing) System.currentTimeMillis() else 0L)
     }
 
     /** Only works within 5 minutes of sending; Firestore rules enforce the same limit. */
-    suspend fun deleteForEveryone(chatId: String, msg: Message) {
+    suspend fun deleteForEveryone(
+        chatId: String,
+        msg: Message,
+    ) {
         db.collection("chats").document(chatId).collection("messages").document(msg.id)
             .update(mapOf("deleted" to true, "text" to "", "imageUrl" to "")).await()
     }
 
-    suspend fun deleteForMe(msg: Message) { put("hidden", msg.id, HiddenMsg()) }
-
-    // ---------- Splits ----------
-    fun splits(chatId: String): Flow<List<SplitEntry>> = callbackFlow {
-        val reg = db.collection("chats").document(chatId).collection("splits")
-            .orderBy("dateMillis", Query.Direction.DESCENDING)
-            .addSnapshotListener { s, _ -> if (s != null) trySend(s.toObjects(SplitEntry::class.java)) }
-        awaitClose { reg.remove() }
+    suspend fun deleteForMe(msg: Message) {
+        put("hidden", msg.id, HiddenMsg())
     }
 
-    suspend fun addSplit(chatId: String, e: SplitEntry) {
+    // ---------- Splits ----------
+    fun splits(chatId: String): Flow<List<SplitEntry>> =
+        callbackFlow {
+            val reg =
+                db.collection("chats").document(chatId).collection("splits")
+                    .orderBy("dateMillis", Query.Direction.DESCENDING)
+                    .addSnapshotListener { s, _ -> if (s != null) trySend(s.toObjects(SplitEntry::class.java)) }
+            awaitClose { reg.remove() }
+        }
+
+    suspend fun addSplit(
+        chatId: String,
+        e: SplitEntry,
+    ) {
         val ref = db.collection("chats").document(chatId)
         ref.collection("splits").add(e.copy(createdBy = uid)).await()
-        val text = if (e.kind == "settlement") "Settled ${formatPaise(e.totalPaise)}" else "${e.description}: ${formatPaise(e.totalPaise)}"
+        val text =
+            if (e.kind == "settlement") {
+                str(
+                    R.string.settled,
+                    formatPaise(e.totalPaise),
+                )
+            } else {
+                "${e.description}: ${formatPaise(e.totalPaise)}"
+            }
         sendSystem(chatId, text)
     }
 
-    suspend fun deleteSplit(chatId: String, id: String) {
+    suspend fun deleteSplit(
+        chatId: String,
+        id: String,
+    ) {
         db.collection("chats").document(chatId).collection("splits").document(id).delete().await()
     }
 }
