@@ -32,7 +32,7 @@ import androidx.compose.ui.graphics.vector.PathParser
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.kdevs.spendly.ui.theme.Primary
+import com.kdevs.spendly.ui.theme.Brand
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -78,13 +78,13 @@ fun SplashOverlay(onFinished: () -> Unit) {
         Modifier
             .fillMaxSize()
             .graphicsLayer { this.alpha = alpha.value }
-            .background(Primary),
+            .background(Brand),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Canvas(Modifier.size(132.dp)) {
             val s = size.width / 108f
-            val rupeeColor = lerp(Color.White, Primary, fill.value)
+            val rupeeColor = lerp(Color.White, Brand, fill.value)
             withTransform({ scale(s, s, Offset.Zero) }) {
                 drawCircle(Color.White.copy(alpha = fill.value), radius = 30f, center = Offset(54f, 54f))
                 drawArc(

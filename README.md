@@ -1,11 +1,12 @@
 # Spendly (com.kdevs.spendly)
 
-Android expense tracker. Kotlin, Jetpack Compose, Firebase. Money is whole paise (INR). Offline-first through the Firestore local cache. Light theme only.
+Android expense tracker. Kotlin, Jetpack Compose, Firebase. Money is whole paise (INR). Offline-first through the Firestore local cache. Light, Dark or System theme (Settings > Appearance).
 
 ## Set up
 1. Open this folder in Android Studio (Ladybug or newer, JDK 17). Let it sync; it creates the Gradle wrapper.
 2. In the Firebase console create a project, add an Android app with package `com.kdevs.spendly`, and download `google-services.json` into `app/`.
-3. Turn on Authentication (Email/Password and Anonymous), Firestore, Storage and Cloud Messaging.
+3. Turn on Authentication (Email/Password, Anonymous and **Google**), Firestore, Storage and Cloud Messaging.
+   For Google sign-in also add your debug and release **SHA-1 / SHA-256** to the Android app in Project settings, then download `google-services.json` again (it must list a web client, `client_type` 3).
 4. Deploy the rules: `firebase deploy --only firestore:rules,storage`.
 5. Optional push notifications: `cd functions && npm install && firebase deploy --only functions`.
 6. Run the `app` configuration.
@@ -17,6 +18,15 @@ Android expense tracker. Kotlin, Jetpack Compose, Firebase. Money is whole paise
 - `ui/splash/SplashOverlay.kt` – animated splash (ring and rupee draw in, coin fills, wordmark rises, fade into the app). `Theme.Spendly.Starting` in `themes.xml` is the plain blue system splash that hands over to it.
 - `data/Repo.kt` – all Firestore, Auth and Storage access. `data/Util.kt` – money formatting and split maths.
 - `firestore.rules`, `storage.rules` – chat is protected by these rules only (no end-to-end encryption).
+
+## New in this version
+- Buttons use a soft press (small shrink and a faint shade in the button's own shape) instead of a ripple. A disabled or busy button stays solid, so no box shows through.
+- Toggle (Expense / Income, Sign in / Create account, theme) has a sliding pill.
+- Settings > Appearance: System, Light or Dark. Settings > Security: biometric lock (fingerprint, face or screen lock). The app asks again when you return after 30 seconds away.
+- Continue with Google on the sign-in screen (`Repo.signInWithGoogle`).
+- Add friend shows your code, a QR code, Copy and Share, and a Scan button (`ui/components/Qr.kt`, Google code scanner).
+- `Repo.ensureProfile()` runs after every sign-in and every app start. It fills in a missing name, friend code and starter categories.
+- Home greets you by first name.
 
 ## Design rules followed
 - Every add, edit, filter, select and bulk action is its own full screen. Dialogs only ask yes or no.

@@ -132,6 +132,7 @@ fun SpendlyNav() {
     }
     LaunchedEffect(uid) {
         if (uid != null) {
+            runCatching { Repo.ensureProfile() }
             runCatching { Repo.runRecurring() }
             runCatching { Repo.syncAccepted() }
         }

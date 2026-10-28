@@ -2,6 +2,14 @@ package com.kdevs.spendly.data
 
 import android.content.Context
 import android.net.Uri
+import androidx.credentials.CredentialManager
+import androidx.credentials.CustomCredential
+import androidx.credentials.GetCredentialRequest
+import androidx.credentials.exceptions.GetCredentialCancellationException
+import androidx.credentials.exceptions.NoCredentialException
+import com.google.android.libraries.identity.googleid.GetGoogleIdOption
+import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
+import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.userProfileChangeRequest
@@ -18,6 +26,8 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.tasks.await
 import kotlin.random.Random
 
@@ -62,6 +72,35 @@ object Repo {
         onSignedIn("Guest")
     }
 
+    /**
+     * Google account sign in through the system account sheet. Returns false when the person
+     * closed the sheet (nothing to show), and throws a short message for real problems.
+     */
+    suspend fun signInWithGoogle(context: android.content.Context): Boolean {
+        val resId = appContext.resources.getIdentifier("default_web_client_id", "string", appContext.packageName)
+        if (resId == 0) error("Google sign-in is not set up yet. Turn on Google in Firebase Authentication, add your SHA-1, and download google-services.json again.")
+        val option = GetGoogleIdOption.Builder()
+            .setFilterByAuthorizedAccounts(false)
+            .setServerClientId(appContext.getString(resId))
+            .build()
+        val request = GetCredentialRequest.Builder().addCredentialOption(option).build()
+        val result = try {
+            CredentialManager.create(context).getCredential(context, request)
+        } catch (e: GetCredentialCancellationException) {
+            return false
+        } catch (e: NoCredentialException) {
+            error("No Google account found on this phone. Add one in your phone settings and try again.")
+        }
+        val cred = result.credential
+        if (cred !is CustomCredential || cred.type != GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
+            error("Google sign-in did not return an account. Please try again.")
+        }
+        val token = GoogleIdTokenCredential.createFrom(cred.data).idToken
+        auth.signInWithCredential(GoogleAuthProvider.getCredential(token, null)).await()
+        onSignedIn(null)
+        return true
+    }
+
     suspend fun resetPassword(email: String) { auth.sendPasswordResetEmail(email.trim()).await() }
 
     fun signOut() { auth.signOut() }
@@ -79,17 +118,58 @@ object Repo {
     }
 
     private suspend fun onSignedIn(name: String?) {
-        val ref = db.collection("users").document(uid)
-        val snap = ref.get().await()
-        val p = snap.toObject(Profile::class.java)
-        val shownName = name ?: auth.currentUser?.displayName ?: auth.currentUser?.email?.substringBefore('@') ?: "Me"
-        if (p == null || !p.seeded) {
-            val code = p?.code?.takeIf { it.isNotBlank() } ?: newFriendCode()
-            ref.set(mapOf("name" to shownName, "code" to code, "seeded" to true), com.google.firebase.firestore.SetOptions.merge()).await()
-            db.collection("userCodes").document(code.replace(" ", "")).set(mapOf("uid" to uid, "name" to shownName)).await()
-            seedCategories()
-        }
+        ensureProfile(name)
         runCatching { FirebaseMessaging.getInstance().token.await() }.getOrNull()?.let { saveToken(it) }
+    }
+
+    private val profileLock = Mutex()
+
+    /**
+     * Makes sure the signed-in person has a name, a friend code (registered for lookup) and the
+     * starter categories. Safe to call any number of times: it only fills what is missing, so an
+     * account that was cut short the first time is repaired the next time the app opens.
+     * [nameHint] is what the person typed on Create account.
+     */
+    suspend fun ensureProfile(nameHint: String? = null) {
+        profileLock.withLock { fillProfile(nameHint) }
+    }
+
+    private suspend fun fillProfile(nameHint: String?) {
+        if (!isSignedIn) return
+        val u = uid
+        val ref = db.collection("users").document(u)
+        val snap = runCatching { ref.get().await() }.getOrNull() ?: return
+        val p = snap.toObject(Profile::class.java) ?: Profile()
+        val user = auth.currentUser
+        val typed = nameHint?.trim().orEmpty()
+        val fallback = user?.displayName?.takeIf { it.isNotBlank() }
+            ?: user?.email?.substringBefore('@')?.takeIf { it.isNotBlank() }
+            ?: if (user?.isAnonymous == true) "Guest" else "Me"
+        val name = when {
+            typed.isNotEmpty() -> typed
+            p.name.isNotBlank() -> p.name
+            else -> fallback
+        }
+        val code = p.code.ifBlank { newFriendCode() }
+
+        val changes = mutableMapOf<String, Any>()
+        if (name != p.name) changes["name"] = name
+        if (code != p.code) changes["code"] = code
+        if (changes.isNotEmpty()) ref.set(changes, com.google.firebase.firestore.SetOptions.merge()).await()
+
+        // Friends find you through this lookup document, so keep it in step with the profile.
+        val lookup = db.collection("userCodes").document(code.replace(" ", ""))
+        val existing = runCatching { lookup.get().await() }.getOrNull()
+        if (existing == null || !existing.exists() || existing.getString("name") != name) {
+            runCatching { lookup.set(mapOf("uid" to u, "name" to name)).await() }
+        }
+
+        // The starter categories are added once. "seeded" is only set after they are all in,
+        // so a first run that was cut short tries again instead of leaving an empty list.
+        if (!p.seeded) {
+            seedCategories()
+            ref.set(mapOf("seeded" to true), com.google.firebase.firestore.SetOptions.merge()).await()
+        }
     }
 
     fun saveToken(token: String) {

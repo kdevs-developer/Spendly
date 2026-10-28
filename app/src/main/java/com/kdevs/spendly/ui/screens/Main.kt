@@ -55,7 +55,7 @@ fun HomeScreen(nav: NavController) {
     val spentNow = spent(month)
     val overall = budgets.firstOrNull { it.categoryId.isBlank() }
 
-    TabScreen("Hi, ${profile.name.ifBlank { "there" }}", Routes.HOME, nav,
+    TabScreen(greeting(profile.name), Routes.HOME, nav,
         actions = { RoundIconButton(Icons.Filled.Settings, "Settings", { nav.navigate(Routes.SETTINGS) }) },
         fab = { Fab(Icons.Filled.Add, "Add transaction") { nav.navigate(Routes.txnAdd()) } },
     ) {
@@ -76,7 +76,7 @@ fun HomeScreen(nav: NavController) {
         }
 
         if (overall != null) {
-            Card(Modifier.clickable { nav.navigate(Routes.BUDGETS) }) {
+            Card(onClick = { nav.navigate(Routes.BUDGETS) }) {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     Text("Monthly budget", fontWeight = FontWeight.Bold, color = Ink)
                     Text("${formatPaise(spentNow)} of ${formatPaise(overall.limitPaise)}", color = Muted, fontSize = 13.sp, fontWeight = FontWeight.Bold)
@@ -109,6 +109,14 @@ fun HomeScreen(nav: NavController) {
         }
         Spacer(Modifier.height(70.dp))
     }
+}
+
+/** "Good evening, Krish" - first name only, by the hour. Falls back to a plain hello. */
+private fun greeting(fullName: String): String {
+    val first = fullName.trim().substringBefore(' ')
+    val hour = java.time.LocalTime.now().hour
+    val part = when { hour < 5 -> "Hello"; hour < 12 -> "Good morning"; hour < 17 -> "Good afternoon"; hour < 22 -> "Good evening"; else -> "Hello" }
+    return if (first.isBlank() || first == "Guest") part else "$part, $first"
 }
 
 @Composable

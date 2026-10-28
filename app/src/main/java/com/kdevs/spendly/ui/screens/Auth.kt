@@ -16,6 +16,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -90,7 +91,7 @@ fun WelcomeScreen(nav: NavController) {
                 val on = i == pager.currentPage
                 val w by androidx.compose.animation.core.animateDpAsState(if (on) 24.dp else 8.dp, label = "dot")
                 Box(Modifier.padding(horizontal = 3.dp).height(8.dp).width(w).clip(CircleShape)
-                    .background(if (on) Primary else Color(0xFFCBD5E1)).clickable { goTo(i) })
+                    .background(if (on) Primary else Faint.copy(alpha = 0.45f)).clickable { goTo(i) })
             }
         }
         if (pager.currentPage < last) PrimaryButton("Next", { goTo(pager.currentPage + 1) })
@@ -128,6 +129,7 @@ fun AuthScreen(nav: NavController) {
     var note by remember { mutableStateOf<String?>(null) }
     val saver = rememberSaver()
     val scope = rememberCoroutineScope()
+    val ctx = LocalContext.current
 
     fun validate(): String? = when {
         mode == 1 && name.isBlank() -> "Enter your name."
@@ -146,8 +148,8 @@ fun AuthScreen(nav: NavController) {
             value = pass, onValueChange = { pass = it }, label = { Text("Password") }, singleLine = true,
             modifier = Modifier.fillMaxWidth(), shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
             visualTransformation = if (show) androidx.compose.ui.text.input.VisualTransformation.None else PasswordVisualTransformation(),
-            trailingIcon = { Icon(if (show) Icons.Filled.VisibilityOff else Icons.Filled.Visibility, "Show password", Modifier.clickable { show = !show }) },
-            colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(focusedContainerColor = Surface, unfocusedContainerColor = Surface, unfocusedBorderColor = Color(0xFFD8DFEC)),
+            trailingIcon = { Icon(if (show) Icons.Filled.VisibilityOff else Icons.Filled.Visibility, "Show password", Modifier.clip(CircleShape).clickable { show = !show }.padding(6.dp)) },
+            colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(focusedContainerColor = Surface, unfocusedContainerColor = Surface, unfocusedBorderColor = FieldBorder),
         )
         (note ?: saver.error)?.let { Text(it, color = Danger, fontSize = 13.sp, fontWeight = FontWeight.SemiBold) }
         PrimaryButton(if (mode == 0) "Sign in" else "Create account", {
@@ -163,7 +165,11 @@ fun AuthScreen(nav: NavController) {
                     else saver.run(scope, onDone = { note = "Reset link sent to $email" }) { Repo.resetPassword(email) }
                 }.padding(10.dp))
         }
-        HorizontalDivider(color = Line)
+        OrDivider()
+        GoogleButton("Continue with Google", {
+            note = null
+            saver.run(scope, onDone = {}) { Repo.signInWithGoogle(ctx) }
+        }, enabled = !saver.busy)
         SecondaryButton("Continue as guest", { saver.run(scope, onDone = {}) { Repo.signInGuest() } })
         Hint("A guest account stays on this phone's login only. Create an account later to keep your data safe.", center = true)
     }

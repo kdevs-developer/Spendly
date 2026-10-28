@@ -81,7 +81,7 @@ fun TxnRow(t: Txn, look: Lookup, onClick: () -> Unit, selected: Boolean? = null,
 fun TickBox(on: Boolean) {
     Box(
         Modifier.size(24.dp).clip(RoundedCornerShape(8.dp)).background(if (on) Primary else Color.Transparent)
-            .let { if (on) it else it.background(Color(0xFFE5EAF3)) },
+            .let { if (on) it else it.background(Track) },
         contentAlignment = Alignment.Center,
     ) { if (on) Icon(Icons.Filled.Check, null, tint = Color.White, modifier = Modifier.size(16.dp)) }
 }
@@ -141,7 +141,7 @@ fun LabeledBar(label: String, value: Long, max: Long, color: Color, right: Strin
             Text(right, fontWeight = FontWeight.Bold, color = Muted, fontSize = 13.sp)
         }
         Spacer(Modifier.height(6.dp))
-        Box(Modifier.fillMaxWidth().height(8.dp).clip(CircleShape).background(Color(0xFFE5EAF3))) {
+        Box(Modifier.fillMaxWidth().height(8.dp).clip(CircleShape).background(Track)) {
             val f = if (max <= 0) 0f else (value.toFloat() / max).coerceIn(0f, 1f)
             Box(Modifier.fillMaxWidth(f).fillMaxHeight().clip(CircleShape).background(color))
         }

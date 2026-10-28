@@ -124,7 +124,7 @@ fun SelectScreen(nav: NavController) {
             }
         }) {
         if (list.isEmpty()) EmptyState(Icons.Filled.SearchOff, "Nothing to select", "No transactions match the current filter.")
-        Card(padding = 12.dp) {
+        else Card(padding = 12.dp) {
             list.forEachIndexed { i, t ->
                 TxnRow(t, look, { Selection.toggle(t.id) }, selected = t.id in chosen, showDate = true)
                 if (i < list.lastIndex) HorizontalDivider(color = Line)
@@ -398,8 +398,10 @@ fun AccountPickerScreen(nav: NavController, slot: String, exclude: String) {
     val list = accounts.filter { !it.archived && it.id != exclude }
     ScreenScaffold("Select account", { nav.popBackStack() },
         actions = { RoundIconButton(Icons.Filled.Add, "New account", { nav.navigate(Routes.ACCOUNT_TYPE) }) }) {
-        if (list.isEmpty()) EmptyState(Icons.Filled.AccountBalance, "No accounts", "Add an account first.")
-        Card(padding = 12.dp) {
+        if (list.isEmpty()) {
+            EmptyState(Icons.Filled.AccountBalance, "No accounts yet", "Add a bank, wallet, cash or card to choose it here.")
+            PrimaryButton("Add account", { nav.navigate(Routes.ACCOUNT_TYPE) })
+        } else Card(padding = 12.dp) {
             list.forEachIndexed { i, a ->
                 val bal = Repo.balanceOf(a.id, accounts, txns)
                 SettingRow(a.name, leading = { IconCircle(a.icon, a.colorKey, 44.dp) },

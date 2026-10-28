@@ -81,7 +81,7 @@ fun TxnFormScreen(nav: NavController, entry: NavBackStackEntry, id: String, kind
     val cat = look.category(subId.ifBlank { catId })
     val parent = look.category(catId)
     val acc = look.account(accountId)
-    val tint = if (type == "income") Success else Danger
+    val tint by androidx.compose.animation.animateColorAsState(if (type == "income") Success else Danger, androidx.compose.animation.core.tween(220), label = "txnTint")
 
     ScreenScaffold(if (editing) "Edit transaction" else "Add transaction", { nav.popBackStack() },
         actions = { if (editing) RoundIconButton(Icons.Filled.Delete, "Delete", { confirmDelete = true }, tint = Danger) },
@@ -93,9 +93,11 @@ fun TxnFormScreen(nav: NavController, entry: NavBackStackEntry, id: String, kind
                 }
             })
         },
+        header = {
+            SegmentedControl(listOf("Expense", "Income"), if (type == "income") 1 else 0, { type = if (it == 1) "income" else "expense"; catId = ""; subId = "" })
+            AmountField(amount, { amount = it }, color = tint)
+        },
     ) {
-        SegmentedControl(listOf("Expense", "Income"), if (type == "income") 1 else 0, { type = if (it == 1) "income" else "expense"; catId = ""; subId = "" })
-        AmountField(amount, { amount = it }, Modifier.padding(vertical = 10.dp), color = tint)
         Card(padding = 12.dp) {
             PickRowLeading("Category", if (cat == null) "" else (parent?.name?.let { p -> if (subId.isNotBlank()) "$p · ${cat.name}" else p } ?: cat.name),
                 leading = { IconCircle(cat?.icon ?: "other", parent?.colorKey ?: cat?.colorKey ?: "slate", 38.dp) },
@@ -187,8 +189,9 @@ fun TransferScreen(nav: NavController, entry: NavBackStackEntry) {
                 Repo.put("txns", "", Txn(kind = "transfer", amountPaise = paise, accountId = from, toAccountId = to, note = note.trim(), dateMillis = date))
             }
         })
+    }, header = {
+        AmountField(amount, { amount = it }, color = Primary)
     }) {
-        AmountField(amount, { amount = it }, Modifier.padding(vertical = 10.dp), color = Primary)
         Card(padding = 12.dp) {
             val f = look.account(from); val t = look.account(to)
             PickRowLeading("From", f?.name ?: "", { IconCircle(f?.icon ?: "bank", f?.colorKey ?: "blue", 38.dp) }, { nav.navigate(Routes.accountPicker("account", to)) })
@@ -207,7 +210,7 @@ fun AccountTypeScreen(nav: NavController) {
     ScreenScaffold("Add account", { nav.popBackStack() }) {
         Hint("Pick the kind of account. Each kind gets its own icon and colour, which you can change later.")
         AccountTypes.forEach { t ->
-            Card(Modifier.clickable { nav.navigate(Routes.accountEdit("", t.key)) }) {
+            Card(onClick = { nav.navigate(Routes.accountEdit("", t.key)) }) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
                     IconCircle(t.icon, t.colorKey, 52.dp)
                     Column(Modifier.weight(1f)) {
@@ -314,7 +317,7 @@ fun BudgetsScreen(nav: NavController) {
             val used = if (b.categoryId.isBlank()) month.sumOf { it.amountPaise } else month.filter { it.categoryId == b.categoryId }.sumOf { it.amountPaise }
             val c = look.category(b.categoryId)
             val over = used > b.limitPaise
-            Card(Modifier.clickable { nav.navigate(Routes.budgetEdit(b.id)) }) {
+            Card(onClick = { nav.navigate(Routes.budgetEdit(b.id)) }) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     IconCircle(c?.icon ?: "bills", c?.colorKey ?: "blue", 42.dp)
                     Column(Modifier.weight(1f)) {
@@ -375,7 +378,7 @@ fun GoalsScreen(nav: NavController) {
         if (goals.isEmpty()) EmptyState(Icons.Filled.Flag, "No goals yet", "Save towards a trip, a phone or an emergency fund.")
         goals.forEach { g ->
             val pct = if (g.targetPaise > 0) (g.savedPaise * 100 / g.targetPaise).coerceAtMost(100) else 0
-            Card(Modifier.clickable { nav.navigate(Routes.goalEdit(g.id)) }) {
+            Card(onClick = { nav.navigate(Routes.goalEdit(g.id)) }) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     IconCircle(g.icon, g.colorKey, 46.dp)
                     Column(Modifier.weight(1f)) {

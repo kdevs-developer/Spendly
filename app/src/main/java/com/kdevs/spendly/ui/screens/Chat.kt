@@ -3,6 +3,7 @@ package com.kdevs.spendly.ui.screens
 import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
@@ -19,6 +20,7 @@ import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.automirrored.filled.Reply
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -27,6 +29,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
@@ -39,6 +42,9 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
+import com.google.mlkit.vision.barcode.common.Barcode
+import com.google.mlkit.vision.codescanner.GmsBarcodeScannerOptions
+import com.google.mlkit.vision.codescanner.GmsBarcodeScanning
 import com.kdevs.spendly.data.*
 import com.kdevs.spendly.data.model.*
 import com.kdevs.spendly.nav.Picked
@@ -129,41 +135,100 @@ fun NewChatScreen(nav: NavController) {
 }
 
 @Composable
+private fun HeroPill(icon: ImageVector, text: String, onClick: () -> Unit) {
+    val shape = RoundedCornerShape(14.dp)
+    Row(
+        Modifier.pressable(shape, onClick = onClick).clip(shape).background(Color.White.copy(alpha = 0.2f))
+            .padding(horizontal = 16.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Icon(icon, null, tint = Color.White, modifier = Modifier.size(18.dp))
+        Text(text, color = Color.White, fontWeight = FontWeight.Bold)
+    }
+}
+
+@Composable
 fun AddFriendScreen(nav: NavController) {
     val profile by Repo.profile.collectAsState()
     val outgoing by Repo.outgoingRequests.collectAsState()
     val ctx = LocalContext.current
+    val clipboard = LocalClipboardManager.current
     var code by remember { mutableStateOf("") }
     var msg by remember { mutableStateOf<String?>(null) }
     var ok by remember { mutableStateOf(false) }
+    var copied by remember { mutableStateOf(false) }
     val saver = rememberSaver(); val scope = rememberCoroutineScope()
+
+    // An account whose code is missing (cut-short sign up) gets one now instead of showing nothing.
+    LaunchedEffect(profile.code) { if (profile.code.isBlank()) runCatching { Repo.ensureProfile() } }
+    LaunchedEffect(copied) { if (copied) { delay(1600); copied = false } }
+
+    fun send(raw: String) {
+        msg = null
+        saver.run(scope, onDone = {}) {
+            val r = Repo.sendFriendRequest(raw)
+            ok = r == null
+            msg = r ?: "Request sent. They will see it in Chat."
+            if (ok) code = ""
+        }
+    }
+
+    // Google's scanner opens its own camera screen, so the app needs no camera permission.
+    fun scan() {
+        msg = null
+        val options = GmsBarcodeScannerOptions.Builder().setBarcodeFormats(Barcode.FORMAT_QR_CODE).build()
+        GmsBarcodeScanning.getClient(ctx, options).startScan()
+            .addOnSuccessListener { result ->
+                val found = parseFriendCode(result.rawValue)
+                if (found == null) { ok = false; msg = "That QR code is not a Spendly friend code." }
+                else { code = found; send(found) }
+            }
+            .addOnFailureListener { ok = false; msg = "Could not open the scanner. Type the code instead." }
+    }
+
     ScreenScaffold("Add friend", { nav.popBackStack() }) {
         HeroCard {
             Text("Your friend code", color = Color.White.copy(alpha = 0.85f), fontWeight = FontWeight.SemiBold)
-            Text(profile.code.ifBlank { "..." }, color = Color.White, fontWeight = FontWeight.ExtraBold, fontSize = 34.sp, letterSpacing = 3.sp)
+            if (profile.code.isBlank()) {
+                Spacer(Modifier.height(6.dp))
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    CircularProgressIndicator(Modifier.size(20.dp), color = Color.White, strokeWidth = 2.dp)
+                    Text("Getting your code...", color = Color.White, fontWeight = FontWeight.SemiBold)
+                }
+            } else {
+                Text(profile.code, color = Color.White, fontWeight = FontWeight.ExtraBold, fontSize = 34.sp, letterSpacing = 3.sp)
+            }
             Spacer(Modifier.height(10.dp))
-            Box(Modifier.clip(RoundedCornerShape(14.dp)).background(Color.White.copy(alpha = 0.2f)).clickable {
-                val i = Intent(Intent.ACTION_SEND).apply { type = "text/plain"; putExtra(Intent.EXTRA_TEXT, "Add me on Spendly. My friend code is ${profile.code}") }
-                ctx.startActivity(Intent.createChooser(i, "Share code"))
-            }.padding(horizontal = 16.dp, vertical = 10.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Icon(Icons.Filled.Share, null, tint = Color.White, modifier = Modifier.size(18.dp))
-                    Text("Share my code", color = Color.White, fontWeight = FontWeight.Bold)
+            if (profile.code.isNotBlank()) Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                HeroPill(Icons.Filled.Share, "Share") {
+                    val i = Intent(Intent.ACTION_SEND).apply { type = "text/plain"; putExtra(Intent.EXTRA_TEXT, "Add me on Spendly. My friend code is ${profile.code}") }
+                    ctx.startActivity(Intent.createChooser(i, "Share code"))
+                }
+                HeroPill(if (copied) Icons.Filled.Check else Icons.Filled.ContentCopy, if (copied) "Copied" else "Copy") {
+                    clipboard.setText(AnnotatedString(profile.code)); copied = true
                 }
             }
         }
-        SectionTitle("Enter a friend's code")
+
+        if (profile.code.isNotBlank()) {
+            val qr = remember(profile.code) { runCatching { qrImage(friendQrPayload(profile.code)) }.getOrNull() }
+            if (qr != null) Card {
+                Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+                    // Always black on white so any phone can scan it, even in the dark theme.
+                    Box(Modifier.clip(RoundedCornerShape(20.dp)).background(Color.White).padding(14.dp)) {
+                        Image(qr, "Your friend QR code", Modifier.size(200.dp))
+                    }
+                    Spacer(Modifier.height(10.dp))
+                    Hint("Let a friend scan this to send you a request.", center = true)
+                }
+            }
+        }
+
+        SecondaryButton("Scan a friend's QR code", { scan() })
+        SectionTitle("Or enter a friend's code")
         AppTextField(code, { code = it.uppercase().filter { c -> c.isLetterOrDigit() || c == ' ' }.take(9) }, "8 letters and numbers")
         msg?.let { Text(it, color = if (ok) Success else Danger, fontWeight = FontWeight.SemiBold) }
-        PrimaryButton("Send request", {
-            msg = null
-            saver.run(scope, onDone = {}) {
-                val r = Repo.sendFriendRequest(code)
-                ok = r == null
-                msg = r ?: "Request sent. They will see it in Chat."
-                if (ok) code = ""
-            }
-        }, enabled = code.filter { it.isLetterOrDigit() }.length == 8, busy = saver.busy)
+        PrimaryButton("Send request", { send(code) }, enabled = code.filter { it.isLetterOrDigit() }.length == 8, busy = saver.busy)
         if (outgoing.isNotEmpty()) {
             SectionTitle("Waiting for a reply")
             Card(padding = 12.dp) { outgoing.forEachIndexed { i, r -> SettingRow("Request ${i + 1}", "Pending", icon = Icons.Filled.Schedule, iconColor = Faint, divider = i < outgoing.lastIndex) } }
@@ -378,7 +443,7 @@ private fun Bubble(m: Message, mine: Boolean, group: Boolean, members: Int, onLo
         if (!mine && group) Text(m.senderName, color = colorSpec(colorKeyFor(m.senderId)).solid, fontWeight = FontWeight.Bold, fontSize = 12.sp, modifier = Modifier.padding(start = 6.dp))
         Column(
             Modifier.widthIn(max = 290.dp).clip(shape)
-                .background(if (m.deleted) Color(0xFFE5EAF3) else if (mine) Primary else Surface)
+                .background(if (m.deleted) Track else if (mine) Brand else Surface)
                 .combinedClickable(onClick = { if (m.type == "image" && !m.deleted) onImage() }, onLongClick = { if (!m.deleted) onLong() })
                 .padding(horizontal = 12.dp, vertical = 8.dp),
         ) {

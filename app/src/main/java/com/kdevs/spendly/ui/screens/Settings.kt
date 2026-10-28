@@ -3,16 +3,22 @@ package com.kdevs.spendly.ui.screens
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.kdevs.spendly.data.Biometric
+import com.kdevs.spendly.data.Prefs
 import com.kdevs.spendly.data.Repo
+import com.kdevs.spendly.data.ThemeMode
+import com.kdevs.spendly.data.findFragmentActivity
 import com.kdevs.spendly.nav.Routes
 import com.kdevs.spendly.ui.components.*
 import com.kdevs.spendly.ui.theme.*
@@ -24,6 +30,23 @@ fun SettingsScreen(nav: NavController) {
     var confirmOut by remember { mutableStateOf(false) }
     var confirmDelete by remember { mutableStateOf(false) }
     val saver = rememberSaver(); val scope = rememberCoroutineScope()
+    val ctx = LocalContext.current
+    var bioNote by remember { mutableStateOf<String?>(null) }
+
+    // Turning the lock on or off asks for the fingerprint / face / screen lock first.
+    fun toggleBiometric(want: Boolean) {
+        bioNote = null
+        val activity = ctx.findFragmentActivity() ?: return
+        if (!Biometric.available(ctx)) {
+            if (want) bioNote = "Set up a fingerprint, face or screen lock in your phone settings first."
+            else Prefs.updateBiometric(false)
+            return
+        }
+        Biometric.prompt(activity, if (want) "Turn on biometric lock" else "Turn off biometric lock", "Confirm it is you") { ok ->
+            if (ok) Prefs.updateBiometric(want)
+        }
+    }
+
     ScreenScaffold("Settings", { nav.popBackStack() }) {
         Card {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
@@ -35,6 +58,19 @@ fun SettingsScreen(nav: NavController) {
                 }
             }
         }
+        SectionTitle("Appearance")
+        Card {
+            SegmentedControl(ThemeMode.values().map { it.label }, Prefs.themeMode.ordinal, { Prefs.setTheme(ThemeMode.values()[it]) })
+            Spacer(Modifier.height(8.dp))
+            Hint("System follows your phone. Light and Dark stay as you choose.")
+        }
+        SectionTitle("Security")
+        Card(padding = 12.dp) {
+            SettingRow("Fingerprint, face or screen lock", "Biometric lock", icon = Icons.Filled.Fingerprint, iconColor = Success,
+                trailing = { Switch(checked = Prefs.biometric, onCheckedChange = { toggleBiometric(it) }) }, divider = false)
+        }
+        bioNote?.let { Text(it, color = Danger, fontWeight = FontWeight.SemiBold, fontSize = 13.sp) }
+        SectionTitle("Your space")
         Card(padding = 12.dp) {
             SettingRow("Your name", profile.name, icon = Icons.Filled.Person, iconColor = Primary, onClick = { nav.navigate(Routes.EDIT_NAME) })
             SettingRow("Categories", icon = Icons.Filled.Category, iconColor = Color(0xFF7E22CE), onClick = { nav.navigate(Routes.categoryPicker("expense", "manage")) })

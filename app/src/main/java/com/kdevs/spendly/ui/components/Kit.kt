@@ -1,10 +1,36 @@
 package com.kdevs.spendly.ui.components
 
+import android.annotation.SuppressLint
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.foundation.BorderStroke
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -13,26 +39,67 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Chat
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.AccountBalanceWallet
+import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.PieChart
+import androidx.compose.material.icons.filled.Receipt
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.composed
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.drawOutline
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import kotlinx.coroutines.launch
+import com.kdevs.spendly.R
 import com.kdevs.spendly.nav.Routes
-import com.kdevs.spendly.ui.theme.*
+import com.kdevs.spendly.ui.theme.Bg
+import com.kdevs.spendly.ui.theme.Brand
+import com.kdevs.spendly.ui.theme.ButtonBrush
+import com.kdevs.spendly.ui.theme.Danger
+import com.kdevs.spendly.ui.theme.DangerBg
+import com.kdevs.spendly.ui.theme.Faint
+import com.kdevs.spendly.ui.theme.FieldBorder
+import com.kdevs.spendly.ui.theme.HeroBrush
+import com.kdevs.spendly.ui.theme.Ink
+import com.kdevs.spendly.ui.theme.Line
+import com.kdevs.spendly.ui.theme.Muted
+import com.kdevs.spendly.ui.theme.Primary
+import com.kdevs.spendly.ui.theme.PrimaryContainer
+import com.kdevs.spendly.ui.theme.SolidColors
+import com.kdevs.spendly.ui.theme.Surface
+import com.kdevs.spendly.ui.theme.Track
+import com.kdevs.spendly.ui.theme.colorSpec
+import kotlinx.coroutines.launch
 
 /** Top bar with a round back button, used by every full screen. */
 @Composable
@@ -43,6 +110,7 @@ fun ScreenScaffold(
     actions: @Composable RowScope.() -> Unit = {},
     bottomBar: @Composable () -> Unit = {},
     scroll: Boolean = true,
+    header: (@Composable ColumnScope.() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     Column(modifier.fillMaxSize().background(Bg).statusBarsPadding()) {
@@ -56,6 +124,8 @@ fun ScreenScaffold(
             Text(title, style = MaterialTheme.typography.titleLarge, color = Ink, modifier = Modifier.weight(1f), maxLines = 1)
             actions()
         }
+        // Pinned part (like the amount): it never scrolls, so typing cannot push it out of view.
+        if (header != null) Column(Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, bottom = 14.dp), verticalArrangement = Arrangement.spacedBy(14.dp), content = header)
         val body = Modifier.weight(1f).fillMaxWidth().let { if (scroll) it.verticalScroll(rememberScrollState()) else it }
         Column(body.padding(horizontal = 20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             content()
@@ -65,19 +135,49 @@ fun ScreenScaffold(
     }
 }
 
+/**
+ * Press feedback for buttons: the button shrinks a little while held and springs back, with a
+ * faint dark veil in the button's own shape. There is no ripple, so a rectangle can never show.
+ * Put it before shadow()/clip() so the shadow scales with the button.
+ */
+fun Modifier.pressable(
+    shape: Shape,
+    enabled: Boolean = true,
+    scaleTo: Float = 0.97f,
+    veil: Boolean = true,
+    onClick: () -> Unit,
+): Modifier = composed {
+    val source = remember { MutableInteractionSource() }
+    val pressed by source.collectIsPressedAsState()
+    val on = pressed && enabled
+    val scale by animateFloatAsState(if (on) scaleTo else 1f, spring(dampingRatio = 0.7f, stiffness = 800f), label = "press")
+    val shade by animateFloatAsState(if (on && veil) 0.10f else 0f, tween(80), label = "veil")
+    this
+        .graphicsLayer { scaleX = scale; scaleY = scale }
+        .drawWithContent {
+            drawContent()
+            if (shade > 0f) drawOutline(shape.createOutline(size, layoutDirection, this), Color.Black.copy(alpha = shade))
+        }
+        .clickable(interactionSource = source, indication = null, enabled = enabled, onClick = onClick)
+}
+
 @Composable
-fun RoundIconButton(icon: ImageVector, description: String, onClick: () -> Unit, tint: Color = Ink, bg: Color = Color.White) {
+fun RoundIconButton(icon: ImageVector, description: String, onClick: () -> Unit, tint: Color = Ink, bg: Color = Surface) {
     Box(
-        Modifier.size(40.dp).shadow(1.dp, CircleShape).clip(CircleShape).background(bg).clickable(onClick = onClick),
+        Modifier.size(40.dp).pressable(CircleShape, scaleTo = 0.92f, onClick = onClick)
+            .shadow(1.dp, CircleShape).clip(CircleShape).background(bg),
         contentAlignment = Alignment.Center,
     ) { Icon(icon, description, tint = tint, modifier = Modifier.size(20.dp)) }
 }
 
+/** A white (or dark) rounded card. Pass onClick to make the whole card tappable; the press stays inside the corners. */
 @Composable
-fun Card(modifier: Modifier = Modifier, padding: Dp = 16.dp, content: @Composable ColumnScope.() -> Unit) {
+fun Card(modifier: Modifier = Modifier, padding: Dp = 16.dp, onClick: (() -> Unit)? = null, content: @Composable ColumnScope.() -> Unit) {
+    val shape = RoundedCornerShape(22.dp)
     Column(
-        modifier.fillMaxWidth().shadow(1.dp, RoundedCornerShape(22.dp)).clip(RoundedCornerShape(22.dp))
-            .background(Surface).padding(padding),
+        modifier.fillMaxWidth().shadow(1.dp, shape).clip(shape).background(Surface)
+            .let { if (onClick != null) it.clickable(onClick = onClick) else it }
+            .padding(padding),
         content = content,
     )
 }
@@ -85,7 +185,7 @@ fun Card(modifier: Modifier = Modifier, padding: Dp = 16.dp, content: @Composabl
 @Composable
 fun HeroCard(modifier: Modifier = Modifier, brush: Brush = HeroBrush, content: @Composable ColumnScope.() -> Unit) {
     Column(
-        modifier.fillMaxWidth().shadow(10.dp, RoundedCornerShape(28.dp), ambientColor = Primary, spotColor = Primary)
+        modifier.fillMaxWidth().shadow(10.dp, RoundedCornerShape(28.dp), ambientColor = Brand, spotColor = Brand)
             .clip(RoundedCornerShape(28.dp)).background(brush).padding(22.dp),
         content = content,
     )
@@ -140,27 +240,57 @@ fun SettingRow(
 
 @Composable
 fun PrimaryButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true, busy: Boolean = false) {
-    val alpha = if (enabled && !busy) 1f else 0.45f
+    val shape = RoundedCornerShape(18.dp)
+    val lift by animateDpAsState(if (enabled) 8.dp else 0.dp, label = "lift")
     Box(
         modifier.fillMaxWidth().height(54.dp)
-            .shadow(if (enabled) 8.dp else 0.dp, RoundedCornerShape(18.dp), ambientColor = Primary, spotColor = Primary)
-            .clip(RoundedCornerShape(18.dp)).background(ButtonBrush, alpha = alpha)
-            .clickable(enabled = enabled && !busy, onClick = onClick),
+            .pressable(shape, enabled = enabled && !busy, onClick = onClick)
+            .shadow(lift, shape, ambientColor = Brand, spotColor = Brand)
+            .clip(shape).background(ButtonBrush),
         contentAlignment = Alignment.Center,
     ) {
+        // The button always stays solid. Disabled is a pale wash on top, never see-through,
+        // so the shadow behind it can no longer show as a box.
+        if (!enabled) Box(Modifier.matchParentSize().background(Bg.copy(alpha = 0.62f)))
         if (busy) CircularProgressIndicator(Modifier.size(22.dp), color = Color.White, strokeWidth = 2.5.dp)
-        else Text(text, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+        else Text(text, color = if (enabled) Color.White else Muted, fontWeight = FontWeight.Bold, fontSize = 15.sp)
     }
 }
 
 @Composable
 fun SecondaryButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, danger: Boolean = false) {
     val c = if (danger) Danger else Primary
+    val shape = RoundedCornerShape(18.dp)
     Box(
-        modifier.fillMaxWidth().height(50.dp).clip(RoundedCornerShape(18.dp))
-            .background(if (danger) DangerBg else PrimaryContainer).clickable(onClick = onClick),
+        modifier.fillMaxWidth().height(50.dp).pressable(shape, onClick = onClick)
+            .clip(shape).background(if (danger) DangerBg else PrimaryContainer),
         contentAlignment = Alignment.Center,
     ) { Text(text, color = c, fontWeight = FontWeight.Bold, fontSize = 15.sp) }
+}
+
+/** "Continue with Google" button with the Google logo. */
+@Composable
+fun GoogleButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true) {
+    val shape = RoundedCornerShape(18.dp)
+    Row(
+        modifier.fillMaxWidth().height(52.dp).pressable(shape, enabled = enabled, onClick = onClick)
+            .clip(shape).background(Surface).border(1.dp, FieldBorder, shape),
+        horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Image(painterResource(R.drawable.ic_google), null, Modifier.size(20.dp))
+        Spacer(Modifier.width(10.dp))
+        Text(text, color = Ink, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+    }
+}
+
+/** A thin line with a word in the middle, e.g. "or". */
+@Composable
+fun OrDivider(text: String = "or") {
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        HorizontalDivider(Modifier.weight(1f), color = Line)
+        Text(text, color = Faint, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+        HorizontalDivider(Modifier.weight(1f), color = Line)
+    }
 }
 
 /** The white bar pinned to the bottom of a form with the main button. */
@@ -195,51 +325,86 @@ fun AppTextField(
         leadingIcon = leading, shape = RoundedCornerShape(16.dp),
         colors = OutlinedTextFieldDefaults.colors(
             focusedContainerColor = Surface, unfocusedContainerColor = Surface,
-            unfocusedBorderColor = Color(0xFFD8DFEC),
+            unfocusedBorderColor = FieldBorder,
         ),
     )
 }
 
-/** Big centred amount input used on money forms. Value is plain rupee text like "1250.50". */
+/**
+ * Big centred amount input. Value is plain rupee text like "1250.50".
+ * The field is exactly as wide as its text (measured, not guessed), the size steps down for long
+ * amounts, and the row has a fixed height, so nothing is clipped and nothing jumps while typing.
+ */
 @Composable
 fun AmountField(value: String, onChange: (String) -> Unit, modifier: Modifier = Modifier, color: Color = Ink) {
-    Column(modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
-            Text("₹", fontSize = 30.sp, fontWeight = FontWeight.ExtraBold, color = color)
-            androidx.compose.foundation.text.BasicTextField(
-                value = value,
-                onValueChange = { v -> if (v.count { it == '.' } <= 1 && v.all { it.isDigit() || it == '.' } && v.substringAfter('.', "").length <= 2) onChange(v) },
-                textStyle = androidx.compose.ui.text.TextStyle(fontSize = 50.sp, fontWeight = FontWeight.ExtraBold, color = color, textAlign = TextAlign.Center),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                singleLine = true,
-                modifier = Modifier.widthIn(min = 80.dp, max = 260.dp).width(IntrinsicSize.Min),
-                decorationBox = { inner -> Box(contentAlignment = Alignment.Center) { if (value.isEmpty()) Text("0", fontSize = 50.sp, fontWeight = FontWeight.ExtraBold, color = Faint); inner() } },
-            )
-        }
+    val digits = value.length
+    val size = when { digits > 11 -> 32.sp; digits > 9 -> 38.sp; digits > 7 -> 44.sp; else -> 50.sp }
+    val style = androidx.compose.ui.text.TextStyle(
+        fontSize = size, lineHeight = (size.value * 1.2f).sp, fontWeight = FontWeight.ExtraBold, color = color, textAlign = TextAlign.Start,
+    )
+    val measurer = androidx.compose.ui.text.rememberTextMeasurer()
+    val density = androidx.compose.ui.platform.LocalDensity.current
+    val textWidth = with(density) { measurer.measure(androidx.compose.ui.text.AnnotatedString(value.ifEmpty { "0" }), style).size.width.toDp() }
+    val focus = remember { androidx.compose.ui.focus.FocusRequester() }
+    Row(
+        modifier.fillMaxWidth().height(76.dp)
+            .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { focus.requestFocus() },
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center,
+    ) {
+        Text("₹", fontSize = (size.value * 0.6f).sp, fontWeight = FontWeight.ExtraBold, color = color, modifier = Modifier.padding(end = 6.dp))
+        androidx.compose.foundation.text.BasicTextField(
+            value = value,
+            onValueChange = { v -> if (v.count { it == '.' } <= 1 && v.all { it.isDigit() || it == '.' } && v.substringAfter('.', "").length <= 2) onChange(v) },
+            textStyle = style,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+            singleLine = true,
+            cursorBrush = androidx.compose.ui.graphics.SolidColor(color),
+            modifier = Modifier.width((textWidth + 4.dp).coerceIn(28.dp, 250.dp)).focusRequester(focus),
+            decorationBox = { inner ->
+                Box(contentAlignment = Alignment.CenterStart) {
+                    if (value.isEmpty()) Text("0", style = style.copy(color = Faint))
+                    inner()
+                }
+            },
+        )
     }
 }
 
+/** Two or three options with a white pill that slides to the chosen one. */
+@SuppressLint("UnusedBoxWithConstraintsScope")
 @Composable
 fun SegmentedControl(options: List<String>, selected: Int, onSelect: (Int) -> Unit, modifier: Modifier = Modifier) {
-    Row(modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(Color(0xFFE5EAF3)).padding(4.dp)) {
-        options.forEachIndexed { i, label ->
-            val bg by animateColorAsState(if (i == selected) Color.White else Color.Transparent, label = "seg")
-            Box(
-                Modifier.weight(1f).clip(RoundedCornerShape(12.dp)).background(bg).clickable { onSelect(i) }.padding(vertical = 9.dp),
-                contentAlignment = Alignment.Center,
-            ) { Text(label, fontWeight = FontWeight.Bold, fontSize = 13.sp, color = if (i == selected) Primary else Muted) }
+    val outer = RoundedCornerShape(16.dp)
+    val inner = RoundedCornerShape(12.dp)
+    BoxWithConstraints(modifier.fillMaxWidth().clip(outer).background(Track).padding(4.dp)) {
+        val segment = maxWidth / options.size
+        val x by animateDpAsState(segment * selected, spring(dampingRatio = 0.85f, stiffness = 380f), label = "segX")
+        Box(
+            Modifier.offset { IntOffset(x.roundToPx(), 0) }.width(segment).height(38.dp)
+                .shadow(2.dp, inner).background(Surface, inner),
+        )
+        Row(Modifier.fillMaxWidth()) {
+            options.forEachIndexed { i, label ->
+                val c by animateColorAsState(if (i == selected) Primary else Muted, tween(180), label = "segText")
+                Box(
+                    Modifier.weight(1f).height(38.dp).clip(inner)
+                        .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { onSelect(i) },
+                    contentAlignment = Alignment.Center,
+                ) { Text(label, fontWeight = FontWeight.Bold, fontSize = 13.sp, color = c) }
+            }
         }
     }
 }
 
 @Composable
 fun SelectChip(label: String, selected: Boolean, onClick: () -> Unit) {
-    val bg by animateColorAsState(if (selected) PrimaryContainer else Color.White, label = "chip")
+    val pill = RoundedCornerShape(999.dp)
+    val bg by animateColorAsState(if (selected) PrimaryContainer else Surface, tween(160), label = "chip")
+    val fg by animateColorAsState(if (selected) Primary else Muted, tween(160), label = "chipText")
     Box(
-        Modifier.clip(RoundedCornerShape(999.dp)).background(bg)
-            .let { if (selected) it else it.background(Color.White) }
-            .clickable(onClick = onClick).padding(horizontal = 16.dp, vertical = 9.dp),
-    ) { Text(label, fontWeight = FontWeight.Bold, fontSize = 13.sp, color = if (selected) Primary else Muted) }
+        Modifier.pressable(pill, scaleTo = 0.95f, veil = false, onClick = onClick)
+            .clip(pill).background(bg).padding(horizontal = 16.dp, vertical = 9.dp),
+    ) { Text(label, fontWeight = FontWeight.Bold, fontSize = 13.sp, color = fg) }
 }
 
 @Composable
@@ -298,9 +463,9 @@ fun BottomTabBar(current: String, nav: NavController) {
     ) {
         tabs.forEach { t ->
             val on = t.route == current
-            val bg by animateColorAsState(if (on) PrimaryContainer else Color.Transparent, label = "tab")
+            val bg by animateColorAsState(if (on) PrimaryContainer else Color.Transparent, tween(200), label = "tab")
             Column(
-                Modifier.weight(1f).clip(RoundedCornerShape(16.dp)).clickable {
+                Modifier.weight(1f).pressable(RoundedCornerShape(16.dp), scaleTo = 0.92f, veil = false) {
                     if (!on) nav.navigate(t.route) { popUpTo(Routes.HOME) { saveState = true }; launchSingleTop = true; restoreState = true }
                 }.padding(vertical = 6.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -332,8 +497,8 @@ fun TabScreen(
 @Composable
 fun Fab(icon: ImageVector, description: String, onClick: () -> Unit) {
     Box(
-        Modifier.size(58.dp).shadow(10.dp, CircleShape, ambientColor = Primary, spotColor = Primary).clip(CircleShape)
-            .background(ButtonBrush).clickable(onClick = onClick),
+        Modifier.size(58.dp).pressable(CircleShape, scaleTo = 0.92f, onClick = onClick)
+            .shadow(10.dp, CircleShape, ambientColor = Brand, spotColor = Brand).clip(CircleShape).background(ButtonBrush),
         contentAlignment = Alignment.Center,
     ) { Icon(icon, description, tint = Color.White) }
 }
