@@ -1,0 +1,10 @@
+*.iml
+.gradle/
+/local.properties
+.idea/
+build/
+app/build/
+.DS_Store
+functions/node_modules/
+# Download this from your Firebase console and put it in app/
+# app/google-services.json

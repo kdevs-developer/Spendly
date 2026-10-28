@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- White coin -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,54 m-30,0 a30,30 0 1 1 60,0 a30,30 0 1 1 -60,0" />
+    <!-- Rupee mark -->
+    <path
+        android:pathData="M42,40H66M42,49H66M42,40H52a9,9 0 0 1 0,18H42L60,74"
+        android:strokeColor="#1D4ED8"
+        android:strokeWidth="4"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
+</vector>

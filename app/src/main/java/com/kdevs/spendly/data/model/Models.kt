@@ -1,0 +1,138 @@
+package com.kdevs.spendly.data.model
+
+import com.google.firebase.Timestamp
+import com.google.firebase.firestore.DocumentId
+import com.google.firebase.firestore.ServerTimestamp
+
+// All money is stored as whole paise (Long). Never Double.
+
+data class Account(
+    @DocumentId val id: String = "",
+    val name: String = "",
+    val type: String = "bank",          // bank | wallet | cash | card
+    val icon: String = "bank",
+    val colorKey: String = "blue",
+    val openingPaise: Long = 0,
+    val archived: Boolean = false,
+    val createdAt: Long = 0,
+)
+
+data class Category(
+    @DocumentId val id: String = "",
+    val name: String = "",
+    val icon: String = "other",
+    val colorKey: String = "slate",
+    val parentId: String = "",          // empty = top-level category
+    val kind: String = "expense",       // expense | income
+)
+
+data class Txn(
+    @DocumentId val id: String = "",
+    val kind: String = "expense",       // expense | income | transfer
+    val amountPaise: Long = 0,
+    val accountId: String = "",
+    val toAccountId: String = "",       // transfers only
+    val categoryId: String = "",
+    val subcategoryId: String = "",
+    val note: String = "",
+    val dateMillis: Long = 0,
+)
+
+data class Budget(
+    @DocumentId val id: String = "",
+    val categoryId: String = "",        // empty = overall monthly budget
+    val limitPaise: Long = 0,
+)
+
+data class Goal(
+    @DocumentId val id: String = "",
+    val name: String = "",
+    val icon: String = "goal",
+    val colorKey: String = "green",
+    val targetPaise: Long = 0,
+    val savedPaise: Long = 0,
+    val deadlineMillis: Long = 0,
+)
+
+data class Template(
+    @DocumentId val id: String = "",
+    val name: String = "",
+    val kind: String = "expense",
+    val amountPaise: Long = 0,
+    val accountId: String = "",
+    val categoryId: String = "",
+    val note: String = "",
+)
+
+data class Recurring(
+    @DocumentId val id: String = "",
+    val name: String = "",
+    val kind: String = "expense",
+    val amountPaise: Long = 0,
+    val accountId: String = "",
+    val categoryId: String = "",
+    val every: String = "monthly",      // daily | weekly | monthly | yearly
+    val nextMillis: Long = 0,
+    val active: Boolean = true,
+)
+
+data class Friend(
+    @DocumentId val id: String = "",    // friend's uid
+    val name: String = "",
+    val code: String = "",
+)
+
+data class FriendRequest(
+    @DocumentId val id: String = "",
+    val from: String = "",
+    val fromName: String = "",
+    val to: String = "",
+    val status: String = "pending",     // pending | accepted | declined
+)
+
+data class Chat(
+    @DocumentId val id: String = "",
+    val type: String = "direct",        // direct | group | split
+    val name: String = "",
+    val members: List<String> = emptyList(),
+    val memberNames: Map<String, String> = emptyMap(),
+    val lastMessage: String = "",
+    @ServerTimestamp val lastAt: Timestamp? = null,
+    val typing: Map<String, Long> = emptyMap(),   // uid -> last typing millis
+    val createdBy: String = "",
+)
+
+data class Message(
+    @DocumentId val id: String = "",
+    val senderId: String = "",
+    val senderName: String = "",
+    val type: String = "text",          // text | image | system
+    val text: String = "",
+    val imageUrl: String = "",
+    val replyToId: String = "",
+    val replyPreview: String = "",
+    val reactions: Map<String, String> = emptyMap(),  // uid -> reaction key
+    val readBy: List<String> = emptyList(),
+    val deleted: Boolean = false,
+    @ServerTimestamp val createdAt: Timestamp? = null,
+)
+
+data class SplitEntry(
+    @DocumentId val id: String = "",
+    val kind: String = "expense",       // expense | settlement
+    val description: String = "",
+    val totalPaise: Long = 0,
+    val paidBy: String = "",
+    val settleTo: String = "",          // settlements only
+    val splitType: String = "equal",    // equal | exact | percent | shares
+    val owed: Map<String, Long> = emptyMap(),  // uid -> paise owed
+    val dateMillis: Long = 0,
+    val createdBy: String = "",
+)
+
+data class Profile(
+    val name: String = "",
+    val code: String = "",
+    val seeded: Boolean = false,
+    val blocked: List<String> = emptyList(),
+)

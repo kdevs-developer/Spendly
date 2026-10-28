@@ -1,0 +1,16 @@
+<resources>
+    <style name="Theme.Spendly" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowBackground">@color/app_bg</item>
+        <item name="android:windowLightStatusBar">true</item>
+    </style>
+
+    <!-- Shown by the system for the first instant. Plain brand blue, no icon, so the
+         animated draw-in in SplashOverlay.kt takes over without a visible jump. -->
+    <style name="Theme.Spendly.Starting" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/brand_primary</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/splash_blank</item>
+        <item name="postSplashScreenTheme">@style/Theme.Spendly</item>
+    </style>
+</resources>
