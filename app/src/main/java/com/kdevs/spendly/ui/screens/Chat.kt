@@ -609,14 +609,19 @@ fun CreateGroupScreen(nav: NavController) {
         SectionTitle(str(R.string.add_members, picked.size))
         if (friends.isEmpty()) Hint(str(R.string.add_friends_first_from_the_chat))
         Card(padding = 12.dp) {
-            friends.forEachIndexed { i, f ->
-                SettingRow(
-                    f.name,
-                    leading = { Avatar(f.name, colorKeyFor(f.id)) },
-                    onClick = { picked = if (f.id in picked) picked - f.id else picked + f.id },
-                    trailing = { TickBox(f.id in picked) },
-                    divider = i < friends.lastIndex,
-                )
+            if (friends.isEmpty()) {
+                EmptyState(Icons.Filled.People, str(R.string.no_friends_yet), str(R.string.add_friends_first_from_the_chat))
+                PrimaryButton(str(R.string.add_a_friend), { nav.navigate(Routes.ADD_FRIEND) })
+            } else {
+                friends.forEachIndexed { i, f ->
+                    SettingRow(
+                        f.name,
+                        leading = { Avatar(f.name, colorKeyFor(f.id)) },
+                        onClick = { picked = if (f.id in picked) picked - f.id else picked + f.id },
+                        trailing = { TickBox(f.id in picked) },
+                        divider = i < friends.lastIndex,
+                    )
+                }
             }
         }
     }
