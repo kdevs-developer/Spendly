@@ -71,14 +71,14 @@ fun FilterScreen(
     val live = accounts.filter { !it.archived }
     val parents = look.categories.filter { it.parentId.isBlank() }
 
-    var query by remember { mutableStateOf(TxnFilter.query) }
-    var kinds by remember { mutableStateOf(TxnFilter.kinds) }
-    var accs by remember { mutableStateOf(TxnFilter.accountIds) }
-    var cats by remember { mutableStateOf(TxnFilter.categoryIds) }
-    var from by remember { mutableLongStateOf(TxnFilter.fromMillis) }
-    var to by remember { mutableLongStateOf(TxnFilter.toMillis) }
-    var min by remember { mutableStateOf(if (TxnFilter.minPaise == 0L) "" else paiseToField(TxnFilter.minPaise)) }
-    var max by remember { mutableStateOf(if (TxnFilter.maxPaise == 0L) "" else paiseToField(TxnFilter.maxPaise)) }
+    var query by rememberSaveable { mutableStateOf(TxnFilter.query) }
+    var kinds by rememberSaveable { mutableStateOf(TxnFilter.kinds) }
+    var accs by rememberSaveable { mutableStateOf(TxnFilter.accountIds) }
+    var cats by rememberSaveable { mutableStateOf(TxnFilter.categoryIds) }
+    var from by rememberSaveable { mutableStateOf(TxnFilter.fromMillis) }
+    var to by rememberSaveable { mutableStateOf(TxnFilter.toMillis) }
+    var min by rememberSaveable { mutableStateOf(if (TxnFilter.minPaise == 0L) "" else paiseToField(TxnFilter.minPaise)) }
+    var max by rememberSaveable { mutableStateOf(if (TxnFilter.maxPaise == 0L) "" else paiseToField(TxnFilter.maxPaise)) }
     // A saved range can't be mapped back to a preset, so it opens as "custom".
     var period by rememberSaveable { mutableStateOf(if (from == 0L && to == 0L) "any" else "custom") }
     var target by rememberSaveable { mutableStateOf("from") }
@@ -566,11 +566,11 @@ fun ReportFilterScreen(
     entry: NavBackStackEntry,
 ) {
     val accounts by Repo.accounts.collectAsState()
-    var period by remember { mutableStateOf(ReportFilter.period) }
-    var from by remember { mutableLongStateOf(ReportFilter.customFrom.takeIf { it > 0 } ?: monthStart()) }
-    var to by remember { mutableLongStateOf(ReportFilter.customTo.takeIf { it > 0 } ?: todayMillis()) }
-    var kind by remember { mutableStateOf(ReportFilter.kind) }
-    var accs by remember { mutableStateOf(ReportFilter.accountIds) }
+    var period by rememberSaveable { mutableStateOf(ReportFilter.period) }
+    var from by rememberSaveable { mutableStateOf(ReportFilter.customFrom.takeIf { it > 0 } ?: monthStart()) }
+    var to by rememberSaveable { mutableStateOf(ReportFilter.customTo.takeIf { it > 0 } ?: todayMillis()) }
+    var kind by rememberSaveable { mutableStateOf(ReportFilter.kind) }
+    var accs by rememberSaveable { mutableStateOf(ReportFilter.accountIds) }
     var target by rememberSaveable { mutableStateOf("from") }
     entry.Picked<Long>("pickedDate") { if (target == "from") from = it else to = it }
 
@@ -635,10 +635,14 @@ fun CategoryPickerScreen(
 ) {
     val look = rememberLookup()
     val withSubs = slot == "category" // budgets, templates, filters and bulk edits pick the main category only
+    val manage = slot == "manage"
+    // In Settings one screen holds both lists; everywhere else the kind is fixed by the caller.
+    var shownKind by rememberSaveable { mutableStateOf(kind) }
+    val activeKind = if (manage) shownKind else kind
     var query by remember { mutableStateOf("") }
     var open by remember { mutableStateOf(setOf<String>()) }
     val parents =
-        look.parents(kind).filter {
+        look.parents(activeKind).filter {
                 p ->
             query.isBlank() || p.name.contains(query, true) || look.subs(p.id).any { it.name.contains(query, true) }
         }
@@ -647,9 +651,16 @@ fun CategoryPickerScreen(
         { nav.popBackStack() },
         // Adding and editing categories happens only in Settings. While choosing for a transaction, it is pick-only.
         actions = {
-            if (slot == "manage") RoundIconButton(Icons.Filled.Add, str(R.string.new_category), { nav.navigate(Routes.categoryEdit("", kind)) })
+            if (manage) RoundIconButton(Icons.Filled.Add, str(R.string.new_category), { nav.navigate(Routes.categoryEdit("", activeKind)) })
         },
     ) {
+        if (manage) {
+            SegmentedControl(listOf(str(R.string.expense), str(R.string.income)), if (activeKind == "income") 1 else 0, {
+                shownKind = if (it == 1) "income" else "expense"
+                query = ""
+                open = emptySet()
+            })
+        }
         AppTextField(query, { query = it }, str(R.string.search), leading = { Icon(Icons.Filled.Search, null) })
         if (parents.isEmpty()) {
             EmptyState(
@@ -664,7 +675,7 @@ fun CategoryPickerScreen(
                 Row(
                     Modifier.fillMaxWidth().clickable {
                         if (slot == "manage") {
-                            nav.navigate(Routes.categoryEdit(p.id, kind))
+                            nav.navigate(Routes.categoryEdit(p.id, activeKind))
                         } else {
                             nav.setPicked("pickedCategory", "${p.id}|")
                             nav.popBackStack()
@@ -682,7 +693,7 @@ fun CategoryPickerScreen(
                         RoundIconButton(
                             Icons.Filled.Edit,
                             str(R.string.edit_2, p.name),
-                            { nav.navigate(Routes.categoryEdit(p.id, kind)) },
+                            { nav.navigate(Routes.categoryEdit(p.id, activeKind)) },
                             bg = Bg,
                         )
                     }
@@ -728,9 +739,9 @@ fun CategoryEditScreen(
 ) {
     val look = rememberLookup()
     val existing = remember(id, look.categories.isEmpty()) { look.category(id) }
-    var name by remember(existing) { mutableStateOf(existing?.name ?: "") }
-    var icon by remember(existing) { mutableStateOf(existing?.icon ?: "other") }
-    var color by remember(existing) { mutableStateOf(existing?.colorKey ?: "blue") }
+    var name by rememberSaveable(existing) { mutableStateOf(existing?.name ?: "") }
+    var icon by rememberSaveable(existing) { mutableStateOf(existing?.icon ?: "other") }
+    var color by rememberSaveable(existing) { mutableStateOf(existing?.colorKey ?: "blue") }
     var confirm by remember { mutableStateOf(false) }
     val saver = rememberSaver()
     val scope = rememberCoroutineScope()
@@ -804,8 +815,8 @@ fun SubcategoryEditScreen(
     val look = rememberLookup()
     val parent = look.category(parentId)
     val existing = remember(id, look.categories.isEmpty()) { look.category(id) }
-    var name by remember(existing) { mutableStateOf(existing?.name ?: "") }
-    var icon by remember(existing) { mutableStateOf(existing?.icon ?: parent?.icon ?: "other") }
+    var name by rememberSaveable(existing) { mutableStateOf(existing?.name ?: "") }
+    var icon by rememberSaveable(existing) { mutableStateOf(existing?.icon ?: parent?.icon ?: "other") }
     var confirm by remember { mutableStateOf(false) }
     val saver = rememberSaver()
     val scope = rememberCoroutineScope()

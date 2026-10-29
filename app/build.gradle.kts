@@ -21,7 +21,7 @@ android {
     }
     signingConfigs {
         getByName("debug") {
-            storeFile = file("C:/Users/krish/AndroidStudioProjects/Spendly/Spendly/debug.keystore")
+            storeFile = file("C:/Users/krish/AndroidStudioProjects/spendly-android/debug.keystore")
             storePassword = "03101996"
             keyAlias = "androiddebugkey"
             keyPassword = "03101996"

@@ -4,15 +4,24 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!-- White coin -->
+    <!-- Soft shadow under the S -->
+    <group android:translateY="1.8">
+        <path
+            android:pathData="M66,43 C66,37 60.5,33.5 54,33.5 C46.5,33.5 42,37.5 42,43 C42,49 47,51 54,54 C61,57 66,59 66,65 C66,70.5 61.5,74.5 54,74.5 C47,74.5 42,71 42,65"
+            android:strokeColor="#59140A46"
+            android:strokeWidth="9"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round" />
+    </group>
+    <!-- S monogram -->
     <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M54,54 m-30,0 a30,30 0 1 1 60,0 a30,30 0 1 1 -60,0" />
-    <!-- Rupee mark -->
-    <path
-        android:pathData="M42,40H66M42,49H66M42,40H52a9,9 0 0 1 0,18H42L60,74"
-        android:strokeColor="#1D4ED8"
-        android:strokeWidth="4"
+        android:pathData="M66,43 C66,37 60.5,33.5 54,33.5 C46.5,33.5 42,37.5 42,43 C42,49 47,51 54,54 C61,57 66,59 66,65 C66,70.5 61.5,74.5 54,74.5 C47,74.5 42,71 42,65"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="9"
         android:strokeLineCap="round"
         android:strokeLineJoin="round" />
+    <!-- Gold coin accent -->
+    <path
+        android:fillColor="#FBBF24"
+        android:pathData="M74.5,31.5 m-4.6,0 a4.6,4.6 0 1 1 9.2,0 a4.6,4.6 0 1 1 -9.2,0" />
 </vector>

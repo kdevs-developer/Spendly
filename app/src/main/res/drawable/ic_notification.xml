@@ -4,8 +4,11 @@
     android:height="24dp"
     android:viewportWidth="24"
     android:viewportHeight="24">
+    <!-- Status-bar icons are white silhouettes; the system tints them. Same "S" as the app icon. -->
     <path
-        android:fillColor="#FFFFFF"
-        android:fillType="evenOdd"
-        android:pathData="M5,6 h14 a2,2 0 0 1 2,2 v9 a2,2 0 0 1 -2,2 h-14 a2,2 0 0 1 -2,-2 v-9 a2,2 0 0 1 2,-2 z M15,10.5 a2,2 0 0 0 0,4 h6 v-4 z" />
+        android:pathData="M17.04,7.38 C17.04,4.86 14.73,3.39 12.00,3.39 C8.85,3.39 6.96,5.07 6.96,7.38 C6.96,9.90 9.06,10.74 12.00,12.00 C14.94,13.26 17.04,14.10 17.04,16.62 C17.04,18.93 15.15,20.61 12.00,20.61 C9.06,20.61 6.96,19.14 6.96,16.62"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="3.8"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
 </vector>

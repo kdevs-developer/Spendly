@@ -12,6 +12,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.material3.Switch
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -254,16 +255,16 @@ fun AddSplitScreen(
 ) {
     val me = Repo.uid
     val chat = rememberChat(id)
-    var desc by remember { mutableStateOf("") }
-    var amount by remember { mutableStateOf("") }
-    var paidBy by remember { mutableStateOf(me) }
-    var date by remember { mutableLongStateOf(todayMillis()) }
-    var type by remember { mutableIntStateOf(0) } // 0 equal, 1 exact, 2 percent, 3 shares
-    var included by remember(chat?.members) { mutableStateOf(chat?.members?.toSet() ?: emptySet()) }
-    var values by remember { mutableStateOf(mapOf<String, String>()) }
+    var desc by rememberSaveable { mutableStateOf("") }
+    var amount by rememberSaveable { mutableStateOf("") }
+    var paidBy by rememberSaveable { mutableStateOf(me) }
+    var date by rememberSaveable { mutableStateOf(todayMillis()) }
+    var type by rememberSaveable { mutableStateOf(0) } // 0 equal, 1 exact, 2 percent, 3 shares
+    var included by rememberSaveable(chat?.members) { mutableStateOf(chat?.members?.toSet() ?: emptySet()) }
+    var values by rememberSaveable { mutableStateOf(mapOf<String, String>()) }
     var payerMenu by remember { mutableStateOf(false) }
     var recordShare by remember { mutableStateOf(false) }
-    var shareAccount by remember { mutableStateOf("") }
+    var shareAccount by rememberSaveable { mutableStateOf("") }
     val accounts by Repo.accounts.collectAsState()
     val look = rememberLookup()
     val saver = rememberSaver()
@@ -446,10 +447,10 @@ fun SettleUpScreen(
     val plan = SplitMath.simplify(SplitMath.balances(entries)).filter { it.from == me || it.to == me }
     var sel by remember(plan.size) { mutableIntStateOf(0) }
     val t = plan.getOrNull(sel)
-    var amount by remember(t) { mutableStateOf(t?.let { paiseToField(it.paise) } ?: "") }
-    var accountId by remember { mutableStateOf("") }
-    var note by remember { mutableStateOf("") }
-    var date by remember { mutableLongStateOf(todayMillis()) }
+    var amount by rememberSaveable(t) { mutableStateOf(t?.let { paiseToField(it.paise) } ?: "") }
+    var accountId by rememberSaveable { mutableStateOf("") }
+    var note by rememberSaveable { mutableStateOf("") }
+    var date by rememberSaveable { mutableStateOf(todayMillis()) }
     val saver = rememberSaver()
     val scope = rememberCoroutineScope()
     LaunchedEffect(accounts) { if (accountId.isBlank()) accountId = accounts.firstOrNull { !it.archived }?.id ?: "" }

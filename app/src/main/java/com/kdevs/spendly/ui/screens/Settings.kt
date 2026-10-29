@@ -138,12 +138,6 @@ fun SettingsScreen(nav: NavController) {
                 onClick = { nav.navigate(Routes.categoryPicker("expense", "manage")) },
             )
             SettingRow(
-                str(R.string.income_categories),
-                icon = Icons.Filled.Savings,
-                iconColor = Success,
-                onClick = { nav.navigate(Routes.categoryPicker("income", "manage")) },
-            )
-            SettingRow(
                 str(R.string.budgets),
                 icon = Icons.Filled.DonutLarge,
                 iconColor = clr(R.color.swatch_teal),

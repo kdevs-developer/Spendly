@@ -135,7 +135,7 @@ fun HomeScreen(nav: NavController) {
             EmptyState(Icons.Filled.Receipt, str(R.string.no_transactions_yet), str(R.string.tap_the_plus_button_to_add))
         } else {
             Card(padding = 12.dp) {
-                val recent = txns.take(5)
+                val recent = txns.sortedByDescending { it.dateMillis }.take(5)
                 recent.forEachIndexed { i, t ->
                     TxnRow(t, look, { nav.navigate(Routes.txnDetail(t.id)) }, showDate = true)
                     if (i < recent.lastIndex) HorizontalDivider(color = Line)
@@ -362,7 +362,7 @@ private fun CalendarView(
             }
         }
     }
-    val dayList = list.filter { toLocalDate(it.dateMillis) == picked }
+    val dayList = list.filter { toLocalDate(it.dateMillis) == picked }.sortedByDescending { it.dateMillis }
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
         SectionTitle(dayLabel(picked.startMillis()))
         if (dayList.isNotEmpty()) Text("-" + formatPaise(spent(dayList)), color = Muted, fontWeight = FontWeight.Bold)

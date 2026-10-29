@@ -2,6 +2,7 @@ package com.kdevs.spendly.ui.splash
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -18,7 +19,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathMeasure
@@ -27,7 +27,6 @@ import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.vector.PathParser
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -39,35 +38,34 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-private val RupeeParts =
-    listOf(
-        "M42,40H66",
-        "M42,49H66",
-        "M42,40H52a9,9 0 0 1 0,18H42L60,74",
-    )
+// The "S" from the launcher icon, in the same 108 x 108 space.
+private const val S_PATH =
+    "M66,43 C66,37 60.5,33.5 54,33.5 C46.5,33.5 42,37.5 42,43 C42,49 47,51 54,54 " +
+            "C61,57 66,59 66,65 C66,70.5 61.5,74.5 54,74.5 C47,74.5 42,71 42,65"
+private val CoinGold = Color(0xFFFBBF24)
 
 /**
- * Animated splash: the coin ring draws in, the rupee mark draws in, the coin fills white,
+ * Animated splash: a soft halo fades in, the "S" draws itself in, the gold coin pops in,
  * the wordmark and tagline rise in, then the whole overlay fades into the app.
  * Background is the same solid brand blue as Theme.Spendly.Starting so the handoff is seamless.
  */
 @Composable
 fun SplashOverlay(onFinished: () -> Unit) {
-    val ring = remember { Animatable(0f) }
-    val rupee = remember { Animatable(0f) }
-    val fill = remember { Animatable(0f) }
+    val halo = remember { Animatable(0f) }
+    val draw = remember { Animatable(0f) }
+    val coin = remember { Animatable(0f) }
     val word = remember { Animatable(0f) }
     val tag = remember { Animatable(0f) }
     val alpha = remember { Animatable(1f) }
 
-    val parts = remember { RupeeParts.map { PathParser().parsePathString(it).toPath() } }
-    val lengths = remember { parts.map { p -> PathMeasure().also { it.setPath(p, false) }.length } }
+    val sPath = remember { PathParser().parsePathString(S_PATH).toPath() }
+    val sLength = remember { PathMeasure().also { it.setPath(sPath, false) }.length }
     val measure = remember { PathMeasure() }
 
     LaunchedEffect(Unit) {
-        ring.animateTo(1f, tween(700, easing = FastOutSlowInEasing))
-        rupee.animateTo(1f, tween(600, easing = FastOutSlowInEasing))
-        fill.animateTo(1f, tween(350))
+        halo.animateTo(1f, tween(500, easing = FastOutSlowInEasing))
+        draw.animateTo(1f, tween(750, easing = FastOutSlowInEasing))
+        coin.animateTo(1f, spring(dampingRatio = 0.45f, stiffness = 380f))
         coroutineScope {
             launch { word.animateTo(1f, tween(500, easing = FastOutSlowInEasing)) }
             launch {
@@ -90,29 +88,13 @@ fun SplashOverlay(onFinished: () -> Unit) {
     ) {
         Canvas(Modifier.size(132.dp)) {
             val s = size.width / 108f
-            val rupeeColor = lerp(Color.White, Brand, fill.value)
             withTransform({ scale(s, s, Offset.Zero) }) {
-                drawCircle(Color.White.copy(alpha = fill.value), radius = 30f, center = Offset(54f, 54f))
-                drawArc(
-                    color = Color.White,
-                    startAngle = -90f,
-                    sweepAngle = 360f * ring.value,
-                    useCenter = false,
-                    topLeft = Offset(24f, 24f),
-                    size = Size(60f, 60f),
-                    style = Stroke(width = 3f, cap = StrokeCap.Round),
-                )
-                var remain = lengths.sum() * rupee.value
-                parts.forEachIndexed { i, p ->
-                    val d = remain.coerceIn(0f, lengths[i])
-                    if (d > 0f) {
-                        val seg = Path()
-                        measure.setPath(p, false)
-                        measure.getSegment(0f, d, seg, true)
-                        drawPath(seg, rupeeColor, style = Stroke(width = 4f, cap = StrokeCap.Round, join = StrokeJoin.Round))
-                    }
-                    remain -= lengths[i]
-                }
+                drawCircle(Color.White.copy(alpha = 0.14f * halo.value), radius = 44f * (0.8f + 0.2f * halo.value), center = Offset(54f, 54f))
+                val seg = Path()
+                measure.setPath(sPath, false)
+                measure.getSegment(0f, sLength * draw.value, seg, true)
+                drawPath(seg, Color.White, style = Stroke(width = 9f, cap = StrokeCap.Round, join = StrokeJoin.Round))
+                if (coin.value > 0f) drawCircle(CoinGold, radius = 4.6f * coin.value, center = Offset(74.5f, 31.5f))
             }
         }
         Spacer(Modifier.height(20.dp))

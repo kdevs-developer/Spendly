@@ -10,6 +10,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -87,13 +88,13 @@ fun TxnFormScreen(
     val existing = remember(id, txns.isEmpty()) { txns.firstOrNull { it.id == id } }
     val editing = id.isNotBlank()
 
-    var type by remember(existing) { mutableStateOf(existing?.kind ?: kind) }
-    var amount by remember(existing) { mutableStateOf(existing?.let { paiseToField(it.amountPaise) } ?: "") }
-    var accountId by remember(existing) { mutableStateOf(existing?.accountId ?: "") }
-    var catId by remember(existing) { mutableStateOf(existing?.categoryId ?: "") }
-    var subId by remember(existing) { mutableStateOf(existing?.subcategoryId ?: "") }
-    var note by remember(existing) { mutableStateOf(existing?.note ?: "") }
-    var date by remember(existing) { mutableLongStateOf(existing?.dateMillis ?: todayMillis()) }
+    var type by rememberSaveable(existing) { mutableStateOf(existing?.kind ?: kind) }
+    var amount by rememberSaveable(existing) { mutableStateOf(existing?.let { paiseToField(it.amountPaise) } ?: "") }
+    var accountId by rememberSaveable(existing) { mutableStateOf(existing?.accountId ?: "") }
+    var catId by rememberSaveable(existing) { mutableStateOf(existing?.categoryId ?: "") }
+    var subId by rememberSaveable(existing) { mutableStateOf(existing?.subcategoryId ?: "") }
+    var note by rememberSaveable(existing) { mutableStateOf(existing?.note ?: "") }
+    var date by rememberSaveable(existing) { mutableStateOf(existing?.dateMillis ?: todayMillis()) }
     var confirmDelete by remember { mutableStateOf(false) }
     val saver = rememberSaver()
     val scope = rememberCoroutineScope()
@@ -145,7 +146,7 @@ fun TxnFormScreen(
                                 categoryId = catId,
                                 subcategoryId = subId,
                                 note = note.trim(),
-                                dateMillis = date,
+                                dateMillis = stampTime(date, existing?.dateMillis),
                             ),
                         )
                     }
@@ -168,11 +169,11 @@ fun TxnFormScreen(
                     ""
                 } else {
                     (
-                        parent?.name?.let {
-                                p ->
-                            if (subId.isNotBlank()) "$p · ${cat.name}" else p
-                        } ?: cat.name
-                    )
+                            parent?.name?.let {
+                                    p ->
+                                if (subId.isNotBlank()) "$p · ${cat.name}" else p
+                            } ?: cat.name
+                            )
                 },
                 leading = { IconCircle(cat?.icon ?: "other", parent?.colorKey ?: cat?.colorKey ?: "slate", 38.dp) },
                 onClick = { nav.navigate(Routes.categoryPicker(type)) },
@@ -240,14 +241,14 @@ fun TxnDetailScreen(
             Spacer(Modifier.height(12.dp))
             Text(
                 (
-                    if (t.kind == "expense") {
-                        "-"
-                    } else if (t.kind == "income") {
-                        "+"
-                    } else {
-                        ""
-                    }
-                ) + formatPaise(t.amountPaise),
+                        if (t.kind == "expense") {
+                            "-"
+                        } else if (t.kind == "income") {
+                            "+"
+                        } else {
+                            ""
+                        }
+                        ) + formatPaise(t.amountPaise),
                 color = Color.White,
                 fontWeight = FontWeight.ExtraBold,
                 fontSize = 40.sp,
@@ -276,12 +277,12 @@ fun TxnDetailScreen(
                     )
                 }
             }
-            PickRow(str(R.string.date), fullDate(t.dateMillis), Icons.Filled.CalendarMonth, Muted, {}, divider = t.note.isNotBlank())
+            PickRow(str(R.string.date), fullDate(t.dateMillis) + if (hasTime(t.dateMillis)) ", " + timeOf(t.dateMillis) else "", Icons.Filled.CalendarMonth, Muted, {}, divider = t.note.isNotBlank())
             if (t.note.isNotBlank()) PickRow(str(R.string.note), t.note, Icons.Filled.Notes, Muted, {}, divider = false)
         }
         if (t.kind != "transfer") {
             SecondaryButton(str(R.string.duplicate), {
-                saver.run(scope, onDone = { nav.popBackStack() }) { Repo.put("txns", "", t.copy(id = "", dateMillis = todayMillis())) }
+                saver.run(scope, onDone = { nav.popBackStack() }) { Repo.put("txns", "", t.copy(id = "", dateMillis = withNowTime(todayMillis()))) }
             })
         }
         SecondaryButton(str(R.string.delete_transaction_2), { confirm = true }, danger = true)
@@ -300,11 +301,11 @@ fun TransferScreen(
 ) {
     val accounts by Repo.accounts.collectAsState()
     val look = rememberLookup()
-    var from by remember { mutableStateOf("") }
-    var to by remember { mutableStateOf("") }
-    var amount by remember { mutableStateOf("") }
-    var note by remember { mutableStateOf("") }
-    var date by remember { mutableLongStateOf(todayMillis()) }
+    var from by rememberSaveable { mutableStateOf("") }
+    var to by rememberSaveable { mutableStateOf("") }
+    var amount by rememberSaveable { mutableStateOf("") }
+    var note by rememberSaveable { mutableStateOf("") }
+    var date by rememberSaveable { mutableStateOf(todayMillis()) }
     val saver = rememberSaver()
     val scope = rememberCoroutineScope()
     LaunchedEffect(accounts) {
@@ -323,7 +324,7 @@ fun TransferScreen(
                 Repo.put(
                     "txns",
                     "",
-                    Txn(kind = "transfer", amountPaise = paise, accountId = from, toAccountId = to, note = note.trim(), dateMillis = date),
+                    Txn(kind = "transfer", amountPaise = paise, accountId = from, toAccountId = to, note = note.trim(), dateMillis = withNowTime(date)),
                 )
             }
         })
@@ -393,10 +394,10 @@ fun AccountEditScreen(
     val type = existing?.type ?: typeArg.ifBlank { "bank" }
     val info = AccountTypes.first { it.key == type }
     val isCard = type == "card"
-    var name by remember(existing) { mutableStateOf(existing?.name ?: "") }
-    var opening by remember(existing) { mutableStateOf(existing?.let { paiseToField(kotlin.math.abs(it.openingPaise)) } ?: "") }
-    var icon by remember(existing) { mutableStateOf(existing?.icon ?: info.icon) }
-    var color by remember(existing) { mutableStateOf(existing?.colorKey ?: info.colorKey) }
+    var name by rememberSaveable(existing) { mutableStateOf(existing?.name ?: "") }
+    var opening by rememberSaveable(existing) { mutableStateOf(existing?.let { paiseToField(kotlin.math.abs(it.openingPaise)) } ?: "") }
+    var icon by rememberSaveable(existing) { mutableStateOf(existing?.icon ?: info.icon) }
+    var color by rememberSaveable(existing) { mutableStateOf(existing?.colorKey ?: info.colorKey) }
     var confirm by remember { mutableStateOf(false) }
     val saver = rememberSaver()
     val scope = rememberCoroutineScope()
@@ -605,8 +606,8 @@ fun BudgetEditScreen(
     val budgets by Repo.budgets.collectAsState()
     val look = rememberLookup()
     val existing = remember(id, budgets.isEmpty()) { budgets.firstOrNull { it.id == id } }
-    var catId by remember(existing) { mutableStateOf(existing?.categoryId ?: "") }
-    var limit by remember(existing) { mutableStateOf(existing?.let { paiseToField(it.limitPaise) } ?: "") }
+    var catId by rememberSaveable(existing) { mutableStateOf(existing?.categoryId ?: "") }
+    var limit by rememberSaveable(existing) { mutableStateOf(existing?.let { paiseToField(it.limitPaise) } ?: "") }
     var confirm by remember { mutableStateOf(false) }
     val saver = rememberSaver()
     val scope = rememberCoroutineScope()
@@ -713,11 +714,11 @@ fun GoalEditScreen(
 ) {
     val goals by Repo.goals.collectAsState()
     val existing = remember(id, goals.isEmpty()) { goals.firstOrNull { it.id == id } }
-    var name by remember(existing) { mutableStateOf(existing?.name ?: "") }
-    var target by remember(existing) { mutableStateOf(existing?.let { paiseToField(it.targetPaise) } ?: "") }
-    var icon by remember(existing) { mutableStateOf(existing?.icon ?: "goal") }
-    var color by remember(existing) { mutableStateOf(existing?.colorKey ?: "green") }
-    var deadline by remember(existing) { mutableLongStateOf(existing?.deadlineMillis ?: 0L) }
+    var name by rememberSaveable(existing) { mutableStateOf(existing?.name ?: "") }
+    var target by rememberSaveable(existing) { mutableStateOf(existing?.let { paiseToField(it.targetPaise) } ?: "") }
+    var icon by rememberSaveable(existing) { mutableStateOf(existing?.icon ?: "goal") }
+    var color by rememberSaveable(existing) { mutableStateOf(existing?.colorKey ?: "green") }
+    var deadline by rememberSaveable(existing) { mutableStateOf(existing?.deadlineMillis ?: 0L) }
     var confirm by remember { mutableStateOf(false) }
     val saver = rememberSaver()
     val scope = rememberCoroutineScope()
@@ -808,7 +809,7 @@ fun GoalAddScreen(
 ) {
     val goals by Repo.goals.collectAsState()
     val g = goals.firstOrNull { it.id == id }
-    var amount by remember { mutableStateOf("") }
+    var amount by rememberSaveable { mutableStateOf("") }
     val saver = rememberSaver()
     val scope = rememberCoroutineScope()
     val paise = parseRupees(amount) ?: 0L
@@ -896,7 +897,7 @@ fun TemplatesScreen(nav: NavController) {
                                             t.note.ifBlank {
                                                 t.name
                                             },
-                                        dateMillis = todayMillis(),
+                                        dateMillis = withNowTime(todayMillis()),
                                     ),
                                 )
                             }
@@ -918,12 +919,12 @@ fun TemplateEditScreen(
     val accounts by Repo.accounts.collectAsState()
     val look = rememberLookup()
     val existing = remember(id, templates.isEmpty()) { templates.firstOrNull { it.id == id } }
-    var name by remember(existing) { mutableStateOf(existing?.name ?: "") }
-    var kind by remember(existing) { mutableStateOf(existing?.kind ?: "expense") }
-    var amount by remember(existing) { mutableStateOf(existing?.let { paiseToField(it.amountPaise) } ?: "") }
-    var accountId by remember(existing) { mutableStateOf(existing?.accountId ?: "") }
-    var catId by remember(existing) { mutableStateOf(existing?.categoryId ?: "") }
-    var note by remember(existing) { mutableStateOf(existing?.note ?: "") }
+    var name by rememberSaveable(existing) { mutableStateOf(existing?.name ?: "") }
+    var kind by rememberSaveable(existing) { mutableStateOf(existing?.kind ?: "expense") }
+    var amount by rememberSaveable(existing) { mutableStateOf(existing?.let { paiseToField(it.amountPaise) } ?: "") }
+    var accountId by rememberSaveable(existing) { mutableStateOf(existing?.accountId ?: "") }
+    var catId by rememberSaveable(existing) { mutableStateOf(existing?.categoryId ?: "") }
+    var note by rememberSaveable(existing) { mutableStateOf(existing?.note ?: "") }
     var confirm by remember { mutableStateOf(false) }
     val saver = rememberSaver()
     val scope = rememberCoroutineScope()
@@ -1051,14 +1052,14 @@ fun RecurringEditScreen(
     val accounts by Repo.accounts.collectAsState()
     val look = rememberLookup()
     val existing = remember(id, items.isEmpty()) { items.firstOrNull { it.id == id } }
-    var name by remember(existing) { mutableStateOf(existing?.name ?: "") }
-    var kind by remember(existing) { mutableStateOf(existing?.kind ?: "expense") }
-    var amount by remember(existing) { mutableStateOf(existing?.let { paiseToField(it.amountPaise) } ?: "") }
-    var accountId by remember(existing) { mutableStateOf(existing?.accountId ?: "") }
-    var catId by remember(existing) { mutableStateOf(existing?.categoryId ?: "") }
-    var every by remember(existing) { mutableStateOf(existing?.every ?: "monthly") }
-    var next by remember(existing) { mutableLongStateOf(existing?.nextMillis ?: todayMillis()) }
-    var active by remember(existing) { mutableStateOf(existing?.active ?: true) }
+    var name by rememberSaveable(existing) { mutableStateOf(existing?.name ?: "") }
+    var kind by rememberSaveable(existing) { mutableStateOf(existing?.kind ?: "expense") }
+    var amount by rememberSaveable(existing) { mutableStateOf(existing?.let { paiseToField(it.amountPaise) } ?: "") }
+    var accountId by rememberSaveable(existing) { mutableStateOf(existing?.accountId ?: "") }
+    var catId by rememberSaveable(existing) { mutableStateOf(existing?.categoryId ?: "") }
+    var every by rememberSaveable(existing) { mutableStateOf(existing?.every ?: "monthly") }
+    var next by rememberSaveable(existing) { mutableStateOf(existing?.nextMillis ?: todayMillis()) }
+    var active by rememberSaveable(existing) { mutableStateOf(existing?.active ?: true) }
     var confirm by remember { mutableStateOf(false) }
     val saver = rememberSaver()
     val scope = rememberCoroutineScope()

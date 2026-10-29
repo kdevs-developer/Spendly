@@ -92,13 +92,13 @@ fun ExportScreen(
     val saver = rememberSaver()
 
     var format by remember { mutableIntStateOf(0) } // 0 Excel, 1 PDF
-    var useFilter by remember { mutableStateOf(false) }
-    var period by remember { mutableStateOf("month") }
-    var from by remember { mutableLongStateOf(monthStart()) }
-    var to by remember { mutableLongStateOf(todayMillis()) }
+    var useFilter by rememberSaveable { mutableStateOf(false) }
+    var period by rememberSaveable { mutableStateOf("month") }
+    var from by rememberSaveable { mutableStateOf(monthStart()) }
+    var to by rememberSaveable { mutableStateOf(todayMillis()) }
     var pickingFrom by rememberSaveable { mutableStateOf(true) }
-    var kinds by remember { mutableStateOf(setOf("expense", "income", "transfer")) }
-    var accountIds by remember { mutableStateOf(setOf<String>()) } // empty = every account
+    var kinds by rememberSaveable { mutableStateOf(setOf("expense", "income", "transfer")) }
+    var accountIds by rememberSaveable { mutableStateOf(setOf<String>()) } // empty = every account
     var periodOpen by remember { mutableStateOf(false) }
     var accountsOpen by remember { mutableStateOf(false) }
     var saved by remember { mutableStateOf<Pair<Uri, String>?>(null) }

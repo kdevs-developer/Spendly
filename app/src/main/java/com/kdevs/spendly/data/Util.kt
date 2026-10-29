@@ -52,6 +52,20 @@ fun LocalDate.startMillis(): Long = atStartOfDay(zone).toInstant().toEpochMilli(
 
 fun todayMillis(): Long = LocalDate.now().startMillis()
 
+/** Pickers return midnight of the chosen day; this puts the current clock time on it. */
+fun withNowTime(dayMillis: Long): Long =
+    toLocalDate(dayMillis).atTime(java.time.LocalTime.now()).atZone(zone).toInstant().toEpochMilli()
+
+/** Keeps the saved time if the day didn't change, otherwise stamps the current time on the new day. */
+fun stampTime(
+    dayMillis: Long,
+    existingMillis: Long?,
+): Long =
+    if (existingMillis != null && toLocalDate(existingMillis) == toLocalDate(dayMillis)) existingMillis else withNowTime(dayMillis)
+
+/** False for older transactions that were saved at midnight with no time. */
+fun hasTime(millis: Long): Boolean = millis != toLocalDate(millis).startMillis()
+
 fun monthStart(d: LocalDate = LocalDate.now()): Long = d.withDayOfMonth(1).startMillis()
 
 fun nextMonthStart(d: LocalDate = LocalDate.now()): Long = d.withDayOfMonth(1).plusMonths(1).startMillis()
