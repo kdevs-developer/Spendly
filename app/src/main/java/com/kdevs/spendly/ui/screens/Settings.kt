@@ -15,6 +15,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.kdevs.spendly.R
 import com.kdevs.spendly.data.Biometric
+import com.kdevs.spendly.data.Inbox
 import com.kdevs.spendly.data.Prefs
 import com.kdevs.spendly.data.Repo
 import com.kdevs.spendly.data.ThemeMode
@@ -165,11 +166,31 @@ fun SettingsScreen(nav: NavController) {
                 icon = Icons.Filled.Repeat,
                 iconColor = clr(R.color.swatch_pink),
                 onClick = { nav.navigate(Routes.RECURRING) },
+            )
+            SettingRow(
+                "Export data",
+                "Excel or PDF",
+                icon = Icons.Filled.FileDownload,
+                iconColor = Primary,
+                onClick = { nav.navigate(Routes.EXPORT) },
                 divider = false,
             )
         }
         SectionTitle(str(R.string.chat))
         Card(padding = 12.dp) {
+            val allowed = Inbox.notificationsAllowed(ctx)
+            SettingRow(
+                "Message notifications",
+                if (allowed) "On" else "Off. Tap to turn on",
+                icon = Icons.Filled.Notifications,
+                iconColor = if (allowed) Success else Danger,
+                onClick = {
+                    val i =
+                        android.content.Intent(android.provider.Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+                            .putExtra(android.provider.Settings.EXTRA_APP_PACKAGE, ctx.packageName)
+                    runCatching { ctx.startActivity(i) }
+                },
+            )
             SettingRow(
                 str(R.string.friends_and_requests),
                 icon = Icons.Filled.People,

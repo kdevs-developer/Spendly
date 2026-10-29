@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
@@ -54,6 +55,7 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -592,6 +594,7 @@ fun BottomTabBar(
     current: String,
     nav: NavController,
 ) {
+    val unread by com.kdevs.spendly.data.Inbox.unreadTotal.collectAsState()
     Row(
         Modifier.fillMaxWidth().shadow(12.dp, RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
             .background(Surface, RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
@@ -614,6 +617,15 @@ fun BottomTabBar(
             ) {
                 Box(Modifier.clip(RoundedCornerShape(999.dp)).background(bg).padding(horizontal = 18.dp, vertical = 4.dp)) {
                     Icon(t.icon, t.label, tint = if (on) Primary else Muted, modifier = Modifier.size(22.dp))
+                    if (t.route == Routes.CHATS && unread > 0) {
+                        Box(
+                            Modifier.align(Alignment.TopEnd).offset(x = 10.dp, y = (-4).dp).defaultMinSize(minWidth = 16.dp, minHeight = 16.dp)
+                                .clip(CircleShape).background(Danger).padding(horizontal = 4.dp),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Text(if (unread > 99) "99+" else "$unread", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.ExtraBold)
+                        }
+                    }
                 }
                 Text(t.label, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = if (on) Primary else Muted)
             }

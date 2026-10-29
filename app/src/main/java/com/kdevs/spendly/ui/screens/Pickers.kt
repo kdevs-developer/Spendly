@@ -392,10 +392,19 @@ fun CategoryPickerScreen(
     ScreenScaffold(
         if (slot == "manage") str(R.string.categories) else str(R.string.select_category),
         { nav.popBackStack() },
-        actions = { RoundIconButton(Icons.Filled.Add, str(R.string.new_category), { nav.navigate(Routes.categoryEdit("", kind)) }) },
+        // Adding and editing categories happens only in Settings. While choosing for a transaction, it is pick-only.
+        actions = {
+            if (slot == "manage") RoundIconButton(Icons.Filled.Add, str(R.string.new_category), { nav.navigate(Routes.categoryEdit("", kind)) })
+        },
     ) {
         AppTextField(query, { query = it }, str(R.string.search), leading = { Icon(Icons.Filled.Search, null) })
-        if (parents.isEmpty()) EmptyState(Icons.Filled.Category, str(R.string.no_categories), str(R.string.tap_the_plus_button_to_create))
+        if (parents.isEmpty()) {
+            EmptyState(
+                Icons.Filled.Category,
+                str(R.string.no_categories),
+                if (slot == "manage") str(R.string.tap_the_plus_button_to_create) else "Add categories in Settings > Categories.",
+            )
+        }
         parents.forEach { p ->
             val subs = look.subs(p.id)
             Card(padding = 12.dp) {
@@ -416,12 +425,14 @@ fun CategoryPickerScreen(
                         Text(p.name, fontWeight = FontWeight.ExtraBold, color = Ink)
                         if (withSubs && subs.isNotEmpty()) Text(str(R.string.sub_categories_2, subs.size), color = Muted, fontSize = 12.sp)
                     }
-                    RoundIconButton(
-                        Icons.Filled.Edit,
-                        str(R.string.edit_2, p.name),
-                        { nav.navigate(Routes.categoryEdit(p.id, kind)) },
-                        bg = Bg,
-                    )
+                    if (slot == "manage") {
+                        RoundIconButton(
+                            Icons.Filled.Edit,
+                            str(R.string.edit_2, p.name),
+                            { nav.navigate(Routes.categoryEdit(p.id, kind)) },
+                            bg = Bg,
+                        )
+                    }
                     if (withSubs && subs.isNotEmpty()) {
                         Icon(
                             if (p.id in open || query.isNotBlank()) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,

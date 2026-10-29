@@ -1,6 +1,14 @@
 package com.kdevs.spendly
 
+import android.Manifest
+import android.content.Intent
+import android.content.pm.PackageManager
 import android.content.res.Configuration
+import android.os.Build
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.runtime.LaunchedEffect
+import androidx.core.content.ContextCompat
+import com.kdevs.spendly.data.Inbox
 import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
 import android.os.SystemClock
@@ -33,11 +41,37 @@ class MainActivity : FragmentActivity() {
     private var locked by mutableStateOf(false)
     private var leftAt = 0L
 
+    // Android 13+ shows no notifications until the person allows them.
+    private val notificationPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) { }
+
+    private fun askForNotifications() {
+        if (Build.VERSION.SDK_INT < 33) return
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED) return
+        val sp = getSharedPreferences("spendly_inbox", MODE_PRIVATE)
+        if (sp.getBoolean("asked_notifications", false)) return // ask once; Settings has a shortcut after that
+        sp.edit().putBoolean("asked_notifications", true).apply()
+        notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
+    }
+
+    private fun readChatExtra(intent: Intent?) {
+        intent?.getStringExtra(Inbox.EXTRA_CHAT)?.takeIf { it.isNotBlank() }?.let {
+            Inbox.openRequest.value = it
+            intent.removeExtra(Inbox.EXTRA_CHAT)
+        }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        readChatExtra(intent)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         // Swaps Theme.Spendly.Starting for Theme.Spendly once the first frame is ready.
         installSplashScreen()
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        readChatExtra(intent)
 
         // "System" theme follows the phone. The activity restarts when the phone switches mode.
         Prefs.systemDark = (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
@@ -49,6 +83,7 @@ class MainActivity : FragmentActivity() {
         setContent {
             val dark = Prefs.isDark
             val uid by Repo.uidFlow.collectAsState()
+            LaunchedEffect(uid) { if (uid != null) askForNotifications() }
             // Status and navigation bar icons follow the app theme, not only the phone's.
             DisposableEffect(dark) {
                 this@MainActivity.enableEdgeToEdge(

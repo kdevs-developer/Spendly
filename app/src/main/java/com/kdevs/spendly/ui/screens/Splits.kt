@@ -1,5 +1,6 @@
 package com.kdevs.spendly.ui.screens
 
+import android.content.Intent
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -9,7 +10,9 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
+import androidx.compose.material3.Switch
 import androidx.compose.runtime.*
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -56,9 +59,8 @@ fun SplitsScreen(
     val me = Repo.uid
     val chat = rememberChat(id)
     val entries = rememberSplits(id)
-    var confirm by remember { mutableStateOf<SplitEntry?>(null) }
     val saver = rememberSaver()
-    val scope = rememberCoroutineScope()
+    val ctx = LocalContext.current
     val balances = SplitMath.balances(entries)
     val mine = balances[me] ?: 0L
     val plan = SplitMath.simplify(balances)
@@ -134,23 +136,113 @@ fun SplitsScreen(
                             icon = if (settle) Icons.Filled.CheckCircle else Icons.Filled.Receipt,
                             iconColor = if (settle) Success else clr(R.color.swatch_teal),
                             trailing = { Text(formatPaise(e.totalPaise), fontWeight = FontWeight.ExtraBold, color = Ink) },
-                            onClick = if (e.createdBy == me) ({ confirm = e }) else null,
+                            onClick = { nav.navigate(Routes.splitEntry(id, e.id)) },
                             divider = i < entries.lastIndex,
                         )
                     }
                 }
             }
-            if (entries.any { it.createdBy == me }) Hint(str(R.string.tap_an_entry_you_added_to))
+            if (entries.isNotEmpty()) {
+                Hint("Tap an entry to see who owes what.")
+                SecondaryButton("Share summary", {
+                    val text =
+                        buildString {
+                            append(chat?.name?.ifBlank { null } ?: "Spendly split").append("\n")
+                            if (plan.isEmpty()) {
+                                append("All settled up.")
+                            } else {
+                                plan.forEach { t -> append("${chat?.nameOf(t.from, me)} pays ${chat?.nameOf(t.to, me)} ${formatPaise(t.paise)}\n") }
+                            }
+                        }.trim()
+                    val i = Intent(Intent.ACTION_SEND).apply { type = "text/plain"; putExtra(Intent.EXTRA_TEXT, text) }
+                    ctx.startActivity(Intent.createChooser(i, "Share summary"))
+                })
+            }
             Spacer(Modifier.height(80.dp))
         }
         Box(Modifier.align(Alignment.BottomEnd).navigationBarsPadding().padding(20.dp)) {
             Fab(Icons.Filled.Add, str(R.string.add_expense)) { nav.navigate(Routes.addSplit(id)) }
         }
     }
-    confirm?.let { e ->
+}
+
+/** One expense or payment: who paid, the split type, and what each person owes. The person who added it can delete it. */
+@Composable
+fun SplitEntryScreen(
+    nav: NavController,
+    chatId: String,
+    entryId: String,
+) {
+    val me = Repo.uid
+    val chat = rememberChat(chatId)
+    val entries = rememberSplits(chatId)
+    val e = entries.firstOrNull { it.id == entryId }
+    var confirm by remember { mutableStateOf(false) }
+    val saver = rememberSaver()
+    val scope = rememberCoroutineScope()
+    ScreenScaffold(if (e?.kind == "settlement") "Payment" else "Expense", { nav.popBackStack() }) {
+        if (e == null) {
+            EmptyState(Icons.Filled.SearchOff, str(R.string.not_found), "This entry was deleted.")
+            return@ScreenScaffold
+        }
+        val settle = e.kind == "settlement"
+        HeroCard(brush = androidx.compose.ui.graphics.Brush.linearGradient(listOf(clr(R.color.swatch_teal), clr(R.color.swatch_teal_dark)))) {
+            Text(
+                if (settle) "${chat?.nameOf(e.paidBy, me)} paid ${chat?.nameOf(e.settleTo, me)}" else e.description,
+                color = Color.White.copy(alpha = 0.9f),
+                fontWeight = FontWeight.SemiBold,
+            )
+            Text(formatPaise(e.totalPaise), color = Color.White, fontWeight = FontWeight.ExtraBold, fontSize = 38.sp)
+        }
+        Card(padding = 12.dp) {
+            if (!settle) SettingRow("Paid by", chat?.nameOf(e.paidBy, me) ?: "", icon = Icons.Filled.Person, iconColor = Primary)
+            SettingRow(
+                str(R.string.date),
+                fullDate(e.dateMillis),
+                icon = Icons.Filled.CalendarMonth,
+                iconColor = Muted,
+                divider = !settle,
+            )
+            if (!settle) {
+                SettingRow(
+                    "Split",
+                    when (e.splitType) {
+                        "exact" -> "Exact amounts"
+                        "percent" -> "By percentage"
+                        "shares" -> "By shares"
+                        else -> "Equally"
+                    },
+                    icon = Icons.Filled.CallSplit,
+                    iconColor = clr(R.color.swatch_teal),
+                    divider = false,
+                )
+            }
+        }
+        if (!settle && e.owed.isNotEmpty()) {
+            SectionTitle("Who owes what")
+            Card(padding = 12.dp) {
+                val list = e.owed.entries.toList()
+                list.forEachIndexed { i, (u, p) ->
+                    SettingRow(
+                        chat?.nameOf(u, me) ?: "",
+                        leading = { Avatar(chat?.nameOf(u, me) ?: "?", colorKeyFor(u), 38.dp) },
+                        trailing = { Text(formatPaise(p), fontWeight = FontWeight.ExtraBold, color = Ink) },
+                        divider = i < list.lastIndex,
+                    )
+                }
+            }
+        }
+        saver.error?.let { Text(it, color = Danger) }
+        if (e.createdBy == me) {
+            SecondaryButton(str(R.string.delete), { confirm = true }, danger = true)
+        } else {
+            Hint("Only the person who added this can delete it.", center = true)
+        }
+    }
+    if (confirm) {
         ConfirmDialog(str(R.string.delete_this_entry), str(R.string.balances_will_be_recalculated), str(R.string.delete), {
-            saver.run(scope, {}) { Repo.deleteSplit(id, e.id) }
-        }, { confirm = null }, danger = true)
+            saver.run(scope, onDone = { nav.popBackStack() }) { Repo.deleteSplit(chatId, entryId) }
+        }, { confirm = false }, danger = true)
     }
 }
 
@@ -170,9 +262,15 @@ fun AddSplitScreen(
     var included by remember(chat?.members) { mutableStateOf(chat?.members?.toSet() ?: emptySet()) }
     var values by remember { mutableStateOf(mapOf<String, String>()) }
     var payerMenu by remember { mutableStateOf(false) }
+    var recordShare by remember { mutableStateOf(false) }
+    var shareAccount by remember { mutableStateOf("") }
+    val accounts by Repo.accounts.collectAsState()
+    val look = rememberLookup()
     val saver = rememberSaver()
     val scope = rememberCoroutineScope()
+    LaunchedEffect(accounts) { if (shareAccount.isBlank()) shareAccount = accounts.firstOrNull { !it.archived }?.id ?: "" }
     entry.Picked<Long>("pickedDate") { date = it }
+    entry.Picked<String>("pickedAccount") { shareAccount = it }
 
     val members = chat?.members.orEmpty()
     val total = parseRupees(amount) ?: 0L
@@ -212,7 +310,8 @@ fun AddSplitScreen(
             owed == null -> str(R.string.give_at_least_one_share)
             else -> null
         }
-    val ok = total > 0 && desc.isNotBlank() && owed != null && ids.isNotEmpty()
+    val myShare = owed?.get(me) ?: 0L
+    val ok = total > 0 && desc.isNotBlank() && owed != null && ids.isNotEmpty() && (!recordShare || shareAccount.isNotBlank())
 
     ScreenScaffold(str(R.string.add_group_expense), { nav.popBackStack() }, bottomBar = {
         SavedBar(str(R.string.save_expense), saver, ok, onSave = {
@@ -229,6 +328,14 @@ fun AddSplitScreen(
                         dateMillis = date,
                     ),
                 )
+                // Your own share also goes into your expenses, so your balances and reports include it.
+                if (recordShare && myShare > 0) {
+                    Repo.put(
+                        "txns",
+                        "",
+                        Txn(kind = "expense", amountPaise = myShare, accountId = shareAccount, note = desc.trim(), dateMillis = date),
+                    )
+                }
             }
         })
     }) {
@@ -294,6 +401,25 @@ fun AddSplitScreen(
                     }
                 }
                 if (i < members.lastIndex) HorizontalDivider(color = Line)
+            }
+        }
+        Card(padding = 12.dp) {
+            SettingRow(
+                "Add my share to my expenses",
+                if (myShare > 0) formatPaise(myShare) else "",
+                icon = Icons.Filled.AccountBalanceWallet,
+                iconColor = Primary,
+                trailing = { Switch(recordShare, { recordShare = it }) },
+                divider = recordShare,
+            )
+            if (recordShare) {
+                PickRowLeading(
+                    str(R.string.account),
+                    look.account(shareAccount)?.name ?: "",
+                    { IconCircle(look.account(shareAccount)?.icon ?: "bank", look.account(shareAccount)?.colorKey ?: "blue", 38.dp) },
+                    { nav.navigate(Routes.accountPicker("account")) },
+                    divider = false,
+                )
             }
         }
         if (type in 2..3 && owed != null) Hint(ids.joinToString("  ·  ") { "${chat?.nameOf(it, me)} ${formatPaise(owed[it] ?: 0L)}" })

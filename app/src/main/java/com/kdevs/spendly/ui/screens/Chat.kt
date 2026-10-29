@@ -2,7 +2,6 @@ package com.kdevs.spendly.ui.screens
 
 import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -71,6 +70,21 @@ private fun Chat.otherId(me: String): String = members.firstOrNull { it != me } 
 
 private fun Message.millis(): Long = createdAt?.toDate()?.time ?: System.currentTimeMillis()
 
+/** Pending = still on this phone. Sent = on the server. Delivered = on every other phone. Read = opened by everyone. */
+private enum class Delivery { Pending, Sent, Delivered, Read }
+
+private fun Message.delivery(
+    me: String,
+    members: List<String>,
+): Delivery {
+    if (pending) return Delivery.Pending
+    val others = members.filter { it != me }
+    if (others.isEmpty()) return Delivery.Sent
+    if (others.all { it in readBy }) return Delivery.Read
+    if (others.all { it in deliveredTo || it in readBy }) return Delivery.Delivered
+    return Delivery.Sent
+}
+
 /** Reaction keys and their icons. Drawn as icons, not emoji, so they match the app. */
 private val reactionIcons =
     listOf(
@@ -126,19 +140,39 @@ fun ChatListScreen(nav: NavController) {
                         } else {
                             IconCircle(if (c.type == "split") "wallet" else "kids", if (c.type == "split") "teal" else "purple", 48.dp)
                         }
+                        val unread = (c.unread[me] ?: 0L).toInt()
                         Column(Modifier.weight(1f)) {
                             Text(title, fontWeight = FontWeight.ExtraBold, color = Ink, maxLines = 1)
                             Text(
                                 c.lastMessage.ifBlank {
                                     str(R.string.no_messages_yet)
                                 },
-                                color = Muted,
+                                color = if (unread > 0) Ink else Muted,
+                                fontWeight = if (unread > 0) FontWeight.Bold else FontWeight.Normal,
                                 fontSize = 13.sp,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
                             )
                         }
-                        c.lastAt?.let { Text(timeOf(it.toDate().time), color = Muted, fontSize = 12.sp, fontWeight = FontWeight.SemiBold) }
+                        Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            c.lastAt?.let {
+                                Text(
+                                    timeOf(it.toDate().time),
+                                    color = if (unread > 0) Primary else Muted,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                )
+                            }
+                            if (unread > 0) {
+                                Box(
+                                    Modifier.defaultMinSize(minWidth = 20.dp, minHeight = 20.dp).clip(CircleShape).background(Primary)
+                                        .padding(horizontal = 6.dp),
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    Text(if (unread > 99) "99+" else "$unread", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.ExtraBold)
+                                }
+                            }
+                        }
                     }
                     if (i < chats.lastIndex) HorizontalDivider(color = Line)
                 }
@@ -332,7 +366,7 @@ fun AddFriendScreen(nav: NavController) {
                         r,
                     ->
                     SettingRow(
-                        str(R.string.request, i + 1),
+                        r.toName.ifBlank { str(R.string.request, i + 1) },
                         str(R.string.pending),
                         icon = Icons.Filled.Schedule,
                         iconColor = Faint,
@@ -344,81 +378,170 @@ fun AddFriendScreen(nav: NavController) {
     }
 }
 
+/** Friends and requests: one screen, three tabs (Friends, Requests, Sent), with a search box and a code card on top. */
 @Composable
 fun RequestsScreen(nav: NavController) {
     val allIncoming by Repo.incomingRequests.collectAsState()
+    val outgoing by Repo.outgoingRequests.collectAsState()
     val myProfile by Repo.profile.collectAsState()
     val incoming = allIncoming.filter { it.from !in myProfile.blocked } // blocked people cannot nudge you
     val friends by Repo.friends.collectAsState()
     val scope = rememberCoroutineScope()
     val saver = rememberSaver()
+    var tab by remember { mutableIntStateOf(0) }
+    var query by remember { mutableStateOf("") }
+    var removeFriend by remember { mutableStateOf<Friend?>(null) }
+    var blockFriend by remember { mutableStateOf<Friend?>(null) }
+    val shown = friends.filter { query.isBlank() || it.name.contains(query, true) }.sortedBy { it.name.lowercase() }
+
     ScreenScaffold(
         str(R.string.friends_and_requests),
         { nav.popBackStack() },
         actions = { RoundIconButton(Icons.Filled.PersonAdd, str(R.string.add_friend), { nav.navigate(Routes.ADD_FRIEND) }) },
-    ) {
-        SectionTitle(str(R.string.requests))
-        if (incoming.isEmpty()) Hint(str(R.string.no_new_requests))
-        incoming.forEach { r ->
-            Card {
+        header = {
+            // Your code, always one tap away.
+            HeroCard {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Avatar(r.fromName, colorKeyFor(r.from), 46.dp)
                     Column(Modifier.weight(1f)) {
-                        Text(r.fromName, fontWeight = FontWeight.ExtraBold, color = Ink)
-                        Hint(str(R.string.wants_to_be_friends))
+                        Text(str(R.string.your_friend_code), color = Color.White.copy(alpha = 0.85f), fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
+                        Text(
+                            myProfile.code.ifBlank { "..." },
+                            color = Color.White,
+                            fontWeight = FontWeight.ExtraBold,
+                            fontSize = 24.sp,
+                            letterSpacing = 2.sp,
+                        )
                     }
-                }
-                Spacer(Modifier.height(10.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Box(Modifier.weight(1f)) {
-                        SecondaryButton(str(R.string.decline), { saver.run(scope, {}) { Repo.answerRequest(r, false) } }, danger = true)
-                    }
-                    Box(
-                        Modifier.weight(1f),
-                    ) { PrimaryButton(str(R.string.accept), { saver.run(scope, {}) { Repo.answerRequest(r, true) } }) }
+                    HeroPill(Icons.Filled.QrCode2, "Share") { nav.navigate(Routes.ADD_FRIEND) }
                 }
             }
-        }
-        saver.error?.let { Text(it, color = Danger) }
-        SectionTitle(str(R.string.friends))
-        if (friends.isEmpty()) {
-            Hint(str(R.string.no_friends_yet_2))
-        } else {
-            Card(padding = 12.dp) {
-                friends.forEachIndexed { i, f ->
-                    SettingRow(
-                        f.name,
-                        f.code,
-                        leading = { Avatar(f.name, colorKeyFor(f.id)) },
-                        divider = i < friends.lastIndex,
-                        trailing = {
+            SegmentedControl(
+                listOf("Friends ${friends.size}", "Requests ${incoming.size}", "Sent ${outgoing.size}"),
+                tab,
+                { tab = it },
+            )
+        },
+    ) {
+        saver.error?.let { Text(it, color = Danger, fontWeight = FontWeight.SemiBold) }
+        when (tab) {
+            0 -> {
+                if (friends.size > 5) AppTextField(query, { query = it }, "Search friends", leading = { Icon(Icons.Filled.Search, null) })
+                if (friends.isEmpty()) {
+                    EmptyState(Icons.Filled.People, str(R.string.no_friends_yet), "Share your code or scan a friend's QR to connect.")
+                    PrimaryButton(str(R.string.add_friend), { nav.navigate(Routes.ADD_FRIEND) })
+                } else if (shown.isEmpty()) {
+                    Hint("No friend matches \"$query\".")
+                } else {
+                    shown.forEach { f ->
+                        Card(padding = 14.dp) {
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                Avatar(f.name, colorKeyFor(f.id), 48.dp)
+                                Column(Modifier.weight(1f)) {
+                                    Text(f.name, fontWeight = FontWeight.ExtraBold, color = Ink, maxLines = 1)
+                                    Text(f.code, color = Muted, fontSize = 12.sp, letterSpacing = 1.sp)
+                                }
+                                RoundIconButton(Icons.AutoMirrored.Filled.Chat, "Message ${f.name}", {
+                                    saver.run(scope, onDone = {}) {
+                                        val id = Repo.openDirectChat(f)
+                                        nav.navigate(Routes.chat(id))
+                                    }
+                                }, tint = Color.White, bg = Primary)
+                            }
+                            Spacer(Modifier.height(10.dp))
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                FriendAction(Icons.Filled.PersonRemove, str(R.string.remove), Modifier.weight(1f)) { removeFriend = f }
+                                FriendAction(Icons.Filled.Block, str(R.string.block), Modifier.weight(1f)) { blockFriend = f }
+                            }
+                        }
+                    }
+                }
+                Card(padding = 12.dp) {
+                    SettingRow(str(R.string.blocked_people), icon = Icons.Filled.Block, iconColor = Danger, onClick = { nav.navigate(Routes.BLOCKED) }, divider = false)
+                }
+            }
+            1 -> {
+                if (incoming.isEmpty()) {
+                    EmptyState(Icons.Filled.MarkEmailRead, "No new requests", "When someone adds you with your code, it shows up here.")
+                }
+                incoming.forEach { r ->
+                    Card(padding = 14.dp) {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            Avatar(r.fromName, colorKeyFor(r.from), 52.dp)
+                            Column(Modifier.weight(1f)) {
+                                Text(r.fromName, fontWeight = FontWeight.ExtraBold, color = Ink, fontSize = 16.sp)
+                                Text(str(R.string.wants_to_be_friends), color = Muted, fontSize = 13.sp)
+                                if (r.fromCode.isNotBlank()) Text(r.fromCode, color = Faint, fontSize = 11.sp, letterSpacing = 1.sp)
+                            }
+                        }
+                        Spacer(Modifier.height(12.dp))
+                        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                            Box(Modifier.weight(1f)) {
+                                SecondaryButton(str(R.string.decline), { saver.run(scope, {}) { Repo.answerRequest(r, false) } }, danger = true)
+                            }
+                            Box(Modifier.weight(1f)) {
+                                PrimaryButton(str(R.string.accept), { saver.run(scope, {}) { Repo.answerRequest(r, true) } }, busy = saver.busy)
+                            }
+                        }
+                    }
+                }
+            }
+            else -> {
+                if (outgoing.isEmpty()) {
+                    EmptyState(Icons.Filled.Send, "Nothing waiting", "Requests you send stay here until the other person answers.")
+                }
+                outgoing.forEach { r ->
+                    Card(padding = 14.dp) {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            Avatar(r.toName.ifBlank { "?" }, colorKeyFor(r.to), 48.dp)
+                            Column(Modifier.weight(1f)) {
+                                Text(r.toName.ifBlank { str(R.string.friend) }, fontWeight = FontWeight.ExtraBold, color = Ink, maxLines = 1)
+                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                    Icon(Icons.Filled.Schedule, null, tint = Faint, modifier = Modifier.size(14.dp))
+                                    Text(str(R.string.pending), color = Muted, fontSize = 12.sp)
+                                }
+                            }
                             Text(
-                                str(
-                                    R.string.remove,
-                                ),
+                                "Cancel",
                                 color = Danger,
                                 fontWeight = FontWeight.Bold,
-                                modifier =
-                                    Modifier.clip(CircleShape).clickable {
-                                        saver.run(scope, {}) { Repo.removeFriend(f.id) }
-                                    }.padding(8.dp),
+                                modifier = Modifier.clip(CircleShape).clickable { saver.run(scope, {}) { Repo.cancelRequest(r) } }.padding(10.dp),
                             )
-                        },
-                    )
+                        }
+                    }
                 }
             }
         }
-        SettingRowCard(str(R.string.blocked_people), Icons.Filled.Block) { nav.navigate(Routes.BLOCKED) }
+    }
+    removeFriend?.let { f ->
+        ConfirmDialog("Remove ${f.name}?", "They will no longer be in your friends list. Your chat history stays.", str(R.string.remove), {
+            saver.run(scope, {}) { Repo.removeFriend(f.id) }
+        }, { removeFriend = null }, danger = true)
+    }
+    blockFriend?.let { f ->
+        ConfirmDialog(str(R.string.block_this_person), str(R.string.you_will_stop_seeing_their_messages), str(R.string.block), {
+            saver.run(scope, {}) {
+                Repo.block(f.id)
+                Repo.removeFriend(f.id)
+            }
+        }, { blockFriend = null }, danger = true)
     }
 }
 
 @Composable
-private fun SettingRowCard(
+private fun FriendAction(
+    icon: ImageVector,
     label: String,
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    modifier: Modifier,
     onClick: () -> Unit,
 ) {
-    Card(padding = 12.dp) { SettingRow(label, icon = icon, iconColor = Danger, onClick = onClick, divider = false) }
+    Row(
+        modifier.clip(RoundedCornerShape(12.dp)).background(Bg).clickable(onClick = onClick).padding(vertical = 9.dp),
+        horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(icon, null, tint = Muted, modifier = Modifier.size(16.dp))
+        Text(label, color = Muted, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+    }
 }
 
 @Composable
@@ -551,10 +674,14 @@ fun ConversationScreen(
     var replyTo by remember { mutableStateOf<Message?>(null) }
     val scope = rememberCoroutineScope()
     val list = rememberLazyListState()
-    val picker =
-        rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
-            if (uri != null) scope.launchIO { Repo.sendImage(id, uri) }
-        }
+    val ctx = LocalContext.current
+
+    // No alert for the chat that is already on screen; opening it also clears its notification.
+    DisposableEffect(id) {
+        Inbox.openChatId = id
+        Inbox.clear(ctx, id)
+        onDispose { if (Inbox.openChatId == id) Inbox.openChatId = null }
+    }
     entry.Picked<String>("replyTo") { mid -> replyTo = msgs.firstOrNull { it.id == mid } }
 
     LaunchedEffect(msgs.size) { if (msgs.isNotEmpty()) list.animateScrollToItem(msgs.lastIndex) }
@@ -628,7 +755,8 @@ fun ConversationScreen(
                     )
                 }
             }
-            if (c?.type == "split") RoundIconButton(Icons.Filled.Receipt, str(R.string.split_ledger), { nav.navigate(Routes.splits(id)) })
+            // Splitting a bill works in every chat: one friend, a group, or a split group.
+            if (c != null) RoundIconButton(Icons.Filled.Receipt, str(R.string.split_ledger), { nav.navigate(Routes.splits(id)) })
         }
         LazyColumn(
             Modifier.weight(1f).fillMaxWidth().padding(horizontal = 16.dp),
@@ -651,9 +779,20 @@ fun ConversationScreen(
                         m,
                         mine = m.senderId == me,
                         group = c?.type != "direct",
-                        members = c?.members?.size ?: 2,
+                        me = me,
+                        memberIds = c?.members.orEmpty(),
                         onLong = { nav.navigate(Routes.messageActions(id, m.id)) },
-                        onImage = { nav.navigate(Routes.image(id, m.id)) },
+                        onImage = {
+                            if (m.type == "video") {
+                                runCatching {
+                                    ctx.startActivity(
+                                        Intent(Intent.ACTION_VIEW).setDataAndType(android.net.Uri.parse(m.imageUrl), "video/*"),
+                                    )
+                                }
+                            } else {
+                                nav.navigate(Routes.image(id, m.id))
+                            }
+                        },
                     )
                 }
             }
@@ -678,7 +817,7 @@ fun ConversationScreen(
                             fontSize = 12.sp,
                         )
                         Text(
-                            if (r.type == "image") str(R.string.photo) else r.text,
+                            if (r.type == "image") str(R.string.photo) else if (r.type == "video") "Video" else r.text,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                             color = Ink,
@@ -695,13 +834,6 @@ fun ConversationScreen(
                 Spacer(Modifier.height(8.dp))
             }
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                RoundIconButton(
-                    Icons.Filled.Image,
-                    str(R.string.send_a_photo),
-                    { picker.launch("image/*") },
-                    tint = Primary,
-                    bg = PrimaryContainer,
-                )
                 androidx.compose.material3.OutlinedTextField(
                     text,
                     { text = it },
@@ -741,7 +873,8 @@ private fun Bubble(
     m: Message,
     mine: Boolean,
     group: Boolean,
-    members: Int,
+    me: String,
+    memberIds: List<String>,
     onLong: () -> Unit,
     onImage: () -> Unit,
 ) {
@@ -767,7 +900,10 @@ private fun Bubble(
                         Surface
                     },
                 )
-                .combinedClickable(onClick = { if (m.type == "image" && !m.deleted) onImage() }, onLongClick = { if (!m.deleted) onLong() })
+                .combinedClickable(
+                    onClick = { if ((m.type == "image" || m.type == "video") && !m.deleted) onImage() },
+                    onLongClick = { if (!m.deleted) onLong() },
+                )
                 .padding(horizontal = 12.dp, vertical = 8.dp),
         ) {
             val ink = if (mine && !m.deleted) Color.White else Ink
@@ -796,6 +932,16 @@ private fun Bubble(
                         Modifier.size(220.dp).clip(RoundedCornerShape(14.dp)),
                         contentScale = ContentScale.Crop,
                     )
+                m.type == "video" ->
+                    Box(
+                        Modifier.size(220.dp).clip(RoundedCornerShape(14.dp)).background(Color.Black.copy(alpha = 0.85f)),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Box(Modifier.size(54.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.25f)), contentAlignment = Alignment.Center) {
+                            Icon(Icons.Filled.PlayArrow, "Play video", tint = Color.White, modifier = Modifier.size(34.dp))
+                        }
+                        Text("Video", color = Color.White.copy(alpha = 0.8f), fontSize = 12.sp, modifier = Modifier.align(Alignment.BottomStart).padding(10.dp))
+                    }
                 else -> Text(m.text, color = ink, fontSize = 15.sp)
             }
             Row(
@@ -805,10 +951,20 @@ private fun Bubble(
             ) {
                 Text(timeOf(m.millis()), color = ink.copy(alpha = 0.7f), fontSize = 10.sp)
                 if (mine && !m.deleted) {
+                    val d = m.delivery(me, memberIds)
                     Icon(
-                        if (m.readBy.size >= members) Icons.Filled.DoneAll else Icons.Filled.Done,
-                        if (m.readBy.size >= members) str(R.string.seen) else str(R.string.sent),
-                        tint = if (m.readBy.size >= members) clr(R.color.read_receipt) else ink.copy(alpha = 0.7f),
+                        when (d) {
+                            Delivery.Pending -> Icons.Filled.Schedule
+                            Delivery.Sent -> Icons.Filled.Done
+                            else -> Icons.Filled.DoneAll
+                        },
+                        when (d) {
+                            Delivery.Pending -> "Sending"
+                            Delivery.Sent -> str(R.string.sent)
+                            Delivery.Delivered -> "Received"
+                            Delivery.Read -> str(R.string.seen)
+                        },
+                        tint = if (d == Delivery.Read) clr(R.color.read_receipt) else ink.copy(alpha = 0.7f),
                         modifier = Modifier.size(14.dp),
                     )
                 }
@@ -870,7 +1026,7 @@ fun MessageActionsScreen(
         val canDeleteAll = mine && left > 0 && !m.deleted
         Column(Modifier.fillMaxWidth(), horizontalAlignment = if (mine) Alignment.End else Alignment.Start) {
             Box(Modifier.widthIn(max = 280.dp).clip(RoundedCornerShape(20.dp)).background(if (mine) Primary else Surface).padding(14.dp)) {
-                Text(if (m.type == "image") str(R.string.photo) else m.text, color = if (mine) Color.White else Ink, fontSize = 15.sp)
+                Text(if (m.type == "image") str(R.string.photo) else if (m.type == "video") "Video" else m.text, color = if (mine) Color.White else Ink, fontSize = 15.sp)
             }
             Hint(timeOf(m.millis()) + " · " + fullDate(m.millis()))
         }
@@ -903,10 +1059,9 @@ fun MessageActionsScreen(
                     nav.popBackStack()
                 })
             }
-            val others = (chat?.members?.size ?: 2) - 1
             SettingRow(
                 str(R.string.message_info),
-                if (mine) str(R.string.seen_by_of, (m.readBy.size - 1).coerceAtLeast(0), others) else str(R.string.sent_by, m.senderName),
+                if (mine) timeOf(m.millis()) + " · " + fullDate(m.millis()) else str(R.string.sent_by, m.senderName),
                 icon = Icons.Filled.Info,
                 iconColor = Muted,
             )
@@ -923,6 +1078,35 @@ fun MessageActionsScreen(
                 scope.launchIO { Repo.deleteForMe(m) }
                 nav.popBackStack()
             }, divider = false)
+        }
+        if (mine) {
+            val others = chat?.members.orEmpty().filter { it != me }
+            SectionTitle("Delivery")
+            Card(padding = 12.dp) {
+                if (m.pending) {
+                    SettingRow("Sending", "Waiting for a connection", icon = Icons.Filled.Schedule, iconColor = Muted, divider = false)
+                } else {
+                    SettingRow("Sent", timeOf(m.millis()), icon = Icons.Filled.Done, iconColor = Muted, divider = others.isNotEmpty())
+                    others.forEachIndexed { i, u ->
+                        val n = chat?.memberNames?.get(u) ?: str(R.string.member)
+                        val read = u in m.readBy
+                        val got = read || u in m.deliveredTo
+                        SettingRow(
+                            n,
+                            if (read) "Read" else if (got) "Received" else "Not received yet",
+                            leading = { Avatar(n, colorKeyFor(u), 38.dp) },
+                            trailing = {
+                                Icon(
+                                    if (got) Icons.Filled.DoneAll else Icons.Filled.Done,
+                                    null,
+                                    tint = if (read) clr(R.color.swatch_blue) else Faint,
+                                )
+                            },
+                            divider = i < others.lastIndex,
+                        )
+                    }
+                }
+            }
         }
         Hint(str(R.string.you_can_delete_for_everyone_within), center = true)
     }
@@ -1089,7 +1273,7 @@ fun ChatInfoScreen(
                 }, busy = saver.busy)
             }
         }
-        if (c.type == "split") {
+        run {
             Card(padding = 12.dp) {
                 SettingRow(
                     str(
@@ -1117,10 +1301,10 @@ fun ChatInfoScreen(
                     trailing =
                         if (uid != me && !direct) {
                             (
-                                {
-                                    Text(str(R.string.report), color = Danger, fontWeight = FontWeight.Bold, fontSize = 13.sp)
-                                }
-                            )
+                                    {
+                                        Text(str(R.string.report), color = Danger, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                    }
+                                    )
                         } else {
                             null
                         },

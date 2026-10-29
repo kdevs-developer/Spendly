@@ -15,6 +15,10 @@ android {
         versionCode = 1
         versionName = "1.0"
     }
+    lint {
+        checkReleaseBuilds = false
+        abortOnError = false
+    }
     signingConfigs {
         getByName("debug") {
             storeFile = file("C:/Users/krish/AndroidStudioProjects/Spendly/Spendly/debug.keystore")

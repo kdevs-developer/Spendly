@@ -244,6 +244,8 @@ fun ActivityScreen(nav: NavController) {
                 }
             }
             Spacer(Modifier.width(8.dp))
+            RoundIconButton(Icons.Filled.FileDownload, "Export", { nav.navigate(Routes.EXPORT) })
+            Spacer(Modifier.width(8.dp))
             RoundIconButton(Icons.Filled.Checklist, str(R.string.select), { nav.navigate(Routes.SELECT) })
         },
         fab = { Fab(Icons.Filled.Add, str(R.string.add_transaction)) { nav.navigate(Routes.txnAdd()) } },

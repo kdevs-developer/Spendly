@@ -1,31 +1,31 @@
 package com.kdevs.spendly.data
 
-import android.app.NotificationChannel
-import android.app.NotificationManager
-import android.os.Build
-import androidx.core.app.NotificationCompat
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
-import com.kdevs.spendly.R
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 
-/** Shows a notification for new chat messages and saves the device token for the signed-in user. */
+/**
+ * Receives pushes (the app may be closed). It shows the notification, and tells the sender the message
+ * reached this phone. The server should send a data-only message (title, body, chatId) so this always runs.
+ */
 class SpendlyMessagingService : FirebaseMessagingService() {
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
     override fun onNewToken(token: String) {
         Repo.saveToken(token)
     }
 
     override fun onMessageReceived(message: RemoteMessage) {
-        val nm = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
-        if (Build.VERSION.SDK_INT >= 26) {
-            nm.createNotificationChannel(NotificationChannel("chat", str(R.string.chat_messages), NotificationManager.IMPORTANCE_HIGH))
-        }
-        val title = message.notification?.title ?: message.data["title"] ?: str(R.string.spendly)
+        val chatId = message.data[Inbox.EXTRA_CHAT].orEmpty()
+        val title = message.notification?.title ?: message.data["title"] ?: "Spendly"
         val body = message.notification?.body ?: message.data["body"].orEmpty()
-        val n =
-            NotificationCompat.Builder(this, "chat")
-                .setSmallIcon(R.drawable.ic_notification)
-                .setColor(androidx.core.content.ContextCompat.getColor(this, R.color.notification_accent))
-                .setContentTitle(title).setContentText(body).setAutoCancel(true).build()
-        nm.notify(System.currentTimeMillis().toInt(), n)
+        if (chatId.isNotBlank()) scope.launch { runCatching { Repo.markDelivered(chatId) } }
+        // While the app is on screen the in-app banner already handles it.
+        if (Inbox.inForeground) return
+        if (chatId == Inbox.openChatId) return
+        Inbox.showSystem(this, chatId.ifBlank { "chat" }, title, body)
     }
 }

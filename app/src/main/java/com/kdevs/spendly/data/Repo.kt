@@ -23,7 +23,9 @@ import com.google.firebase.auth.userProfileChangeRequest
 import com.google.firebase.firestore.CollectionReference
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestoreException
+import com.google.firebase.firestore.MetadataChanges
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.SetOptions
 import com.google.firebase.firestore.Source
@@ -342,6 +344,12 @@ object Repo {
         error(str(R.string.could_not_create_a_friend_code))
     }
 
+    /** Saves this phone's push token. Called on every app start, because a token created while signed out would be lost. */
+    suspend fun refreshToken() {
+        if (!isSignedIn) return
+        FirebaseMessaging.getInstance().token.await().let { saveToken(it) }
+    }
+
     fun saveToken(token: String) {
         if (!isSignedIn) return
         db.collection("users").document(uid).set(mapOf("fcmToken" to token), com.google.firebase.firestore.SetOptions.merge())
@@ -623,6 +631,11 @@ object Repo {
         }
     }
 
+    /** Withdraws a request we sent. */
+    suspend fun cancelRequest(req: FriendRequest) {
+        db.collection("requests").document(req.id).delete().await()
+    }
+
     suspend fun removeFriend(id: String) {
         remove("friends", id)
     }
@@ -735,14 +748,47 @@ object Repo {
             callbackFlow {
                 val reg =
                     db.collection("chats").document(chatId).collection("messages")
-                        .orderBy("createdAt").addSnapshotListener { s, _ -> if (s != null) trySend(s.toObjects(Message::class.java)) }
+                        .orderBy("createdAt")
+                        // Metadata changes tell us when a message moves from "on this phone" to "on the server".
+                        .addSnapshotListener(MetadataChanges.INCLUDE) { s, _ ->
+                            if (s != null) {
+                                trySend(
+                                    s.documents.mapNotNull { d ->
+                                        d.toObject(Message::class.java, DocumentSnapshot.ServerTimestampBehavior.ESTIMATE)
+                                            ?.also { it.pending = d.metadata.hasPendingWrites() }
+                                    },
+                                )
+                            }
+                        }
                 awaitClose { reg.remove() }
             },
             hiddenIds,
             profile,
         ) { list, hidden, p -> list.filter { it.id !in hidden && it.senderId !in p.blocked } }
 
-    suspend fun sendText(
+    /** The fields every new message sets on the chat: preview, sender, time, and +1 unread for everyone else. */
+    private fun chatBump(
+        chatId: String,
+        preview: String,
+    ): Map<String, Any> {
+        val members = chats.value.firstOrNull { it.id == chatId }?.members.orEmpty()
+        val m =
+            mutableMapOf<String, Any>(
+                "lastMessage" to preview,
+                "lastAt" to FieldValue.serverTimestamp(),
+                "lastSenderId" to uid,
+                "lastSenderName" to profile.value.name,
+                "typing.$uid" to 0L,
+            )
+        members.filter { it != uid }.forEach { m["unread.$it"] = FieldValue.increment(1) }
+        return m
+    }
+
+    /**
+     * Writes are not awaited: Firestore keeps them on the phone and sends them when online, so a message
+     * shows at once with a clock icon (pending), then a tick (sent) when the server has it.
+     */
+    fun sendText(
         chatId: String,
         text: String,
         replyTo: Message? = null,
@@ -754,27 +800,20 @@ object Repo {
                 type = "text",
                 text = text.trim(),
                 replyToId = replyTo?.id.orEmpty(),
-                replyPreview = replyTo?.let { if (it.type == "image") str(R.string.photo) else it.text.take(80) }.orEmpty(),
+                replyPreview =
+                    replyTo?.let {
+                        when (it.type) {
+                            "image" -> str(R.string.photo)
+                            "video" -> "Video"
+                            else -> it.text.take(80)
+                        }
+                    }.orEmpty(),
                 readBy = listOf(uid),
+                deliveredTo = listOf(uid),
             )
         val chatRef = db.collection("chats").document(chatId)
-        chatRef.collection("messages").add(msg).await()
-        chatRef.update(mapOf("lastMessage" to text.trim().take(80), "lastAt" to FieldValue.serverTimestamp(), "typing.$uid" to 0L)).await()
-    }
-
-    suspend fun sendImage(
-        chatId: String,
-        uri: Uri,
-    ) {
-        val path = "chats/$chatId/${System.currentTimeMillis()}_$uid.jpg"
-        val ref = FirebaseStorage.getInstance().reference.child(path)
-        ref.putFile(uri).await()
-        val url = ref.downloadUrl.await().toString()
-        val chatRef = db.collection("chats").document(chatId)
-        chatRef.collection("messages").add(
-            Message(senderId = uid, senderName = profile.value.name, type = "image", imageUrl = url, readBy = listOf(uid)),
-        ).await()
-        chatRef.update(mapOf("lastMessage" to str(R.string.photo), "lastAt" to FieldValue.serverTimestamp())).await()
+        chatRef.collection("messages").add(msg)
+        chatRef.update(chatBump(chatId, text.trim().take(80)))
     }
 
     private suspend fun sendSystem(
@@ -785,7 +824,8 @@ object Repo {
         chatRef.collection(
             "messages",
         ).add(Message(senderId = uid, senderName = "", type = "system", text = text, readBy = listOf(uid))).await()
-        chatRef.update(mapOf("lastMessage" to text, "lastAt" to FieldValue.serverTimestamp())).await()
+        // lastSenderId is cleared so a system line (member added, expense split) never triggers a message alert.
+        chatRef.update(mapOf("lastMessage" to text, "lastAt" to FieldValue.serverTimestamp(), "lastSenderId" to "")).await()
     }
 
     suspend fun react(
@@ -801,20 +841,40 @@ object Repo {
         }
     }
 
+    /** Opening a chat: mark messages as received and read, and zero this person's unread counter. */
     suspend fun markRead(
         chatId: String,
         msgs: List<Message>,
     ) {
-        val unread = msgs.filter { it.senderId != uid && uid !in it.readBy && it.type != "system" }
-        if (unread.isEmpty()) return
-        val batch = db.batch()
-        unread.forEach {
-            batch.update(
-                db.collection("chats").document(chatId).collection("messages").document(it.id),
-                "readBy",
-                FieldValue.arrayUnion(uid),
-            )
+        val unread = msgs.filter { it.senderId != uid && it.type != "system" && (uid !in it.readBy || uid !in it.deliveredTo) }
+        val chatRef = db.collection("chats").document(chatId)
+        if (unread.isNotEmpty()) {
+            val batch = db.batch()
+            unread.forEach {
+                batch.update(
+                    chatRef.collection("messages").document(it.id),
+                    mapOf("readBy" to FieldValue.arrayUnion(uid), "deliveredTo" to FieldValue.arrayUnion(uid)),
+                )
+            }
+            batch.commit().await()
         }
+        if ((chats.value.firstOrNull { it.id == chatId }?.unread?.get(uid) ?: 0L) > 0L) chatRef.update("unread.$uid", 0L).await()
+    }
+
+    /** A message reached this phone (chat not open): lets the sender see the double grey tick. */
+    suspend fun markDelivered(chatId: String) {
+        val me = uid
+        if (me.isBlank()) return
+        val col = db.collection("chats").document(chatId).collection("messages")
+        val recent = col.orderBy("createdAt", Query.Direction.DESCENDING).limit(30).get().await()
+        val todo =
+            recent.documents.filter { d ->
+                d.getString("senderId") != me && d.getString("type") != "system" &&
+                        (d.get("deliveredTo") as? List<*>)?.contains(me) != true
+            }
+        if (todo.isEmpty()) return
+        val batch = db.batch()
+        todo.forEach { batch.update(it.reference, "deliveredTo", FieldValue.arrayUnion(me)) }
         batch.commit().await()
     }
 

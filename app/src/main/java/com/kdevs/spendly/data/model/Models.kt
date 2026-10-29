@@ -2,6 +2,7 @@ package com.kdevs.spendly.data.model
 
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.DocumentId
+import com.google.firebase.firestore.Exclude
 import com.google.firebase.firestore.ServerTimestamp
 
 // All money is stored as whole paise (Long). Never Double.
@@ -103,22 +104,29 @@ data class Chat(
     @ServerTimestamp val lastAt: Timestamp? = null,
     val typing: Map<String, Long> = emptyMap(), // uid -> last typing millis
     val createdBy: String = "",
+    val lastSenderId: String = "", // who wrote the last message, so other phones can notify
+    val lastSenderName: String = "",
+    val unread: Map<String, Long> = emptyMap(), // uid -> messages that person has not opened yet
 )
 
 data class Message(
     @DocumentId val id: String = "",
     val senderId: String = "",
     val senderName: String = "",
-    val type: String = "text", // text | image | system
+    val type: String = "text", // text | image | video | system
     val text: String = "",
-    val imageUrl: String = "",
+    val imageUrl: String = "", // download link for both photos and videos
+    val deliveredTo: List<String> = emptyList(), // phones that have received the message
     val replyToId: String = "",
     val replyPreview: String = "",
     val reactions: Map<String, String> = emptyMap(), // uid -> reaction key
     val readBy: List<String> = emptyList(),
     val deleted: Boolean = false,
     @ServerTimestamp val createdAt: Timestamp? = null,
-)
+) {
+    /** True while the message is only on this phone and not yet confirmed by the server. Never stored. */
+    @get:Exclude var pending: Boolean = false
+}
 
 data class SplitEntry(
     @DocumentId val id: String = "",

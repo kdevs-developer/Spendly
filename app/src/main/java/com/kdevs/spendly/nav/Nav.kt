@@ -2,6 +2,7 @@ package com.kdevs.spendly.nav
 
 import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.*
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavType
@@ -9,7 +10,11 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import androidx.compose.foundation.layout.Box
+import androidx.compose.ui.Modifier
+import com.kdevs.spendly.data.Inbox
 import com.kdevs.spendly.data.Repo
+import com.kdevs.spendly.ui.components.MessageBanner
 import com.kdevs.spendly.ui.screens.*
 
 /** Every screen in the app. Empty ids are sent as "-" because a path segment cannot be blank. */
@@ -126,6 +131,11 @@ object Routes {
 
     fun settle(chatId: String) = "chat/settle/$chatId"
 
+    fun splitEntry(
+        chatId: String,
+        entryId: String,
+    ) = "chat/splitEntry/$chatId/$entryId"
+
     fun addMembers(chatId: String) = "chat/addMembers/$chatId"
 
     fun reportUser(
@@ -133,6 +143,7 @@ object Routes {
         uid: String,
     ) = "chat/report/$chatId/$uid"
 
+    const val EXPORT = "export"
     const val EDIT_NAME = "settings/name"
     const val DELETE_ACCOUNT = "settings/delete"
 }
@@ -215,6 +226,16 @@ fun SpendlyNav() {
         if (uid != null) {
             runCatching { Repo.ensureProfile() }
             runCatching { Repo.runRecurring() }
+            runCatching { Repo.refreshToken() } // so pushes reach this phone even after a reinstall or sign in
+        }
+    }
+    // A tapped notification asks for a chat to open.
+    val openChat by Inbox.openRequest.collectAsState()
+    LaunchedEffect(openChat, uid) {
+        val target = openChat
+        if (target != null && uid != null) {
+            Inbox.openRequest.value = null
+            nav.navigate(Routes.chat(target)) { launchSingleTop = true }
         }
     }
     // When a friend accepts, our pending request disappears from this list. That is the moment to add them.
@@ -223,75 +244,82 @@ fun SpendlyNav() {
         if (uid != null) runCatching { Repo.syncAccepted() }
     }
 
-    NavHost(nav, startDestination = start) {
-        // ----- Signed out -----
-        screen(Routes.WELCOME) { WelcomeScreen(nav) }
-        screen(Routes.AUTH) { AuthScreen(nav) }
-        screen(Routes.PRIVACY) { LegalScreen(nav, privacy = true) }
-        screen(Routes.TERMS) { LegalScreen(nav, privacy = false) }
+    Box(Modifier.fillMaxSize()) {
+        NavHost(nav, startDestination = start) {
+            // ----- Signed out -----
+            screen(Routes.WELCOME) { WelcomeScreen(nav) }
+            screen(Routes.AUTH) { AuthScreen(nav) }
+            screen(Routes.PRIVACY) { LegalScreen(nav, privacy = true) }
+            screen(Routes.TERMS) { LegalScreen(nav, privacy = false) }
 
-        // ----- Main tabs -----
-        tab(Routes.HOME) { HomeScreen(nav) }
-        tab(Routes.ACTIVITY) { ActivityScreen(nav) }
-        tab(Routes.REPORTS) { ReportsScreen(nav) }
-        tab(Routes.ACCOUNTS) { AccountsScreen(nav) }
-        tab(Routes.CHATS) { ChatListScreen(nav) }
-        screen(Routes.SETTINGS) { SettingsScreen(nav) }
-        screen(Routes.EDIT_NAME) { EditNameScreen(nav) }
-        screen(Routes.DELETE_ACCOUNT) { DeleteAccountScreen(nav) }
+            // ----- Main tabs -----
+            tab(Routes.HOME) { HomeScreen(nav) }
+            tab(Routes.ACTIVITY) { ActivityScreen(nav) }
+            tab(Routes.REPORTS) { ReportsScreen(nav) }
+            tab(Routes.ACCOUNTS) { AccountsScreen(nav) }
+            tab(Routes.CHATS) { ChatListScreen(nav) }
+            screen(Routes.SETTINGS) { SettingsScreen(nav) }
+            screen(Routes.EDIT_NAME) { EditNameScreen(nav) }
+            screen(Routes.DELETE_ACCOUNT) { DeleteAccountScreen(nav) }
 
-        // ----- Transactions -----
-        screen("txn/add/{kind}", listOf("kind")) { e -> TxnFormScreen(nav, e, id = "", kind = e.s("kind").ifBlank { "expense" }) }
-        screen("txn/edit/{id}", listOf("id")) { e -> TxnFormScreen(nav, e, id = e.s("id"), kind = "") }
-        screen("txn/{id}", listOf("id")) { e -> TxnDetailScreen(nav, e.s("id")) }
-        screen(Routes.TRANSFER) { TransferScreen(nav, it) }
+            // ----- Transactions -----
+            screen("txn/add/{kind}", listOf("kind")) { e -> TxnFormScreen(nav, e, id = "", kind = e.s("kind").ifBlank { "expense" }) }
+            screen("txn/edit/{id}", listOf("id")) { e -> TxnFormScreen(nav, e, id = e.s("id"), kind = "") }
+            screen("txn/{id}", listOf("id")) { e -> TxnDetailScreen(nav, e.s("id")) }
+            screen(Routes.TRANSFER) { TransferScreen(nav, it) }
 
-        // ----- Accounts -----
-        screen(Routes.ACCOUNT_TYPE) { AccountTypeScreen(nav) }
-        screen("account/edit/{id}/{type}", listOf("id", "type")) { e -> AccountEditScreen(nav, e, e.s("id"), e.s("type")) }
-        screen("account/{id}", listOf("id")) { e -> AccountDetailScreen(nav, e.s("id")) }
+            // ----- Accounts -----
+            screen(Routes.ACCOUNT_TYPE) { AccountTypeScreen(nav) }
+            screen("account/edit/{id}/{type}", listOf("id", "type")) { e -> AccountEditScreen(nav, e, e.s("id"), e.s("type")) }
+            screen("account/{id}", listOf("id")) { e -> AccountDetailScreen(nav, e.s("id")) }
 
-        // ----- Filter, select, bulk, reports -----
-        screen(Routes.FILTER) { FilterScreen(nav, it) }
-        screen(Routes.SELECT) { SelectScreen(nav) }
-        screen(Routes.BULK) { BulkScreen(nav, it) }
-        screen(Routes.REPORT_FILTER) { ReportFilterScreen(nav, it) }
-        screen("report/category/{id}", listOf("id")) { e -> ReportCategoryScreen(nav, e.s("id")) }
+            // ----- Filter, select, bulk, reports -----
+            screen(Routes.FILTER) { FilterScreen(nav, it) }
+            screen(Routes.SELECT) { SelectScreen(nav) }
+            screen(Routes.BULK) { BulkScreen(nav, it) }
+            screen(Routes.REPORT_FILTER) { ReportFilterScreen(nav, it) }
+            screen("report/category/{id}", listOf("id")) { e -> ReportCategoryScreen(nav, e.s("id")) }
 
-        // ----- Pickers -----
-        screen("pick/category/{kind}/{slot}", listOf("kind", "slot")) { e -> CategoryPickerScreen(nav, e.s("kind"), e.s("slot")) }
-        screen("category/edit/{id}/{kind}", listOf("id", "kind")) { e -> CategoryEditScreen(nav, e, e.s("id"), e.s("kind")) }
-        screen("category/sub/{id}/{parent}", listOf("id", "parent")) { e -> SubcategoryEditScreen(nav, e, e.s("id"), e.s("parent")) }
-        screen("pick/color/{current}/{locked}", listOf("current", "locked")) { e -> ColorPickerScreen(nav, e.s("current"), e.s("locked")) }
-        screen("pick/icon/{group}/{current}", listOf("group", "current")) { e -> IconPickerScreen(nav, e.s("group"), e.s("current")) }
-        screen("pick/account/{slot}/{exclude}", listOf("slot", "exclude")) { e -> AccountPickerScreen(nav, e.s("slot"), e.s("exclude")) }
-        screen("pick/date/{millis}", listOf("millis")) { e -> DatePickerScreen(nav, e.s("millis").toLongOrNull() ?: 0L) }
+            // ----- Pickers -----
+            screen("pick/category/{kind}/{slot}", listOf("kind", "slot")) { e -> CategoryPickerScreen(nav, e.s("kind"), e.s("slot")) }
+            screen("category/edit/{id}/{kind}", listOf("id", "kind")) { e -> CategoryEditScreen(nav, e, e.s("id"), e.s("kind")) }
+            screen("category/sub/{id}/{parent}", listOf("id", "parent")) { e -> SubcategoryEditScreen(nav, e, e.s("id"), e.s("parent")) }
+            screen("pick/color/{current}/{locked}", listOf("current", "locked")) { e -> ColorPickerScreen(nav, e.s("current"), e.s("locked")) }
+            screen("pick/icon/{group}/{current}", listOf("group", "current")) { e -> IconPickerScreen(nav, e.s("group"), e.s("current")) }
+            screen("pick/account/{slot}/{exclude}", listOf("slot", "exclude")) { e -> AccountPickerScreen(nav, e.s("slot"), e.s("exclude")) }
+            screen("pick/date/{millis}", listOf("millis")) { e -> DatePickerScreen(nav, e.s("millis").toLongOrNull() ?: 0L) }
 
-        // ----- Budgets, goals, templates, recurring -----
-        screen(Routes.BUDGETS) { BudgetsScreen(nav) }
-        screen("budget/{id}", listOf("id")) { e -> BudgetEditScreen(nav, e, e.s("id")) }
-        screen(Routes.GOALS) { GoalsScreen(nav) }
-        screen("goal/add/{id}", listOf("id")) { e -> GoalAddScreen(nav, e.s("id")) }
-        screen("goal/{id}", listOf("id")) { e -> GoalEditScreen(nav, e, e.s("id")) }
-        screen(Routes.TEMPLATES) { TemplatesScreen(nav) }
-        screen("template/{id}", listOf("id")) { e -> TemplateEditScreen(nav, e, e.s("id")) }
-        screen(Routes.RECURRING) { RecurringScreen(nav) }
-        screen("recurring/{id}", listOf("id")) { e -> RecurringEditScreen(nav, e, e.s("id")) }
+            // ----- Budgets, goals, templates, recurring -----
+            screen(Routes.BUDGETS) { BudgetsScreen(nav) }
+            screen("budget/{id}", listOf("id")) { e -> BudgetEditScreen(nav, e, e.s("id")) }
+            screen(Routes.GOALS) { GoalsScreen(nav) }
+            screen("goal/add/{id}", listOf("id")) { e -> GoalAddScreen(nav, e.s("id")) }
+            screen("goal/{id}", listOf("id")) { e -> GoalEditScreen(nav, e, e.s("id")) }
+            screen(Routes.TEMPLATES) { TemplatesScreen(nav) }
+            screen("template/{id}", listOf("id")) { e -> TemplateEditScreen(nav, e, e.s("id")) }
+            screen(Routes.RECURRING) { RecurringScreen(nav) }
+            screen("recurring/{id}", listOf("id")) { e -> RecurringEditScreen(nav, e, e.s("id")) }
 
-        // ----- Chat -----
-        screen(Routes.NEW_CHAT) { NewChatScreen(nav) }
-        screen(Routes.ADD_FRIEND) { AddFriendScreen(nav) }
-        screen(Routes.REQUESTS) { RequestsScreen(nav) }
-        screen(Routes.BLOCKED) { BlockedScreen(nav) }
-        screen(Routes.CREATE_GROUP) { CreateGroupScreen(nav) }
-        screen("chat/info/{id}", listOf("id")) { e -> ChatInfoScreen(nav, e.s("id")) }
-        screen("chat/actions/{chat}/{msg}", listOf("chat", "msg")) { e -> MessageActionsScreen(nav, e.s("chat"), e.s("msg")) }
-        screen("chat/image/{chat}/{msg}", listOf("chat", "msg")) { e -> ImageViewerScreen(nav, e.s("chat"), e.s("msg")) }
-        screen("chat/splits/{id}", listOf("id")) { e -> SplitsScreen(nav, e.s("id")) }
-        screen("chat/addSplit/{id}", listOf("id")) { e -> AddSplitScreen(nav, e, e.s("id")) }
-        screen("chat/settle/{id}", listOf("id")) { e -> SettleUpScreen(nav, e, e.s("id")) }
-        screen("chat/report/{chat}/{uid}", listOf("chat", "uid")) { e -> ReportUserScreen(nav, e.s("chat"), e.s("uid")) }
-        screen("chat/addMembers/{id}", listOf("id")) { e -> AddMembersScreen(nav, e.s("id")) }
-        screen("chat/{id}", listOf("id")) { e -> ConversationScreen(nav, e, e.s("id")) }
+            // ----- Chat -----
+            screen(Routes.NEW_CHAT) { NewChatScreen(nav) }
+            screen(Routes.ADD_FRIEND) { AddFriendScreen(nav) }
+            screen(Routes.REQUESTS) { RequestsScreen(nav) }
+            screen(Routes.BLOCKED) { BlockedScreen(nav) }
+            screen(Routes.CREATE_GROUP) { CreateGroupScreen(nav) }
+            screen("chat/info/{id}", listOf("id")) { e -> ChatInfoScreen(nav, e.s("id")) }
+            screen("chat/actions/{chat}/{msg}", listOf("chat", "msg")) { e -> MessageActionsScreen(nav, e.s("chat"), e.s("msg")) }
+            screen("chat/image/{chat}/{msg}", listOf("chat", "msg")) { e -> ImageViewerScreen(nav, e.s("chat"), e.s("msg")) }
+            screen("chat/splits/{id}", listOf("id")) { e -> SplitsScreen(nav, e.s("id")) }
+            screen("chat/addSplit/{id}", listOf("id")) { e -> AddSplitScreen(nav, e, e.s("id")) }
+            screen("chat/settle/{id}", listOf("id")) { e -> SettleUpScreen(nav, e, e.s("id")) }
+            screen("chat/report/{chat}/{uid}", listOf("chat", "uid")) { e -> ReportUserScreen(nav, e.s("chat"), e.s("uid")) }
+            screen("chat/addMembers/{id}", listOf("id")) { e -> AddMembersScreen(nav, e.s("id")) }
+            screen("chat/{id}", listOf("id")) { e -> ConversationScreen(nav, e, e.s("id")) }
+            screen("chat/splitEntry/{chat}/{entry}", listOf("chat", "entry")) { e -> SplitEntryScreen(nav, e.s("chat"), e.s("entry")) }
+
+            // ----- Export -----
+            screen(Routes.EXPORT) { ExportScreen(nav, it) }
+        }
+        if (uid != null) MessageBanner(nav)
     }
 }
