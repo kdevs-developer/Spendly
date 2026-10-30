@@ -147,3 +147,15 @@ data class Profile(
     val seeded: Boolean = false,
     val blocked: List<String> = emptyList(),
 )
+
+/** Marker document for "delete chat". Its id is the chat id; [at] is when it was deleted. */
+data class HiddenChat(
+    @DocumentId val id: String = "",
+    val at: Long = 0,
+)
+
+/** Marker document for "delete for me". Its id is the message id. */
+data class HiddenMsg(
+    @DocumentId val id: String = "",
+    val at: Long = 0,
+)

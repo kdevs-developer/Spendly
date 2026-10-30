@@ -1,6 +1,7 @@
 package com.kdevs.spendly.ui.screens
 
 import android.content.Intent
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
@@ -121,27 +122,40 @@ fun ChatListScreen(nav: NavController) {
                 at == null || (c.lastAt?.toDate()?.time ?: Long.MAX_VALUE) > at
             }
         }
-    var pending by remember { mutableStateOf<Chat?>(null) }
+    var selected by remember { mutableStateOf(setOf<String>()) }
+    var confirm by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val saver = rememberSaver()
+    val selecting = selected.isNotEmpty()
+    // Chats that disappear (deleted, left) drop out of the selection.
+    LaunchedEffect(chats) {
+        if (selected.isNotEmpty()) selected = selected.filter { id -> chats.any { it.id == id } }.toSet()
+    }
+    BackHandler(enabled = selecting) { selected = emptySet() }
     TabScreen(
-        str(R.string.chat),
+        if (selecting) str(R.string.selected, selected.size) else str(R.string.chat),
         Routes.CHATS,
         nav,
         actions = {
-            Box {
-                RoundIconButton(Icons.Filled.PersonAdd, str(R.string.friend_requests), { nav.navigate(Routes.REQUESTS) })
-                if (incoming.isNotEmpty()) {
-                    Box(
-                        Modifier.align(Alignment.TopEnd).size(16.dp).clip(CircleShape).background(Danger),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Text(str(R.string.text__2, incoming.size), color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.ExtraBold)
+            if (selecting) {
+                RoundIconButton(Icons.Filled.Close, str(R.string.cancel), { selected = emptySet() })
+                Spacer(Modifier.width(8.dp))
+                RoundIconButton(Icons.Filled.Delete, str(R.string.delete), { confirm = true }, tint = Danger)
+            } else {
+                Box {
+                    RoundIconButton(Icons.Filled.PersonAdd, str(R.string.friend_requests), { nav.navigate(Routes.REQUESTS) })
+                    if (incoming.isNotEmpty()) {
+                        Box(
+                            Modifier.align(Alignment.TopEnd).size(16.dp).clip(CircleShape).background(Danger),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Text(str(R.string.text__2, incoming.size), color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.ExtraBold)
+                        }
                     }
                 }
             }
         },
-        fab = { Fab(Icons.Filled.Edit, str(R.string.new_chat)) { nav.navigate(Routes.NEW_CHAT) } },
+        fab = { if (!selecting) Fab(Icons.Filled.Edit, str(R.string.new_chat)) { nav.navigate(Routes.NEW_CHAT) } },
     ) {
         saver.error?.let { Text(it, color = Danger) }
         if (chats.isEmpty() && !ready) {
@@ -152,13 +166,25 @@ fun ChatListScreen(nav: NavController) {
             Card(padding = 12.dp) {
                 chats.forEachIndexed { i, c ->
                     val title = c.title(me)
+                    val isPicked = c.id in selected
+                    val rowShape = RoundedCornerShape(16.dp)
                     Row(
-                        Modifier.fillMaxWidth()
-                            .combinedClickable(onClick = { nav.navigate(Routes.chat(c.id)) }, onLongClick = { pending = c })
-                            .padding(vertical = 10.dp),
+                        Modifier.fillMaxWidth().clip(rowShape).background(if (isPicked) PrimaryContainer else Color.Transparent)
+                            .combinedClickable(
+                                onClick = {
+                                    if (selecting) {
+                                        selected = if (isPicked) selected - c.id else selected + c.id
+                                    } else {
+                                        nav.navigate(Routes.chat(c.id))
+                                    }
+                                },
+                                onLongClick = { selected = if (isPicked) selected - c.id else selected + c.id },
+                            )
+                            .padding(horizontal = 4.dp, vertical = 10.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
+                        if (selecting) TickBox(isPicked)
                         if (c.type == "direct") {
                             Avatar(title, colorKeyFor(c.otherId(me)), 48.dp)
                         } else {
@@ -201,21 +227,33 @@ fun ChatListScreen(nav: NavController) {
                     if (i < chats.lastIndex) HorizontalDivider(color = Line)
                 }
             }
-            Hint(str(R.string.hold_a_chat_to_delete_it), center = true)
+            if (!selecting) Hint(str(R.string.hold_a_chat_to_delete_it), center = true)
         }
         Spacer(Modifier.height(70.dp))
     }
-    pending?.let { c ->
-        val isDirect = c.type == "direct"
+    val picked = chats.filter { it.id in selected }
+    if (confirm && picked.isNotEmpty()) {
+        val one = picked.singleOrNull()
+        val oneDirect = one?.type == "direct"
         ConfirmDialog(
-            if (isDirect) str(R.string.delete_chat) else str(R.string.leave_this_group),
-            if (isDirect) str(R.string.delete_chat_text, c.title(me)) else str(R.string.you_will_no_longer_get_its),
-            if (isDirect) str(R.string.delete) else str(R.string.leave),
-            {
-                pending = null
-                saver.run(scope, onDone = {}) { if (isDirect) Repo.deleteChatForMe(c.id) else Repo.leaveChat(c.id) }
+            when {
+                one == null -> str(R.string.delete_n_chats, picked.size)
+                oneDirect -> str(R.string.delete_chat)
+                else -> str(R.string.leave_this_group)
             },
-            { pending = null },
+            when {
+                one == null -> str(R.string.delete_chats_text)
+                oneDirect -> str(R.string.delete_chat_text, one.title(me))
+                else -> str(R.string.you_will_no_longer_get_its)
+            },
+            if (picked.none { it.type == "direct" }) str(R.string.leave) else str(R.string.delete),
+            {
+                confirm = false
+                saver.run(scope, onDone = { selected = emptySet() }) {
+                    picked.forEach { if (it.type == "direct") Repo.deleteChatForMe(it.id) else Repo.leaveChat(it.id) }
+                }
+            },
+            { confirm = false },
             danger = true,
         )
     }

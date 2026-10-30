@@ -268,8 +268,8 @@ fun AuthScreen(nav: NavController) {
             note = null
             saver.run(scope, onDone = {}) { Repo.signInWithGoogle(ctx) }
         }, enabled = !saver.busy)
-        SecondaryButton(str(R.string.continue_as_guest), { saver.run(scope, onDone = {}) { Repo.signInGuest() } })
-        Hint(str(R.string.guest_account_hint), center = true)
+//        SecondaryButton(str(R.string.continue_as_guest), { saver.run(scope, onDone = {}) { Repo.signInGuest() } })
+//        Hint(str(R.string.guest_account_hint), center = true)
     }
 }
 

@@ -764,5 +764,7 @@
     <string name="last_5_years">Last 5 years</string>
     <string name="delete_chat">Delete chat</string>
     <string name="delete_chat_text">This clears your conversation with %1$s from your phone and account. They keep their copy, and a new message from them brings the chat back.</string>
-    <string name="hold_a_chat_to_delete_it">Press and hold a chat to delete it.</string>
+    <string name="hold_a_chat_to_delete_it">Press and hold a chat to select it, then tap the bin to delete.</string>
+    <string name="delete_n_chats">Delete %1$d chats</string>
+    <string name="delete_chats_text">One-to-one chats are cleared from your list, and you leave any groups you picked. Other people keep their copies.</string>
 </resources>

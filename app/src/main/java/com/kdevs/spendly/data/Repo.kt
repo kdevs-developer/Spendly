@@ -408,7 +408,7 @@ object Repo {
                     val reg =
                         q.addSnapshotListener { s, _ ->
                             if (s != null) {
-                                trySend(s.toObjects(T::class.java))
+                                runCatching { s.toObjects(T::class.java) }.onSuccess { trySend(it) }
                                 loaded.value = loaded.value + name
                             }
                         }
@@ -963,15 +963,3 @@ object Repo {
         db.collection("chats").document(chatId).collection("splits").document(id).delete().await()
     }
 }
-
-/** Marker document for "delete chat". Its id is the chat id; [at] is when it was deleted. */
-data class HiddenChat(
-    @com.google.firebase.firestore.DocumentId val id: String = "",
-    val at: Long = 0,
-)
-
-/** Marker document for "delete for me". Its id is the message id. */
-data class HiddenMsg(
-    @com.google.firebase.firestore.DocumentId val id: String = "",
-    val at: Long = 0,
-)

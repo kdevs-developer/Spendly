@@ -120,36 +120,36 @@ fun ScreenScaffold(
     content: @Composable ColumnScope.() -> Unit,
 ) {
     Box(Modifier.fillMaxSize()) {
-    Column(modifier.fillMaxSize().background(Bg).statusBarsPadding()) {
-        Row(
-            Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            if (onBack != null) {
-                RoundIconButton(Icons.AutoMirrored.Filled.ArrowBack, str(R.string.back), onBack)
-            } else {
-                Spacer(Modifier.width(4.dp))
+        Column(modifier.fillMaxSize().background(Bg).statusBarsPadding()) {
+            Row(
+                Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                if (onBack != null) {
+                    RoundIconButton(Icons.AutoMirrored.Filled.ArrowBack, str(R.string.back), onBack)
+                } else {
+                    Spacer(Modifier.width(4.dp))
+                }
+                Spacer(Modifier.width(12.dp))
+                Text(title, style = MaterialTheme.typography.titleLarge, color = Ink, modifier = Modifier.weight(1f), maxLines = 1)
+                actions()
             }
-            Spacer(Modifier.width(12.dp))
-            Text(title, style = MaterialTheme.typography.titleLarge, color = Ink, modifier = Modifier.weight(1f), maxLines = 1)
-            actions()
+            // Pinned part (like the amount): it never scrolls, so typing cannot push it out of view.
+            if (header != null) {
+                Column(
+                    Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, bottom = 14.dp),
+                    verticalArrangement = Arrangement.spacedBy(14.dp),
+                    content = header,
+                )
+            }
+            val body = Modifier.weight(1f).fillMaxWidth().let { if (scroll) it.verticalScroll(rememberScrollState()) else it }
+            Column(body.padding(horizontal = 20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                content()
+                Spacer(Modifier.height(24.dp))
+            }
+            bottomBar()
         }
-        // Pinned part (like the amount): it never scrolls, so typing cannot push it out of view.
-        if (header != null) {
-            Column(
-                Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, bottom = 14.dp),
-                verticalArrangement = Arrangement.spacedBy(14.dp),
-                content = header,
-            )
-        }
-        val body = Modifier.weight(1f).fillMaxWidth().let { if (scroll) it.verticalScroll(rememberScrollState()) else it }
-        Column(body.padding(horizontal = 20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            content()
-            Spacer(Modifier.height(24.dp))
-        }
-        bottomBar()
-    }
-    if (busy) LoadingOverlay(busyText)
+        if (busy) LoadingOverlay(busyText)
     }
 }
 
@@ -190,14 +190,15 @@ fun Modifier.pressable(
     enabled: Boolean = true,
     scaleTo: Float = 0.97f,
     veil: Boolean = true,
+    interactionSource: MutableInteractionSource? = null,
     onClick: () -> Unit,
 ): Modifier =
     composed {
-        val source = remember { MutableInteractionSource() }
+        val source = interactionSource ?: remember { MutableInteractionSource() }
         val pressed by source.collectIsPressedAsState()
         val on = pressed && enabled
         val scale by animateFloatAsState(if (on) scaleTo else 1f, spring(dampingRatio = 0.7f, stiffness = 800f), label = "press")
-        val shade by animateFloatAsState(if (on && veil) 0.10f else 0f, tween(80), label = "veil")
+        val shade by animateFloatAsState(if (on && veil) 0.06f else 0f, tween(80), label = "veil")
         this
             .graphicsLayer {
                 scaleX = scale
@@ -220,7 +221,7 @@ fun RoundIconButton(
 ) {
     Box(
         Modifier.size(40.dp).pressable(CircleShape, scaleTo = 0.92f, onClick = onClick)
-            .shadow(1.dp, CircleShape).clip(CircleShape).background(bg),
+            .clip(CircleShape).background(bg).border(1.dp, Line, CircleShape),
         contentAlignment = Alignment.Center,
     ) { Icon(icon, description, tint = tint, modifier = Modifier.size(20.dp)) }
 }
@@ -332,11 +333,14 @@ fun PrimaryButton(
     busy: Boolean = false,
 ) {
     val shape = RoundedCornerShape(18.dp)
-    val lift by animateDpAsState(if (enabled) 8.dp else 0.dp, label = "lift")
+    val source = remember { MutableInteractionSource() }
+    val pressed by source.collectIsPressedAsState()
+    val lift by animateDpAsState(if (!enabled) 0.dp else if (pressed) 1.dp else 5.dp, tween(120), label = "lift")
+    val glow = Brand.copy(alpha = 0.30f)
     Box(
         modifier.fillMaxWidth().height(54.dp)
-            .pressable(shape, enabled = enabled && !busy, onClick = onClick)
-            .shadow(lift, shape, ambientColor = Brand, spotColor = Brand)
+            .pressable(shape, enabled = enabled && !busy, veil = false, interactionSource = source, onClick = onClick)
+            .shadow(lift, shape, ambientColor = glow, spotColor = glow)
             .clip(shape).background(ButtonBrush),
         contentAlignment = Alignment.Center,
     ) {
@@ -696,9 +700,13 @@ fun Fab(
     description: String,
     onClick: () -> Unit,
 ) {
+    val source = remember { MutableInteractionSource() }
+    val pressed by source.collectIsPressedAsState()
+    val lift by animateDpAsState(if (pressed) 2.dp else 7.dp, tween(120), label = "fabLift")
+    val glow = Brand.copy(alpha = 0.30f)
     Box(
-        Modifier.size(58.dp).pressable(CircleShape, scaleTo = 0.92f, onClick = onClick)
-            .shadow(10.dp, CircleShape, ambientColor = Brand, spotColor = Brand).clip(CircleShape).background(ButtonBrush),
+        Modifier.size(58.dp).pressable(CircleShape, scaleTo = 0.92f, veil = false, interactionSource = source, onClick = onClick)
+            .shadow(lift, CircleShape, ambientColor = glow, spotColor = glow).clip(CircleShape).background(ButtonBrush),
         contentAlignment = Alignment.Center,
     ) { Icon(icon, description, tint = Color.White) }
 }
