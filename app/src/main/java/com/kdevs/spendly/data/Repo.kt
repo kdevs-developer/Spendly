@@ -237,7 +237,7 @@ object Repo {
         }
         // 3. My private collections, in batches (a batch holds at most 500 writes).
         val me = db.collection("users").document(u)
-        for (name in listOf("accounts", "categories", "txns", "budgets", "goals", "templates", "recurring", "friends", "hidden")) {
+        for (name in listOf("accounts", "categories", "txns", "budgets", "goals", "templates", "recurring", "friends", "hidden", "hiddenChats")) {
             me.collection(name).get(Source.SERVER).await().documents.chunked(400).forEach { part ->
                 val batch = db.batch()
                 part.forEach { batch.delete(it.reference) }
@@ -479,6 +479,10 @@ object Repo {
     private val hiddenIds: StateFlow<List<String>> =
         live<HiddenMsg>("hidden").map { l -> l.map { it.id } }.hot(emptyList())
 
+    /** Chats this person deleted from their own list: chat id to the time it was deleted. */
+    val hiddenChats: StateFlow<Map<String, Long>> =
+        live<HiddenChat>("hiddenChats").map { l -> l.associate { it.id to it.at } }.hot(emptyMap())
+
     /** Money in an account right now: opening balance plus all its transactions. */
     fun balanceOf(
         accountId: String,
@@ -537,7 +541,7 @@ object Repo {
                         accountId = r.accountId,
                         categoryId = r.categoryId,
                         note = r.name,
-                        dateMillis = atNineIfNoTime(next),
+                        dateMillis = next,
                     ),
                 )
                 next = addPeriod(next, r.every)
@@ -746,6 +750,15 @@ object Repo {
         ref.update("members", FieldValue.arrayRemove(uid)).await()
     }
 
+    /**
+     * Removes a one-to-one chat from this person's list and clears its history for them. The other person
+     * keeps their copy, and a new message brings the chat back (with only the new messages).
+     */
+    suspend fun deleteChatForMe(chatId: String) {
+        put("hiddenChats", chatId, HiddenChat(at = System.currentTimeMillis()))
+        runCatching { db.collection("chats").document(chatId).update("unread.$uid", 0L).await() }
+    }
+
     suspend fun renameChat(
         chatId: String,
         name: String,
@@ -774,7 +787,14 @@ object Repo {
             },
             hiddenIds,
             profile,
-        ) { list, hidden, p -> list.filter { it.id !in hidden && it.senderId !in p.blocked } }
+            hiddenChats,
+        ) { list, hidden, p, cleared ->
+            val cut = cleared[chatId] ?: 0L
+            list.filter {
+                it.id !in hidden && it.senderId !in p.blocked &&
+                        (cut == 0L || (it.createdAt?.toDate()?.time ?: Long.MAX_VALUE) > cut)
+            }
+        }
 
     /** The fields every new message sets on the chat: preview, sender, time, and +1 unread for everyone else. */
     private fun chatBump(
@@ -943,6 +963,12 @@ object Repo {
         db.collection("chats").document(chatId).collection("splits").document(id).delete().await()
     }
 }
+
+/** Marker document for "delete chat". Its id is the chat id; [at] is when it was deleted. */
+data class HiddenChat(
+    @com.google.firebase.firestore.DocumentId val id: String = "",
+    val at: Long = 0,
+)
 
 /** Marker document for "delete for me". Its id is the message id. */
 data class HiddenMsg(

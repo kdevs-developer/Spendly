@@ -101,12 +101,29 @@ private fun reactionIcon(key: String) = reactionIcons.firstOrNull { it.first == 
 
 // ------------------------------------------------------------------ Chat list and friends
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ChatListScreen(nav: NavController) {
-    val chats by Repo.chats.collectAsState()
+    val allChats by Repo.chats.collectAsState()
+    val hidden by Repo.hiddenChats.collectAsState()
     val incoming by Repo.incomingRequests.collectAsState()
     val me = Repo.uid
-    val chatsLoaded = "chats" in Repo.loaded.collectAsState().value
+    val loadedSet = Repo.loaded.collectAsState().value
+    val chatsLoaded = "chats" in loadedSet
+    val ready = chatsLoaded && "hiddenChats" in loadedSet
+    // A chat you deleted stays out of the list until someone sends a newer message.
+    val chats =
+        if (!ready) {
+            emptyList()
+        } else {
+            allChats.filter { c ->
+                val at = hidden[c.id]
+                at == null || (c.lastAt?.toDate()?.time ?: Long.MAX_VALUE) > at
+            }
+        }
+    var pending by remember { mutableStateOf<Chat?>(null) }
+    val scope = rememberCoroutineScope()
+    val saver = rememberSaver()
     TabScreen(
         str(R.string.chat),
         Routes.CHATS,
@@ -126,7 +143,8 @@ fun ChatListScreen(nav: NavController) {
         },
         fab = { Fab(Icons.Filled.Edit, str(R.string.new_chat)) { nav.navigate(Routes.NEW_CHAT) } },
     ) {
-        if (chats.isEmpty() && !chatsLoaded) {
+        saver.error?.let { Text(it, color = Danger) }
+        if (chats.isEmpty() && !ready) {
             InlineLoader()
         } else if (chats.isEmpty()) {
             EmptyState(Icons.AutoMirrored.Filled.Chat, str(R.string.no_chats_yet), str(R.string.add_a_friend_with_their_code))
@@ -135,7 +153,9 @@ fun ChatListScreen(nav: NavController) {
                 chats.forEachIndexed { i, c ->
                     val title = c.title(me)
                     Row(
-                        Modifier.fillMaxWidth().clickable { nav.navigate(Routes.chat(c.id)) }.padding(vertical = 10.dp),
+                        Modifier.fillMaxWidth()
+                            .combinedClickable(onClick = { nav.navigate(Routes.chat(c.id)) }, onLongClick = { pending = c })
+                            .padding(vertical = 10.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
@@ -181,8 +201,23 @@ fun ChatListScreen(nav: NavController) {
                     if (i < chats.lastIndex) HorizontalDivider(color = Line)
                 }
             }
+            Hint(str(R.string.hold_a_chat_to_delete_it), center = true)
         }
         Spacer(Modifier.height(70.dp))
+    }
+    pending?.let { c ->
+        val isDirect = c.type == "direct"
+        ConfirmDialog(
+            if (isDirect) str(R.string.delete_chat) else str(R.string.leave_this_group),
+            if (isDirect) str(R.string.delete_chat_text, c.title(me)) else str(R.string.you_will_no_longer_get_its),
+            if (isDirect) str(R.string.delete) else str(R.string.leave),
+            {
+                pending = null
+                saver.run(scope, onDone = {}) { if (isDirect) Repo.deleteChatForMe(c.id) else Repo.leaveChat(c.id) }
+            },
+            { pending = null },
+            danger = true,
+        )
     }
 }
 

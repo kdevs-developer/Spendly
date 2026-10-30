@@ -762,4 +762,7 @@
     <string name="last_14_days">Last 14 days</string>
     <string name="last_8_weeks">Last 8 weeks</string>
     <string name="last_5_years">Last 5 years</string>
+    <string name="delete_chat">Delete chat</string>
+    <string name="delete_chat_text">This clears your conversation with %1$s from your phone and account. They keep their copy, and a new message from them brings the chat back.</string>
+    <string name="hold_a_chat_to_delete_it">Press and hold a chat to delete it.</string>
 </resources>
