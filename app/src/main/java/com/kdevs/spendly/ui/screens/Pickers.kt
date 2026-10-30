@@ -93,12 +93,11 @@ fun FilterScreen(
 
     fun <T> Set<T>.flip(v: T) = if (v in this) this - v else this + v
 
-    // TODO: move the hard-coded labels below to strings.xml.
     val periods =
         listOf(
             "any" to str(R.string.any),
             "month" to str(R.string.this_month),
-            "lastmonth" to "Last month",
+            "lastmonth" to str(R.string.last_month),
             "last30" to str(R.string.last_30_days),
             "year" to str(R.string.this_year),
             "custom" to str(R.string.custom),
@@ -154,8 +153,8 @@ fun FilterScreen(
             val b = if (to > 0L) fullDate(to - DAY) else str(R.string.any)
             "$a – $b"
         }
-    val accountSummary = summary(live.filter { it.id in accs }.map { it.name }, "All accounts")
-    val categorySummary = summary(parents.filter { it.id in cats }.map { it.name }, "All categories")
+    val accountSummary = summary(live.filter { it.id in accs }.map { it.name }, str(R.string.all_accounts))
+    val categorySummary = summary(parents.filter { it.id in cats }.map { it.name }, str(R.string.all_categories))
 
     val minPaise = parseRupees(min) ?: 0L
     val maxPaise = parseRupees(max) ?: 0L
@@ -269,7 +268,7 @@ fun FilterScreen(
                 AnimatedVisibility(accountsOpen) {
                     Column {
                         FilterHairline()
-                        FilterOption("All accounts", selected = accs.isEmpty()) { accs = emptySet() }
+                        FilterOption(str(R.string.all_accounts), selected = accs.isEmpty()) { accs = emptySet() }
                         live.forEach { a ->
                             FilterHairline()
                             FilterOption(a.name, selected = a.id in accs) {
@@ -295,7 +294,7 @@ fun FilterScreen(
                 AnimatedVisibility(categoriesOpen) {
                     Column {
                         FilterHairline()
-                        FilterOption("All categories", selected = cats.isEmpty()) { cats = emptySet() }
+                        FilterOption(str(R.string.all_categories), selected = cats.isEmpty()) { cats = emptySet() }
                         parents.forEach { c ->
                             FilterHairline()
                             FilterOption(c.name, selected = c.id in cats) {
@@ -316,14 +315,14 @@ fun FilterScreen(
                 Box(Modifier.weight(1f)) {
                     AppTextField(min, { v -> if (v.all { it.isDigit() || it == '.' }) min = v }, str(R.string.min), keyboard = KeyboardType.Decimal)
                 }
-                Text("to", color = Muted, fontSize = 12.sp)
+                Text(str(R.string.to_lower), color = Muted, fontSize = 12.sp)
                 Box(Modifier.weight(1f)) {
                     AppTextField(max, { v -> if (v.all { it.isDigit() || it == '.' }) max = v }, str(R.string.max), keyboard = KeyboardType.Decimal)
                 }
             }
             if (badRange) {
                 Spacer(Modifier.height(6.dp))
-                Text("Min can't be higher than max", color = Danger, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                Text(str(R.string.min_higher_than_max), color = Danger, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
             }
         }
     }
@@ -386,7 +385,7 @@ private fun FilterOption(
             fontSize = 14.sp,
             fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
         )
-        if (selected) Icon(Icons.Filled.Check, contentDescription = "Selected", tint = Primary, modifier = Modifier.size(18.dp))
+        if (selected) Icon(Icons.Filled.Check, contentDescription = str(R.string.selected_2), tint = Primary, modifier = Modifier.size(18.dp))
     }
 }
 
@@ -394,7 +393,7 @@ private fun FilterOption(
 private fun FilterChevron(open: Boolean) {
     Icon(
         if (open) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
-        contentDescription = if (open) "Collapse" else "Expand",
+        contentDescription = if (open) str(R.string.collapse) else str(R.string.expand),
         tint = Muted,
     )
 }
@@ -507,13 +506,13 @@ fun BulkScreen(
         saver.run(scope, onDone = { finish("") }) { updateAll { it.copy(dateMillis = d) } }
     }
 
-    ScreenScaffold(str(R.string.bulk_actions), { nav.popBackStack() }) {
+    ScreenScaffold(str(R.string.bulk_actions), { nav.popBackStack() }, busy = saver.busy, busyText = str(R.string.updating_transactions)) {
         HeroCard {
             Text(str(R.string.selected, picked.size), color = Color.White.copy(alpha = 0.85f), fontWeight = FontWeight.SemiBold)
             Text("-" + formatPaise(spent(picked)), color = Color.White, fontWeight = FontWeight.ExtraBold, fontSize = 32.sp)
             if (earned(picked) > 0) {
                 Text(
-                    "+" + formatPaise(earned(picked)) + " income",
+                    str(R.string.plus_amount_income, formatPaise(earned(picked))),
                     color = Color.White.copy(alpha = 0.9f),
                     fontWeight = FontWeight.SemiBold,
                 )
@@ -574,6 +573,16 @@ fun ReportFilterScreen(
     var target by rememberSaveable { mutableStateOf("from") }
     entry.Picked<Long>("pickedDate") { if (target == "from") from = it else to = it }
 
+    val today = LocalDate.now()
+    val periodDates =
+        when (period) {
+            "last30" -> fullDate(today.minusDays(29).startMillis()) + " – " + fullDate(todayMillis())
+            "year" -> fullDate(today.withDayOfYear(1).startMillis()) + " – " + fullDate(todayMillis())
+            "custom" -> fullDate(minOf(from, to)) + " – " + fullDate(maxOf(from, to))
+            else -> fullDate(monthStart()) + " – " + fullDate(todayMillis())
+        }
+    val live = accounts.filter { !it.archived }
+
     ScreenScaffold(str(R.string.report_filter), { nav.popBackStack() }, bottomBar = {
         BottomActionBar {
             PrimaryButton(str(R.string.apply), {
@@ -586,20 +595,27 @@ fun ReportFilterScreen(
             })
         }
     }) {
-        SectionTitle(str(R.string.period))
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            listOf(
-                "month" to str(R.string.this_month),
-                "last30" to str(R.string.last_30_days),
-                "year" to str(R.string.this_year),
-                "custom" to str(R.string.custom),
-            ).forEach {
-                    (k, l) ->
-                SelectChip(l, period == k) { period = k }
+        // Period: four equal buttons in a 2 x 2 grid, with the dates it covers underneath.
+        Card {
+            Text(str(R.string.period), color = Muted, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+            Spacer(Modifier.height(10.dp))
+            val options =
+                listOf(
+                    "month" to str(R.string.this_month),
+                    "last30" to str(R.string.last_30_days),
+                    "year" to str(R.string.this_year),
+                    "custom" to str(R.string.custom),
+                )
+            options.chunked(2).forEachIndexed { i, pair ->
+                if (i > 0) Spacer(Modifier.height(8.dp))
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    pair.forEach { (k, l) -> Box(Modifier.weight(1f)) { PeriodButton(l, period == k) { period = k } } }
+                }
             }
-        }
-        if (period == "custom") {
-            Card(padding = 12.dp) {
+            Spacer(Modifier.height(10.dp))
+            Text(periodDates, color = Muted, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+            if (period == "custom") {
+                Spacer(Modifier.height(6.dp))
                 PickRow(str(R.string.from), fullDate(from), Icons.Filled.CalendarMonth, Muted, {
                     target = "from"
                     nav.navigate(Routes.datePicker(from))
@@ -610,18 +626,79 @@ fun ReportFilterScreen(
                 }, divider = false)
             }
         }
-        SectionTitle(str(R.string.show))
+
         SegmentedControl(listOf(str(R.string.spending), str(R.string.income)), if (kind == "income") 1 else 0, {
             kind = if (it == 1) "income" else "expense"
         })
-        SectionTitle(str(R.string.accounts))
-        Hint(str(R.string.leave_empty_to_include_all_accounts))
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            accounts.filter { !it.archived }.forEach {
-                    a ->
-                SelectChip(a.name, a.id in accs) { accs = if (a.id in accs) accs - a.id else accs + a.id }
+
+        // Accounts: a checklist. Nothing ticked means every account.
+        Card {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Text(str(R.string.accounts), color = Muted, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
+                Text(
+                    if (accs.isEmpty()) str(R.string.select_all) else str(R.string.clear),
+                    color = Primary,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.clip(RoundedCornerShape(8.dp)).clickable {
+                        accs = if (accs.isEmpty()) live.map { it.id }.toSet() else emptySet()
+                    }.padding(horizontal = 6.dp, vertical = 4.dp),
+                )
             }
+            live.forEachIndexed { i, a ->
+                val on = a.id in accs
+                Row(
+                    Modifier.fillMaxWidth().clickable { accs = if (on) accs - a.id else accs + a.id }.padding(vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    IconCircle(a.icon, a.colorKey, 34.dp)
+                    Text(a.name, color = Ink, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f), maxLines = 1)
+                    CheckBubble(on)
+                }
+                if (i < live.lastIndex) HorizontalDivider(color = Line)
+            }
+            Spacer(Modifier.height(4.dp))
+            Hint(str(R.string.leave_empty_to_include_all_accounts))
         }
+    }
+}
+
+/** One period button: equal width, same height, selected = tinted with a coloured outline. */
+@Composable
+private fun PeriodButton(
+    label: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+) {
+    val shape = RoundedCornerShape(14.dp)
+    Box(
+        Modifier.fillMaxWidth().height(46.dp).clip(shape)
+            .background(if (selected) PrimaryContainer else Surface)
+            .border(if (selected) 1.5.dp else 1.dp, if (selected) Primary else FieldBorder, shape)
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            label,
+            color = if (selected) Primary else Muted,
+            fontWeight = if (selected) FontWeight.ExtraBold else FontWeight.SemiBold,
+            fontSize = 14.sp,
+            maxLines = 1,
+        )
+    }
+}
+
+/** Round tick used in checklists. */
+@Composable
+private fun CheckBubble(on: Boolean) {
+    Box(
+        Modifier.size(22.dp).clip(CircleShape)
+            .background(if (on) Primary else Color.Transparent)
+            .border(1.5.dp, if (on) Primary else FieldBorder, CircleShape),
+        contentAlignment = Alignment.Center,
+    ) {
+        if (on) Icon(Icons.Filled.Check, null, tint = Color.White, modifier = Modifier.size(14.dp))
     }
 }
 

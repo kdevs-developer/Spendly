@@ -94,7 +94,7 @@ fun TxnFormScreen(
     var catId by rememberSaveable(existing) { mutableStateOf(existing?.categoryId ?: "") }
     var subId by rememberSaveable(existing) { mutableStateOf(existing?.subcategoryId ?: "") }
     var note by rememberSaveable(existing) { mutableStateOf(existing?.note ?: "") }
-    var date by rememberSaveable(existing) { mutableStateOf(existing?.dateMillis ?: todayMillis()) }
+    var date by rememberSaveable(existing) { mutableStateOf(existing?.dateMillis ?: nowMillis()) }
     var confirmDelete by remember { mutableStateOf(false) }
     val saver = rememberSaver()
     val scope = rememberCoroutineScope()
@@ -107,7 +107,8 @@ fun TxnFormScreen(
             subId = it.second
         }
     }
-    entry.Picked<Long>("pickedDate") { date = it }
+    entry.Picked<Long>("pickedDate") { date = withTimeOf(it, date) }
+    entry.Picked<Int>("pickedTime") { date = withMinutes(date, it) }
 
     val paise = parseRupees(amount) ?: 0L
     val cat = look.category(subId.ifBlank { catId })
@@ -146,7 +147,7 @@ fun TxnFormScreen(
                                 categoryId = catId,
                                 subcategoryId = subId,
                                 note = note.trim(),
-                                dateMillis = stampTime(date, existing?.dateMillis),
+                                dateMillis = date,
                             ),
                         )
                     }
@@ -186,7 +187,15 @@ fun TxnFormScreen(
             )
             PickRow(str(R.string.date), dayLabel(date) + ", " + fullDate(date), Icons.Filled.CalendarMonth, Muted, {
                 nav.navigate(Routes.datePicker(date))
-            }, divider = false)
+            })
+            PickRow(
+                str(R.string.time),
+                if (hasTime(date)) timeOf(date) else str(R.string.add_time),
+                Icons.Filled.Schedule,
+                Muted,
+                { nav.navigate(Routes.timePicker(minutesOfDay(date))) },
+                divider = false,
+            )
         }
         AppTextField(note, { note = it }, str(R.string.note_optional), singleLine = false, minLines = 2)
     }
@@ -305,7 +314,7 @@ fun TransferScreen(
     var to by rememberSaveable { mutableStateOf("") }
     var amount by rememberSaveable { mutableStateOf("") }
     var note by rememberSaveable { mutableStateOf("") }
-    var date by rememberSaveable { mutableStateOf(todayMillis()) }
+    var date by rememberSaveable { mutableStateOf(nowMillis()) }
     val saver = rememberSaver()
     val scope = rememberCoroutineScope()
     LaunchedEffect(accounts) {
@@ -315,7 +324,8 @@ fun TransferScreen(
     }
     entry.Picked<String>("pickedAccount") { from = it }
     entry.Picked<String>("pickedAccount2") { to = it }
-    entry.Picked<Long>("pickedDate") { date = it }
+    entry.Picked<Long>("pickedDate") { date = withTimeOf(it, date) }
+    entry.Picked<Int>("pickedTime") { date = withMinutes(date, it) }
     val paise = parseRupees(amount) ?: 0L
     val ok = paise > 0 && from.isNotBlank() && to.isNotBlank() && from != to
     ScreenScaffold(str(R.string.transfer), { nav.popBackStack() }, bottomBar = {
@@ -324,7 +334,7 @@ fun TransferScreen(
                 Repo.put(
                     "txns",
                     "",
-                    Txn(kind = "transfer", amountPaise = paise, accountId = from, toAccountId = to, note = note.trim(), dateMillis = withNowTime(date)),
+                    Txn(kind = "transfer", amountPaise = paise, accountId = from, toAccountId = to, note = note.trim(), dateMillis = date),
                 )
             }
         })
@@ -346,6 +356,13 @@ fun TransferScreen(
                 Icons.Filled.CalendarMonth,
                 Muted,
                 { nav.navigate(Routes.datePicker(date)) },
+            )
+            PickRow(
+                str(R.string.time),
+                if (hasTime(date)) timeOf(date) else str(R.string.add_time),
+                Icons.Filled.Schedule,
+                Muted,
+                { nav.navigate(Routes.timePicker(minutesOfDay(date))) },
                 divider = false,
             )
         }
@@ -443,7 +460,7 @@ fun AccountEditScreen(
             },
             if (isCard) str(R.string.amount_you_owe_now) else str(R.string.opening_balance),
             keyboard = androidx.compose.ui.text.input.KeyboardType.Decimal,
-            leading = { Text("₹", fontWeight = FontWeight.Bold) },
+            leading = { Text(str(R.string.rupee_symbol), fontWeight = FontWeight.Bold) },
         )
         Card(padding = 12.dp) {
             PickRowLeading(str(R.string.icon), iconLabel(icon), {
@@ -503,7 +520,7 @@ fun AccountDetailScreen(
                 Text(
                     AccountTypes.firstOrNull {
                         it.key == a.type
-                    }?.label.orEmpty() + if (a.archived) " · Archived" else "",
+                    }?.label.orEmpty() + if (a.archived) " · " + str(R.string.archived) else "",
                     color =
                         Color.White.copy(
                             alpha = 0.9f,
@@ -694,7 +711,7 @@ fun GoalsScreen(nav: NavController) {
                     g.savedPaise,
                     g.targetPaise,
                     colorSpec(g.colorKey).solid,
-                    "${formatPaise(g.savedPaise)} of ${formatPaise(g.targetPaise)}",
+                    str(R.string.of_2, formatPaise(g.savedPaise), formatPaise(g.targetPaise)),
                 )
                 if (g.savedPaise < g.targetPaise) {
                     SecondaryButton(str(R.string.add_savings), { nav.navigate(Routes.goalAdd(g.id)) })
@@ -756,7 +773,7 @@ fun GoalEditScreen(
             { v -> if (v.all { it.isDigit() || it == '.' }) target = v },
             str(R.string.target_amount),
             keyboard = androidx.compose.ui.text.input.KeyboardType.Decimal,
-            leading = { Text("₹", fontWeight = FontWeight.Bold) },
+            leading = { Text(str(R.string.rupee_symbol), fontWeight = FontWeight.Bold) },
         )
         Card(padding = 12.dp) {
             PickRow(

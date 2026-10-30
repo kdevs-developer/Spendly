@@ -1,5 +1,6 @@
 package com.kdevs.spendly.data
 
+import com.kdevs.spendly.R
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
@@ -39,7 +40,7 @@ object Exporter {
             Row(
                 t.dateMillis,
                 t.kind.replaceFirstChar { it.uppercase() },
-                if (transfer) "Transfer" else if (t.categoryId.isBlank()) "Uncategorised" else look.categoryName(t.categoryId),
+                if (transfer) str(R.string.transfer) else if (t.categoryId.isBlank()) str(R.string.uncategorised) else look.categoryName(t.categoryId),
                 if (t.subcategoryId.isBlank()) "" else look.categoryName(t.subcategoryId),
                 look.accountName(t.accountId),
                 if (transfer) look.accountName(t.toAccountId) else "",
@@ -105,7 +106,7 @@ object Exporter {
         periodLabel: String,
     ): ByteArray {
         val data = rows(list, look)
-        val headers = listOf("Date", "Type", "Category", "Sub-category", "Account", "To account", "Amount (INR)", "Note")
+        val headers = listOf(str(R.string.col_date), str(R.string.col_type), str(R.string.col_category), str(R.string.col_sub_category), str(R.string.col_account), str(R.string.col_to_account), str(R.string.col_amount_inr), str(R.string.col_note))
 
         val tx = StringBuilder()
         tx.append("""<row r="1">""")
@@ -129,7 +130,7 @@ object Exporter {
         val expense = list.filter { it.kind == "expense" }.sumOf { it.amountPaise }
         val byCat =
             list.filter { it.kind == "expense" }
-                .groupBy { if (it.categoryId.isBlank()) "Uncategorised" else look.categoryName(it.categoryId) }
+                .groupBy { if (it.categoryId.isBlank()) str(R.string.uncategorised) else look.categoryName(it.categoryId) }
                 .map { (k, v) -> k to v.sumOf { it.amountPaise } }
                 .sortedByDescending { it.second }
 
@@ -148,16 +149,16 @@ object Exporter {
             sm.append("</row>")
             r++
         }
-        sm.append("""<row r="1">${text("A1", "Spendly export", 4)}</row>""")
+        sm.append("""<row r="1">${text("A1", str(R.string.spendly_export), 4)}</row>""")
         r = 2
-        sm.append("""<row r="2">${text("A2", "Period")}${text("B2", periodLabel)}</row>""")
-        sm.append("""<row r="3">${text("A3", "Transactions")}${num("B3", list.size.toDouble(), 0)}</row>""")
+        sm.append("""<row r="2">${text("A2", str(R.string.period))}${text("B2", periodLabel)}</row>""")
+        sm.append("""<row r="3">${text("A3", str(R.string.transactions_2))}${num("B3", list.size.toDouble(), 0)}</row>""")
         r = 4
-        line("Total income", rupees(income))
-        line("Total expenses", rupees(expense))
-        line("Net (income - expenses)", rupees(income - expense), 4)
+        line(str(R.string.total_income), rupees(income))
+        line(str(R.string.total_expenses), rupees(expense))
+        line(str(R.string.net_income_expenses), rupees(income - expense), 4)
         r++
-        sm.append("""<row r="$r">${text("A$r", "Expenses by category", 1)}${text("B$r", "Amount (INR)", 1)}${text("C$r", "Share", 1)}</row>""")
+        sm.append("""<row r="$r">${text("A$r", str(R.string.expenses_by_category), 1)}${text("B$r", str(R.string.col_amount_inr), 1)}${text("C$r", str(R.string.col_share), 1)}</row>""")
         r++
         byCat.forEach { (k, v) -> line(k, rupees(v), 0, if (expense > 0) v.toDouble() / expense else 0.0) }
 
@@ -243,7 +244,7 @@ object Exporter {
         fun paint(
             size: Float,
             bold: Boolean = false,
-            color: Int = Color.parseColor("#111827"),
+            color: Int = Res.colorInt(R.color.pdf_ink),
         ) = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
             textSize = size
             this.color = color
@@ -253,11 +254,11 @@ object Exporter {
         val bodyRight = paint(9f, true).apply { textAlign = Paint.Align.RIGHT }
         val head = paint(9f, true, Color.WHITE)
         val headRight = paint(9f, true, Color.WHITE).apply { textAlign = Paint.Align.RIGHT }
-        val muted = paint(9f, false, Color.parseColor("#6B7280"))
-        val green = Color.parseColor("#15803D")
-        val red = Color.parseColor("#B91C1C")
-        val fill = Paint().apply { color = Color.parseColor("#1D4ED8") }
-        val zebra = Paint().apply { color = Color.parseColor("#F3F4F6") }
+        val muted = paint(9f, false, Res.colorInt(R.color.pdf_muted))
+        val green = Res.colorInt(R.color.pdf_green)
+        val red = Res.colorInt(R.color.pdf_red)
+        val fill = Paint().apply { color = Res.colorInt(R.color.pdf_header) }
+        val zebra = Paint().apply { color = Res.colorInt(R.color.pdf_zebra) }
 
         fun fit(
             s: String,
@@ -273,17 +274,17 @@ object Exporter {
 
         fun footer() {
             val cv = c ?: return
-            cv.drawText("Spendly  |  page $pageNo", m, h - 24f, muted)
+            cv.drawText(str(R.string.pdf_page_footer, pageNo), m, h - 24f, muted)
         }
 
         fun tableHeader() {
             val cv = c ?: return
             cv.drawRect(m, y, right, y + rowH, fill)
-            cv.drawText("Date", colDate + 4, y + 14, head)
-            cv.drawText("Category", colCat, y + 14, head)
-            cv.drawText("Account", colAcc, y + 14, head)
-            cv.drawText("Note", colNote, y + 14, head)
-            cv.drawText("Amount", right - 4, y + 14, headRight)
+            cv.drawText(str(R.string.col_date), colDate + 4, y + 14, head)
+            cv.drawText(str(R.string.col_category), colCat, y + 14, head)
+            cv.drawText(str(R.string.col_account), colAcc, y + 14, head)
+            cv.drawText(str(R.string.col_note), colNote, y + 14, head)
+            cv.drawText(str(R.string.col_amount), right - 4, y + 14, headRight)
             y += rowH
         }
 
@@ -299,17 +300,17 @@ object Exporter {
             y = m
             if (pageNo == 1) {
                 val cv = p.canvas
-                cv.drawText("Spendly transactions", m, y + 18, paint(20f, true))
+                cv.drawText(str(R.string.pdf_title), m, y + 18, paint(20f, true))
                 y += 34
-                cv.drawText(periodLabel, m, y, paint(11f, false, Color.parseColor("#374151")))
+                cv.drawText(periodLabel, m, y, paint(11f, false, Res.colorInt(R.color.pdf_subtext)))
                 y += 14
-                cv.drawText("Created ${fullDate(todayMillis())}  |  ${list.size} transactions", m, y, muted)
+                cv.drawText(str(R.string.pdf_created, fullDate(todayMillis()), list.size), m, y, muted)
                 y += 22
                 val third = (right - m) / 3
                 listOf(
-                    Triple("Income", formatPaise(income), green),
-                    Triple("Expenses", formatPaise(expense), red),
-                    Triple("Net", formatPaise(income - expense), Color.parseColor("#111827")),
+                    Triple(str(R.string.income), formatPaise(income), green),
+                    Triple(str(R.string.expenses_word), formatPaise(expense), red),
+                    Triple(str(R.string.net_word), formatPaise(income - expense), Res.colorInt(R.color.pdf_ink)),
                 ).forEachIndexed { i, (label, value, col) ->
                     val x = m + third * i
                     cv.drawText(label, x, y, muted)
@@ -335,13 +336,13 @@ object Exporter {
                 when (r.type) {
                     "Income" -> "+" + formatPaise(r.paise) to green
                     "Expense" -> "-" + formatPaise(r.paise) to red
-                    else -> formatPaise(r.paise) to Color.parseColor("#6B7280")
+                    else -> formatPaise(r.paise) to Res.colorInt(R.color.pdf_muted)
                 }
             bodyRight.color = col
             cv.drawText(txt, right - 4, y + 14, bodyRight)
             y += rowH
         }
-        if (data.isEmpty()) c?.drawText("No transactions in this period.", m, y + 16, muted)
+        if (data.isEmpty()) c?.drawText(str(R.string.no_transactions_in_period), m, y + 16, muted)
         page?.let {
             footer()
             doc.finishPage(it)

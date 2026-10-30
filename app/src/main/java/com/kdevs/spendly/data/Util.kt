@@ -66,6 +66,28 @@ fun stampTime(
 /** False for older transactions that were saved at midnight with no time. */
 fun hasTime(millis: Long): Boolean = millis != toLocalDate(millis).startMillis()
 
+/** Right now, as a full moment (day and clock time). */
+fun nowMillis(): Long = withNowTime(todayMillis())
+
+/** Moves a moment to another day and keeps its clock time. A midnight source stays at midnight (no time). */
+fun withTimeOf(
+    dayMillis: Long,
+    timeSource: Long,
+): Long =
+    toLocalDate(dayMillis).atTime(Instant.ofEpochMilli(timeSource).atZone(zone).toLocalTime()).atZone(zone).toInstant().toEpochMilli()
+
+/** Minutes since midnight (0 to 1439) of a moment. */
+fun minutesOfDay(millis: Long): Int = Instant.ofEpochMilli(millis).atZone(zone).let { it.hour * 60 + it.minute }
+
+/** The given day at a chosen clock time, in minutes since midnight. */
+fun withMinutes(
+    dayMillis: Long,
+    minutes: Int,
+): Long = toLocalDate(dayMillis).atTime(minutes / 60, minutes % 60).atZone(zone).toInstant().toEpochMilli()
+
+/** Recurring entries are saved at midnight; give them a steady 9:00 AM so they show a time. */
+fun atNineIfNoTime(millis: Long): Long = if (hasTime(millis)) millis else withMinutes(millis, 9 * 60)
+
 fun monthStart(d: LocalDate = LocalDate.now()): Long = d.withDayOfMonth(1).startMillis()
 
 fun nextMonthStart(d: LocalDate = LocalDate.now()): Long = d.withDayOfMonth(1).plusMonths(1).startMillis()

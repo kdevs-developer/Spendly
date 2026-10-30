@@ -405,11 +405,20 @@ object Repo {
             } else {
                 callbackFlow {
                     val q = order(db.collection("users").document(u).collection(name))
-                    val reg = q.addSnapshotListener { s, _ -> if (s != null) trySend(s.toObjects(T::class.java)) }
+                    val reg =
+                        q.addSnapshotListener { s, _ ->
+                            if (s != null) {
+                                trySend(s.toObjects(T::class.java))
+                                loaded.value = loaded.value + name
+                            }
+                        }
                     awaitClose { reg.remove() }
                 }
             }
         }
+
+    /** Names of collections that have delivered their first snapshot, so screens can show a loader instead of "empty". */
+    val loaded = kotlinx.coroutines.flow.MutableStateFlow(setOf<String>())
 
     private fun <T> Flow<T>.hot(initial: T): StateFlow<T> = stateIn(scope, SharingStarted.Eagerly, initial)
 
@@ -528,7 +537,7 @@ object Repo {
                         accountId = r.accountId,
                         categoryId = r.categoryId,
                         note = r.name,
-                        dateMillis = next,
+                        dateMillis = atNineIfNoTime(next),
                     ),
                 )
                 next = addPeriod(next, r.every)
@@ -675,6 +684,7 @@ object Repo {
                                     trySend(
                                         s.toObjects(Chat::class.java).sortedByDescending { it.lastAt?.toDate()?.time ?: Long.MAX_VALUE },
                                     )
+                                    loaded.value = loaded.value + "chats"
                                 }
                             }
                     awaitClose { reg.remove() }

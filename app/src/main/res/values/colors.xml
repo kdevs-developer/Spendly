@@ -60,4 +60,63 @@
     <color name="viewer_danger">#FCA5A5</color>
     <color name="qr_dark">#0F172A</color>
     <color name="qr_light">#FFFFFF</color>
+
+    <!-- Lock screen, loaders and text drawn on the brand blue -->
+    <color name="on_brand">#FFFFFF</color>
+    <color name="lock_ring">#FFFFFF</color>
+    <color name="scrim">#66000000</color>
+    <color name="coin_gold">#FBBF24</color>
+
+    <!-- Extra palette colours and gradients (colour picker) -->
+    <color name="palette_indigo">#4338CA</color>
+    <color name="palette_violet">#6D28D9</color>
+    <color name="palette_fuchsia">#A21CAF</color>
+    <color name="palette_rose">#E11D48</color>
+    <color name="palette_coral">#F2644B</color>
+    <color name="palette_amber">#D97706</color>
+    <color name="palette_gold">#CA8A04</color>
+    <color name="palette_lime">#65A30D</color>
+    <color name="palette_emerald">#059669</color>
+    <color name="palette_mint">#14B8A6</color>
+    <color name="palette_cyan">#0891B2</color>
+    <color name="palette_sky">#0284C7</color>
+    <color name="palette_navy">#1E3A8A</color>
+    <color name="palette_maroon">#9F1239</color>
+    <color name="palette_brown">#92400E</color>
+    <color name="palette_olive">#4D7C0F</color>
+    <color name="palette_graphite">#1F2937</color>
+    <color name="palette_steel">#64748B</color>
+    <color name="palette_g_berry_start">#DB2777</color>
+    <color name="palette_g_berry_end">#7C3AED</color>
+    <color name="palette_g_lagoon_start">#06B6D4</color>
+    <color name="palette_g_lagoon_end">#2563EB</color>
+    <color name="palette_g_mango_start">#F59E0B</color>
+    <color name="palette_g_mango_end">#EF4444</color>
+    <color name="palette_g_mint_start">#34D399</color>
+    <color name="palette_g_mint_end">#0EA5E9</color>
+    <color name="palette_g_dusk_start">#6366F1</color>
+    <color name="palette_g_dusk_end">#EC4899</color>
+    <color name="palette_g_lime_start">#A3E635</color>
+    <color name="palette_g_lime_end">#16A34A</color>
+    <color name="palette_g_flame_start">#F97316</color>
+    <color name="palette_g_flame_end">#DC2626</color>
+    <color name="palette_g_midnight_start">#1E3A8A</color>
+    <color name="palette_g_midnight_end">#7C3AED</color>
+    <color name="palette_g_peach_start">#FB923C</color>
+    <color name="palette_g_peach_end">#F472B6</color>
+    <color name="palette_g_steel_start">#475569</color>
+    <color name="palette_g_steel_end">#0EA5E9</color>
+    <color name="palette_g_royal_start">#4F46E5</color>
+    <color name="palette_g_royal_end">#0891B2</color>
+    <color name="palette_g_cherry_start">#BE123C</color>
+    <color name="palette_g_cherry_end">#F97316</color>
+
+    <!-- Excel / PDF export -->
+    <color name="pdf_ink">#111827</color>
+    <color name="pdf_muted">#6B7280</color>
+    <color name="pdf_green">#15803D</color>
+    <color name="pdf_red">#B91C1C</color>
+    <color name="pdf_header">#1D4ED8</color>
+    <color name="pdf_zebra">#F3F4F6</color>
+    <color name="pdf_subtext">#374151</color>
 </resources>

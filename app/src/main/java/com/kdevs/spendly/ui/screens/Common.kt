@@ -7,6 +7,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -16,6 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kdevs.spendly.R
@@ -49,7 +51,11 @@ fun rememberLookup(): Lookup {
     return remember(a, c) { Lookup(a, c) }
 }
 
-/** One transaction line. Pass `selected` (true/false) to show a tick box for select mode. */
+/**
+ * One transaction. Layout: icon, then the category and amount on the first line, a small line with the
+ * parent category, date and time, the note in its own block, and the account at the bottom.
+ * Pass `selected` (true/false) to show a tick box for select mode.
+ */
 @Composable
 fun TxnRow(
     t: Txn,
@@ -60,44 +66,104 @@ fun TxnRow(
 ) {
     val cat = look.category(t.subcategoryId.ifBlank { t.categoryId })
     val parent = look.category(t.categoryId)
+    val isTransfer = t.kind == "transfer"
     val (title, icon, color) =
-        when (t.kind) {
-            "transfer" -> Triple(str(R.string.transfer), "invest", "slate")
-            else ->
-                Triple(
-                    cat?.name ?: str(R.string.uncategorised),
-                    cat?.icon ?: parent?.icon ?: "other",
-                    parent?.colorKey ?: cat?.colorKey ?: "slate",
-                )
+        if (isTransfer) {
+            Triple(str(R.string.transfer), "invest", "slate")
+        } else {
+            Triple(
+                cat?.name ?: str(R.string.uncategorised),
+                cat?.icon ?: parent?.icon ?: "other",
+                parent?.colorKey ?: cat?.colorKey ?: "slate",
+            )
         }
-    val sub =
-        buildString {
-            if (t.kind == "transfer") {
-                append(str(R.string.to, look.accountName(t.accountId), look.accountName(t.toAccountId)))
-            } else {
-                append(look.accountName(t.accountId))
-            }
-            if (t.note.isNotBlank()) append(str(R.string.text__3, t.note))
-            if (showDate) append(str(R.string.text__3, fullDate(t.dateMillis)))
+    val subtitle =
+        listOfNotNull(
+            when {
+                isTransfer -> null
+                t.subcategoryId.isNotBlank() && parent != null -> parent.name
+                t.kind == "income" -> str(R.string.income)
+                else -> str(R.string.expense)
+            },
+            if (showDate) fullDate(t.dateMillis) else null,
+            if (hasTime(t.dateMillis)) timeOf(t.dateMillis) else null,
+        ).joinToString(" · ")
+    val accountLabel =
+        if (isTransfer) {
+            str(R.string.to, look.accountName(t.accountId), look.accountName(t.toAccountId))
+        } else {
+            look.accountName(t.accountId)
+        }
+    val accountIcon = if (isTransfer) Icons.Filled.SwapHoriz else iconFor(look.account(t.accountId)?.icon ?: "bank")
+    val amt =
+        when (t.kind) {
+            "income" -> formatPaise(t.amountPaise, withSign = true) to Success
+            "expense" -> "-" + formatPaise(t.amountPaise) to Ink
+            else -> formatPaise(t.amountPaise) to Muted
         }
     Row(
-        Modifier.fillMaxWidth().clickable(onClick = onClick).padding(vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
+        Modifier.fillMaxWidth().clickable(onClick = onClick).padding(vertical = 10.dp),
+        verticalAlignment = Alignment.Top,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        if (selected != null) TickBox(selected)
+        if (selected != null) Box(Modifier.padding(top = 9.dp)) { TickBox(selected) }
         IconCircle(icon, color, 42.dp)
         Column(Modifier.weight(1f)) {
-            Text(title, fontWeight = FontWeight.Bold, color = Ink, fontSize = 15.sp, maxLines = 1)
-            Text(sub, color = Muted, fontSize = 12.sp, maxLines = 1, fontWeight = FontWeight.Medium)
-        }
-        val amt =
-            when (t.kind) {
-                "income" -> formatPaise(t.amountPaise, withSign = true) to Success
-                "expense" -> "-" + formatPaise(t.amountPaise) to Ink
-                else -> formatPaise(t.amountPaise) to Muted
+            Row(
+                Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Text(
+                    title,
+                    modifier = Modifier.weight(1f),
+                    fontWeight = FontWeight.Bold,
+                    color = Ink,
+                    fontSize = 15.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(amt.first, color = amt.second, fontWeight = FontWeight.ExtraBold, fontSize = 15.sp, maxLines = 1)
             }
-        Text(amt.first, color = amt.second, fontWeight = FontWeight.ExtraBold, fontSize = 15.sp)
+            if (subtitle.isNotBlank()) {
+                Text(
+                    subtitle,
+                    color = Muted,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Medium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+            if (t.note.isNotBlank()) {
+                Text(
+                    t.note,
+                    modifier =
+                        Modifier.padding(top = 6.dp).fillMaxWidth().clip(RoundedCornerShape(8.dp)).background(Bg)
+                            .padding(horizontal = 10.dp, vertical = 7.dp),
+                    color = Muted,
+                    fontSize = 12.sp,
+                    lineHeight = 17.sp,
+                    maxLines = 3,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+            Row(
+                Modifier.padding(top = 6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                Icon(accountIcon, null, tint = Muted, modifier = Modifier.size(14.dp))
+                Text(
+                    accountLabel,
+                    color = Muted,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Medium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+        }
     }
 }
 
@@ -159,7 +225,7 @@ fun periodLabel(): String =
     when (ReportFilter.period) {
         "last30" -> str(R.string.last_30_days)
         "year" -> str(R.string.this_year)
-        "custom" -> "${fullDate(ReportFilter.customFrom)} to ${fullDate(ReportFilter.customTo)}"
+        "custom" -> str(R.string.to, fullDate(ReportFilter.customFrom), fullDate(ReportFilter.customTo))
         else -> str(R.string.this_month)
     }
 

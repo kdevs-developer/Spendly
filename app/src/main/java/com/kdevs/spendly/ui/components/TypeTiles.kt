@@ -55,7 +55,7 @@ private class TypeSpec(
  * - Each kind has its own icon and colour (red / green / blue), so it reads without colour too.
  * - [selected] holds the keys "expense", "income" and "transfer". The caller owns the rules:
  *   Filter allows none (none = all), Export keeps at least one (guard inside [onToggle]).
- * - [emptyMeansAll] adds a status text next to the label: "All types included" or the picked names.
+ * - [emptyMeansAll] adds a status text next to the label: str(R.string.all_types_included) or the picked names.
  *
  * Put it inside a Card:  Card { TypeTiles(kinds, { kinds = kinds.flip(it) }, emptyMeansAll = true) }
  */
@@ -64,7 +64,7 @@ fun TypeTiles(
     selected: Set<String>,
     onToggle: (String) -> Unit,
     modifier: Modifier = Modifier,
-    label: String = "Transaction types",
+    label: String = str(R.string.transaction_types),
     emptyMeansAll: Boolean = false,
     enabled: Boolean = true,
 ) {

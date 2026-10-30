@@ -87,6 +87,8 @@ object Routes {
 
     fun datePicker(millis: Long) = "pick/date/$millis"
 
+    fun timePicker(minutes: Int) = "pick/time/$minutes"
+
     const val BUDGETS = "budgets"
 
     fun budgetEdit(id: String) = "budget/${id.ifBlank { "-" }}"
@@ -288,6 +290,7 @@ fun SpendlyNav() {
             screen("pick/icon/{group}/{current}", listOf("group", "current")) { e -> IconPickerScreen(nav, e.s("group"), e.s("current")) }
             screen("pick/account/{slot}/{exclude}", listOf("slot", "exclude")) { e -> AccountPickerScreen(nav, e.s("slot"), e.s("exclude")) }
             screen("pick/date/{millis}", listOf("millis")) { e -> DatePickerScreen(nav, e.s("millis").toLongOrNull() ?: 0L) }
+            screen("pick/time/{minutes}", listOf("minutes")) { e -> TimePickerScreen(nav, e.s("minutes").toIntOrNull() ?: 0) }
 
             // ----- Budgets, goals, templates, recurring -----
             screen(Routes.BUDGETS) { BudgetsScreen(nav) }

@@ -201,7 +201,7 @@ fun AuthScreen(nav: NavController) {
             else -> null
         }
 
-    ScreenScaffold(if (mode == 0) str(R.string.welcome_back) else str(R.string.create_account), onBack = { nav.popBackStack() }) {
+    ScreenScaffold(if (mode == 0) str(R.string.welcome_back) else str(R.string.create_account), onBack = { nav.popBackStack() }, busy = saver.busy, busyText = str(R.string.signing_you_in)) {
         Spacer(Modifier.height(4.dp))
         SegmentedControl(listOf(str(R.string.sign_in), str(R.string.create_account)), mode, {
             mode = it

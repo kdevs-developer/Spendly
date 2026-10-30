@@ -162,8 +162,8 @@ fun SettingsScreen(nav: NavController) {
                 onClick = { nav.navigate(Routes.RECURRING) },
             )
             SettingRow(
-                "Export data",
-                "Excel or PDF",
+                str(R.string.export_data),
+                str(R.string.excel_or_pdf),
                 icon = Icons.Filled.FileDownload,
                 iconColor = Primary,
                 onClick = { nav.navigate(Routes.EXPORT) },
@@ -174,8 +174,8 @@ fun SettingsScreen(nav: NavController) {
         Card(padding = 12.dp) {
             val allowed = Inbox.notificationsAllowed(ctx)
             SettingRow(
-                "Message notifications",
-                if (allowed) "On" else "Off. Tap to turn on",
+                str(R.string.message_notifications),
+                if (allowed) str(R.string.on) else str(R.string.off_tap_to_turn_on),
                 icon = Icons.Filled.Notifications,
                 iconColor = if (allowed) Success else Danger,
                 onClick = {
@@ -257,7 +257,7 @@ fun DeleteAccountScreen(nav: NavController) {
     val saver = rememberSaver()
     val scope = rememberCoroutineScope()
     val ctx = LocalContext.current
-    ScreenScaffold(str(R.string.delete_my_data), { if (!saver.busy) nav.popBackStack() }) {
+    ScreenScaffold(str(R.string.delete_my_data), { if (!saver.busy) nav.popBackStack() }, busy = saver.busy, busyText = str(R.string.deleting_your_data)) {
         Hint(str(R.string.this_removes_your_accounts_transaction))
         when {
             Repo.usesPassword -> {

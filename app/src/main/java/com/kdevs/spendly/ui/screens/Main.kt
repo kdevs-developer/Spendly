@@ -36,9 +36,13 @@ import com.kdevs.spendly.ui.components.*
 import com.kdevs.spendly.ui.state.ReportFilter
 import com.kdevs.spendly.ui.state.TxnFilter
 import com.kdevs.spendly.ui.theme.*
+import androidx.compose.runtime.saveable.rememberSaveable
+import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.YearMonth
+import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
+import java.time.temporal.TemporalAdjusters
 import java.util.Locale
 
 // ------------------------------------------------------------------ Home
@@ -113,7 +117,7 @@ fun HomeScreen(nav: NavController) {
                             formatPaise(spentNow - overall.limitPaise),
                         )
                     } else {
-                        "${formatPaise(overall.limitPaise - spentNow)} left"
+                        str(R.string.amount_left, formatPaise(overall.limitPaise - spentNow))
                     },
                 )
             }
@@ -131,7 +135,10 @@ fun HomeScreen(nav: NavController) {
                     }.padding(8.dp),
             )
         }
-        if (txns.isEmpty()) {
+        val txnsLoaded = "txns" in Repo.loaded.collectAsState().value
+        if (txns.isEmpty() && !txnsLoaded) {
+            InlineLoader()
+        } else if (txns.isEmpty()) {
             EmptyState(Icons.Filled.Receipt, str(R.string.no_transactions_yet), str(R.string.tap_the_plus_button_to_add))
         } else {
             Card(padding = 12.dp) {
@@ -252,7 +259,9 @@ fun ActivityScreen(nav: NavController) {
     ) {
         SegmentedControl(listOf(str(R.string.list), str(R.string.calendar)), view, { view = it })
         if (view == 0) {
-            if (filtered.isEmpty()) {
+            if (filtered.isEmpty() && txns.isEmpty() && "txns" !in Repo.loaded.collectAsState().value) {
+                InlineLoader()
+            } else if (filtered.isEmpty()) {
                 EmptyState(
                     Icons.Filled.SearchOff,
                     str(R.string.nothing_here),
@@ -482,37 +491,108 @@ private fun CategoryReport(
     }
 }
 
-@Composable
-private fun TrendReport(txns: List<Txn>) {
+/** One bar group in the trend chart: a day, a week, a month or a year. */
+private class TrendBucket(val short: String, val long: String, val from: Long, val to: Long)
+
+private fun trendBuckets(gran: Int): List<TrendBucket> {
     val today = LocalDate.now()
-    val months = (5 downTo 0).map { today.withDayOfMonth(1).minusMonths(it.toLong()) }
+    val loc = Locale.getDefault()
+    return when (gran) {
+        0 ->
+            (13 downTo 0).map {
+                val d = today.minusDays(it.toLong())
+                TrendBucket(
+                    d.dayOfMonth.toString(),
+                    d.format(DateTimeFormatter.ofPattern("EEE, d MMM", loc)),
+                    d.startMillis(),
+                    d.plusDays(1).startMillis(),
+                )
+            }
+        1 -> {
+            val thisWeek = today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
+            (7 downTo 0).map {
+                val w = thisWeek.minusWeeks(it.toLong())
+                val f = DateTimeFormatter.ofPattern("d MMM", loc)
+                TrendBucket(
+                    w.format(f),
+                    w.format(f) + " – " + w.plusDays(6).format(f),
+                    w.startMillis(),
+                    w.plusWeeks(1).startMillis(),
+                )
+            }
+        }
+        3 ->
+            (4 downTo 0).map {
+                val y = today.withDayOfYear(1).minusYears(it.toLong())
+                TrendBucket(y.year.toString(), y.year.toString(), y.startMillis(), y.plusYears(1).startMillis())
+            }
+        else ->
+            (5 downTo 0).map {
+                val m = today.withDayOfMonth(1).minusMonths(it.toLong())
+                TrendBucket(
+                    m.month.getDisplayName(TextStyle.SHORT, loc),
+                    m.format(DateTimeFormatter.ofPattern("MMM yyyy", loc)),
+                    m.startMillis(),
+                    m.plusMonths(1).startMillis(),
+                )
+            }
+    }
+}
+
+@Composable
+private fun TrendReport(allTxns: List<Txn>) {
+    var gran by rememberSaveable { mutableIntStateOf(2) } // 0 day, 1 week, 2 month, 3 year
+    val txns = allTxns.filter { ReportFilter.accountIds.isEmpty() || it.accountId in ReportFilter.accountIds }
+    val buckets = remember(gran) { trendBuckets(gran) }
     val data =
-        months.map { m ->
-            val l = inRange(txns, m.startMillis(), m.plusMonths(1).startMillis())
-            Triple(m.month.getDisplayName(TextStyle.SHORT, Locale.getDefault()), spent(l), earned(l))
+        buckets.map { b ->
+            val l = inRange(txns, b.from, b.to)
+            Triple(b, spent(l), earned(l))
         }
     val max = (data.maxOfOrNull { maxOf(it.second, it.third) } ?: 0L).coerceAtLeast(1L)
+    val barWidth = when (gran) { 0 -> 7.dp; 1 -> 12.dp; 3 -> 18.dp; else -> 14.dp }
+    val title =
+        when (gran) {
+            0 -> str(R.string.last_14_days)
+            1 -> str(R.string.last_8_weeks)
+            3 -> str(R.string.last_5_years)
+            else -> str(R.string.last_6_months)
+        }
+    SegmentedControl(
+        listOf(str(R.string.trend_day), str(R.string.trend_week), str(R.string.trend_month), str(R.string.trend_year)),
+        gran,
+        { gran = it },
+    )
     Card {
-        Text(str(R.string.last_6_months), fontWeight = FontWeight.Bold, color = Ink)
+        Text(title, fontWeight = FontWeight.Bold, color = Ink)
         Spacer(Modifier.height(12.dp))
-        Row(Modifier.fillMaxWidth().height(170.dp), horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.Bottom) {
-            data.forEach { (_, s, e) ->
-                Row(Modifier.fillMaxHeight(), verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
-                    Box(
-                        Modifier.width(
-                            14.dp,
-                        ).fillMaxHeight((s.toFloat() / max).coerceIn(0.02f, 1f)).clip(RoundedCornerShape(5.dp)).background(Danger),
-                    )
-                    Box(
-                        Modifier.width(
-                            14.dp,
-                        ).fillMaxHeight((e.toFloat() / max).coerceIn(0.02f, 1f)).clip(RoundedCornerShape(5.dp)).background(Success),
+        Row(Modifier.fillMaxWidth()) {
+            data.forEach { (b, s, e) ->
+                Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Row(
+                        Modifier.fillMaxWidth().height(170.dp),
+                        verticalAlignment = Alignment.Bottom,
+                        horizontalArrangement = Arrangement.spacedBy(2.dp, Alignment.CenterHorizontally),
+                    ) {
+                        Box(
+                            Modifier.width(barWidth).fillMaxHeight((s.toFloat() / max).coerceIn(0.02f, 1f))
+                                .clip(RoundedCornerShape(4.dp)).background(Danger),
+                        )
+                        Box(
+                            Modifier.width(barWidth).fillMaxHeight((e.toFloat() / max).coerceIn(0.02f, 1f))
+                                .clip(RoundedCornerShape(4.dp)).background(Success),
+                        )
+                    }
+                    Text(
+                        b.short,
+                        modifier = Modifier.padding(top = 8.dp),
+                        color = Muted,
+                        fontSize = if (gran == 1) 10.sp else 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
                     )
                 }
             }
-        }
-        Row(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.SpaceEvenly) {
-            data.forEach { Text(it.first, color = Muted, fontSize = 12.sp, fontWeight = FontWeight.Bold) }
         }
         Spacer(Modifier.height(10.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -521,11 +601,21 @@ private fun TrendReport(txns: List<Txn>) {
         }
     }
     Card(padding = 12.dp) {
-        data.reversed().forEachIndexed { i, (m, s, e) ->
-            Row(Modifier.fillMaxWidth().padding(vertical = 10.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text(m, fontWeight = FontWeight.Bold, color = Ink, modifier = Modifier.width(50.dp))
+        data.reversed().forEachIndexed { i, (b, s, e) ->
+            Row(
+                Modifier.fillMaxWidth().padding(vertical = 10.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(b.long, fontWeight = FontWeight.Bold, color = Ink, modifier = Modifier.weight(1f), maxLines = 1)
                 Text("-" + formatPaise(s), color = Danger, fontWeight = FontWeight.Bold)
-                Text(formatPaise(e, true).let { if (e == 0L) "₹0" else it }, color = Success, fontWeight = FontWeight.Bold)
+                Text(
+                    formatPaise(e, true).let { if (e == 0L) "₹0" else it },
+                    color = Success,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.widthIn(min = 64.dp),
+                    textAlign = androidx.compose.ui.text.style.TextAlign.End,
+                )
             }
             if (i < data.lastIndex) HorizontalDivider(color = Line)
         }

@@ -1,5 +1,6 @@
 package com.kdevs.spendly.data
 
+import com.kdevs.spendly.R
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import kotlinx.coroutines.CoroutineScope
@@ -20,7 +21,7 @@ class SpendlyMessagingService : FirebaseMessagingService() {
 
     override fun onMessageReceived(message: RemoteMessage) {
         val chatId = message.data[Inbox.EXTRA_CHAT].orEmpty()
-        val title = message.notification?.title ?: message.data["title"] ?: "Spendly"
+        val title = message.notification?.title ?: message.data["title"] ?: str(R.string.spendly)
         val body = message.notification?.body ?: message.data["body"].orEmpty()
         if (chatId.isNotBlank()) scope.launch { runCatching { Repo.markDelivered(chatId) } }
         // While the app is on screen the in-app banner already handles it.

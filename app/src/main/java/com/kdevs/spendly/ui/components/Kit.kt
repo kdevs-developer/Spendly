@@ -83,6 +83,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.kdevs.spendly.R
+import com.kdevs.spendly.data.clr
 import com.kdevs.spendly.data.str
 import com.kdevs.spendly.nav.Routes
 import com.kdevs.spendly.ui.theme.Bg
@@ -114,8 +115,11 @@ fun ScreenScaffold(
     bottomBar: @Composable () -> Unit = {},
     scroll: Boolean = true,
     header: (@Composable ColumnScope.() -> Unit)? = null,
+    busy: Boolean = false,
+    busyText: String? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
+    Box(Modifier.fillMaxSize()) {
     Column(modifier.fillMaxSize().background(Bg).statusBarsPadding()) {
         Row(
             Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp),
@@ -144,6 +148,35 @@ fun ScreenScaffold(
             Spacer(Modifier.height(24.dp))
         }
         bottomBar()
+    }
+    if (busy) LoadingOverlay(busyText)
+    }
+}
+
+/** Dims the screen, blocks taps and shows a spinner card while something slow runs. */
+@Composable
+fun LoadingOverlay(message: String? = null) {
+    Box(
+        Modifier.fillMaxSize().background(clr(R.color.scrim))
+            .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) {},
+        contentAlignment = Alignment.Center,
+    ) {
+        Column(
+            Modifier.clip(RoundedCornerShape(22.dp)).background(Surface).padding(horizontal = 28.dp, vertical = 24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(14.dp),
+        ) {
+            CircularProgressIndicator(Modifier.size(34.dp), color = Primary, strokeWidth = 3.dp)
+            Text(message ?: str(R.string.please_wait), color = Ink, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+        }
+    }
+}
+
+/** Centred spinner for a list that has not received its first data yet. */
+@Composable
+fun InlineLoader(modifier: Modifier = Modifier) {
+    Box(modifier.fillMaxWidth().padding(vertical = 48.dp), contentAlignment = Alignment.Center) {
+        CircularProgressIndicator(Modifier.size(30.dp), color = Primary, strokeWidth = 3.dp)
     }
 }
 

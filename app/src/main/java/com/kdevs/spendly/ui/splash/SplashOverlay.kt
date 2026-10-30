@@ -32,6 +32,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kdevs.spendly.R
+import com.kdevs.spendly.data.clr
 import com.kdevs.spendly.data.str
 import com.kdevs.spendly.ui.theme.Brand
 import kotlinx.coroutines.coroutineScope
@@ -42,7 +43,7 @@ import kotlinx.coroutines.launch
 private const val S_PATH =
     "M66,43 C66,37 60.5,33.5 54,33.5 C46.5,33.5 42,37.5 42,43 C42,49 47,51 54,54 " +
             "C61,57 66,59 66,65 C66,70.5 61.5,74.5 54,74.5 C47,74.5 42,71 42,65"
-private val CoinGold = Color(0xFFFBBF24)
+private val CoinGold get() = clr(R.color.coin_gold)
 
 /**
  * Animated splash: a soft halo fades in, the "S" draws itself in, the gold coin pops in,

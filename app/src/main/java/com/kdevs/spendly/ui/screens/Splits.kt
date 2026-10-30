@@ -132,7 +132,7 @@ fun SplitsScreen(
                     entries.forEachIndexed { i, e ->
                         val settle = e.kind == "settlement"
                         SettingRow(
-                            if (settle) "${chat?.nameOf(e.paidBy, me)} paid ${chat?.nameOf(e.settleTo, me)}" else e.description,
+                            if (settle) str(R.string.person_paid_person, chat?.nameOf(e.paidBy, me), chat?.nameOf(e.settleTo, me)) else e.description,
                             str(R.string.text__2, fullDate(e.dateMillis)) + if (!settle) " · paid by ${chat?.nameOf(e.paidBy, me)}" else "",
                             icon = if (settle) Icons.Filled.CheckCircle else Icons.Filled.Receipt,
                             iconColor = if (settle) Success else clr(R.color.swatch_teal),
@@ -144,15 +144,15 @@ fun SplitsScreen(
                 }
             }
             if (entries.isNotEmpty()) {
-                Hint("Tap an entry to see who owes what.")
-                SecondaryButton("Share summary", {
+                Hint(str(R.string.tap_entry_hint))
+                SecondaryButton(str(R.string.share_summary), {
                     val text =
                         buildString {
-                            append(chat?.name?.ifBlank { null } ?: "Spendly split").append("\n")
+                            append(chat?.name?.ifBlank { null } ?: str(R.string.spendly_split)).append("\n")
                             if (plan.isEmpty()) {
-                                append("All settled up.")
+                                append(str(R.string.all_settled_up))
                             } else {
-                                plan.forEach { t -> append("${chat?.nameOf(t.from, me)} pays ${chat?.nameOf(t.to, me)} ${formatPaise(t.paise)}\n") }
+                                plan.forEach { t -> append(str(R.string.pays_with_amount, chat?.nameOf(t.from, me), chat?.nameOf(t.to, me), formatPaise(t.paise))).append("\n") }
                             }
                         }.trim()
                     val i = Intent(Intent.ACTION_SEND).apply { type = "text/plain"; putExtra(Intent.EXTRA_TEXT, text) }
@@ -181,7 +181,7 @@ fun SplitEntryScreen(
     var confirm by remember { mutableStateOf(false) }
     val saver = rememberSaver()
     val scope = rememberCoroutineScope()
-    ScreenScaffold(if (e?.kind == "settlement") "Payment" else "Expense", { nav.popBackStack() }) {
+    ScreenScaffold(if (e?.kind == "settlement") str(R.string.payment) else str(R.string.expense), { nav.popBackStack() }) {
         if (e == null) {
             EmptyState(Icons.Filled.SearchOff, str(R.string.not_found), "This entry was deleted.")
             return@ScreenScaffold
@@ -189,14 +189,14 @@ fun SplitEntryScreen(
         val settle = e.kind == "settlement"
         HeroCard(brush = androidx.compose.ui.graphics.Brush.linearGradient(listOf(clr(R.color.swatch_teal), clr(R.color.swatch_teal_dark)))) {
             Text(
-                if (settle) "${chat?.nameOf(e.paidBy, me)} paid ${chat?.nameOf(e.settleTo, me)}" else e.description,
+                if (settle) str(R.string.person_paid_person, chat?.nameOf(e.paidBy, me), chat?.nameOf(e.settleTo, me)) else e.description,
                 color = Color.White.copy(alpha = 0.9f),
                 fontWeight = FontWeight.SemiBold,
             )
             Text(formatPaise(e.totalPaise), color = Color.White, fontWeight = FontWeight.ExtraBold, fontSize = 38.sp)
         }
         Card(padding = 12.dp) {
-            if (!settle) SettingRow("Paid by", chat?.nameOf(e.paidBy, me) ?: "", icon = Icons.Filled.Person, iconColor = Primary)
+            if (!settle) SettingRow(str(R.string.paid_by), chat?.nameOf(e.paidBy, me) ?: "", icon = Icons.Filled.Person, iconColor = Primary)
             SettingRow(
                 str(R.string.date),
                 fullDate(e.dateMillis),
@@ -206,12 +206,12 @@ fun SplitEntryScreen(
             )
             if (!settle) {
                 SettingRow(
-                    "Split",
+                    str(R.string.split_word),
                     when (e.splitType) {
-                        "exact" -> "Exact amounts"
-                        "percent" -> "By percentage"
-                        "shares" -> "By shares"
-                        else -> "Equally"
+                        "exact" -> str(R.string.exact_amounts)
+                        "percent" -> str(R.string.by_percentage)
+                        "shares" -> str(R.string.by_shares)
+                        else -> str(R.string.equally)
                     },
                     icon = Icons.Filled.CallSplit,
                     iconColor = clr(R.color.swatch_teal),
@@ -220,7 +220,7 @@ fun SplitEntryScreen(
             }
         }
         if (!settle && e.owed.isNotEmpty()) {
-            SectionTitle("Who owes what")
+            SectionTitle(str(R.string.who_owes_what))
             Card(padding = 12.dp) {
                 val list = e.owed.entries.toList()
                 list.forEachIndexed { i, (u, p) ->
@@ -237,7 +237,7 @@ fun SplitEntryScreen(
         if (e.createdBy == me) {
             SecondaryButton(str(R.string.delete), { confirm = true }, danger = true)
         } else {
-            Hint("Only the person who added this can delete it.", center = true)
+            Hint(str(R.string.only_adder_can_delete), center = true)
         }
     }
     if (confirm) {
@@ -334,7 +334,7 @@ fun AddSplitScreen(
                     Repo.put(
                         "txns",
                         "",
-                        Txn(kind = "expense", amountPaise = myShare, accountId = shareAccount, note = desc.trim(), dateMillis = date),
+                        Txn(kind = "expense", amountPaise = myShare, accountId = shareAccount, note = desc.trim(), dateMillis = withNowTime(date)),
                     )
                 }
             }
@@ -406,7 +406,7 @@ fun AddSplitScreen(
         }
         Card(padding = 12.dp) {
             SettingRow(
-                "Add my share to my expenses",
+                str(R.string.add_my_share),
                 if (myShare > 0) formatPaise(myShare) else "",
                 icon = Icons.Filled.AccountBalanceWallet,
                 iconColor = Primary,
@@ -498,7 +498,7 @@ fun SettleUpScreen(
                             amountPaise = paise,
                             accountId = accountId,
                             note = str(R.string.settled_with, chat?.nameOf(other!!, me)),
-                            dateMillis = date,
+                            dateMillis = withNowTime(date),
                         ),
                     )
                 }

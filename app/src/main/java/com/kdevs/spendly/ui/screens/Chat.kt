@@ -32,6 +32,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -105,6 +106,7 @@ fun ChatListScreen(nav: NavController) {
     val chats by Repo.chats.collectAsState()
     val incoming by Repo.incomingRequests.collectAsState()
     val me = Repo.uid
+    val chatsLoaded = "chats" in Repo.loaded.collectAsState().value
     TabScreen(
         str(R.string.chat),
         Routes.CHATS,
@@ -124,7 +126,9 @@ fun ChatListScreen(nav: NavController) {
         },
         fab = { Fab(Icons.Filled.Edit, str(R.string.new_chat)) { nav.navigate(Routes.NEW_CHAT) } },
     ) {
-        if (chats.isEmpty()) {
+        if (chats.isEmpty() && !chatsLoaded) {
+            InlineLoader()
+        } else if (chats.isEmpty()) {
             EmptyState(Icons.AutoMirrored.Filled.Chat, str(R.string.no_chats_yet), str(R.string.add_a_friend_with_their_code))
         } else {
             Card(padding = 12.dp) {
@@ -397,7 +401,6 @@ fun RequestsScreen(nav: NavController) {
     ScreenScaffold(
         str(R.string.friends_and_requests),
         { nav.popBackStack() },
-        actions = { RoundIconButton(Icons.Filled.PersonAdd, str(R.string.add_friend), { nav.navigate(Routes.ADD_FRIEND) }) },
         header = {
             // Your code, always one tap away.
             HeroCard {
@@ -416,7 +419,7 @@ fun RequestsScreen(nav: NavController) {
                 }
             }
             SegmentedControl(
-                listOf("Friends ${friends.size}", "Requests ${incoming.size}", "Sent ${outgoing.size}"),
+                listOf(str(R.string.tab_friends, friends.size), str(R.string.tab_requests, incoming.size), str(R.string.tab_sent, outgoing.size)),
                 tab,
                 { tab = it },
             )
@@ -425,12 +428,12 @@ fun RequestsScreen(nav: NavController) {
         saver.error?.let { Text(it, color = Danger, fontWeight = FontWeight.SemiBold) }
         when (tab) {
             0 -> {
-                if (friends.size > 5) AppTextField(query, { query = it }, "Search friends", leading = { Icon(Icons.Filled.Search, null) })
+                if (friends.size > 5) AppTextField(query, { query = it }, str(R.string.search_friends), leading = { Icon(Icons.Filled.Search, null) })
                 if (friends.isEmpty()) {
-                    EmptyState(Icons.Filled.People, str(R.string.no_friends_yet), "Share your code or scan a friend's QR to connect.")
+                    EmptyState(Icons.Filled.People, str(R.string.no_friends_yet), str(R.string.share_code_or_scan))
                     PrimaryButton(str(R.string.add_friend), { nav.navigate(Routes.ADD_FRIEND) })
                 } else if (shown.isEmpty()) {
-                    Hint("No friend matches \"$query\".")
+                    Hint(str(R.string.no_friend_matches, query))
                 } else {
                     shown.forEach { f ->
                         Card(padding = 14.dp) {
@@ -440,7 +443,7 @@ fun RequestsScreen(nav: NavController) {
                                     Text(f.name, fontWeight = FontWeight.ExtraBold, color = Ink, maxLines = 1)
                                     Text(f.code, color = Muted, fontSize = 12.sp, letterSpacing = 1.sp)
                                 }
-                                RoundIconButton(Icons.AutoMirrored.Filled.Chat, "Message ${f.name}", {
+                                RoundIconButton(Icons.AutoMirrored.Filled.Chat, str(R.string.message_person, f.name), {
                                     saver.run(scope, onDone = {}) {
                                         val id = Repo.openDirectChat(f)
                                         nav.navigate(Routes.chat(id))
@@ -461,7 +464,7 @@ fun RequestsScreen(nav: NavController) {
             }
             1 -> {
                 if (incoming.isEmpty()) {
-                    EmptyState(Icons.Filled.MarkEmailRead, "No new requests", "When someone adds you with your code, it shows up here.")
+                    EmptyState(Icons.Filled.MarkEmailRead, str(R.string.no_new_requests_title), str(R.string.requests_empty_hint))
                 }
                 incoming.forEach { r ->
                     Card(padding = 14.dp) {
@@ -487,7 +490,7 @@ fun RequestsScreen(nav: NavController) {
             }
             else -> {
                 if (outgoing.isEmpty()) {
-                    EmptyState(Icons.Filled.Send, "Nothing waiting", "Requests you send stay here until the other person answers.")
+                    EmptyState(Icons.Filled.Send, str(R.string.nothing_waiting), str(R.string.sent_empty_hint))
                 }
                 outgoing.forEach { r ->
                     Card(padding = 14.dp) {
@@ -689,7 +692,13 @@ fun ConversationScreen(
     }
     entry.Picked<String>("replyTo") { mid -> replyTo = msgs.firstOrNull { it.id == mid } }
 
-    LaunchedEffect(msgs.size) { if (msgs.isNotEmpty()) list.animateScrollToItem(msgs.lastIndex) }
+    LaunchedEffect(msgs.size) { if (msgs.isNotEmpty()) list.animateScrollToItem(list.layoutInfo.totalItemsCount - 1) }
+
+    // When the keyboard opens (or grows, e.g. while a reply bar appears) keep the last message in view.
+    val imeBottom = WindowInsets.ime.getBottom(LocalDensity.current)
+    LaunchedEffect(imeBottom) {
+        if (imeBottom > 0 && msgs.isNotEmpty()) list.scrollToItem(list.layoutInfo.totalItemsCount - 1)
+    }
     LaunchedEffect(msgs) { runCatching { Repo.markRead(id, msgs) } }
 
     // Typing: say "typing" while the field changes, and clear it after 3 seconds of quiet.
@@ -748,11 +757,11 @@ fun ConversationScreen(
                     Text(title, fontWeight = FontWeight.ExtraBold, color = Ink, maxLines = 1)
                     Text(
                         if (typingNames.isNotEmpty()) {
-                            "typing..."
+                            str(R.string.typing)
                         } else if (c?.type == "direct") {
                             str(R.string.tap_for_info)
                         } else {
-                            "${c?.members?.size ?: 0} members"
+                            str(R.string.members_count, c?.members?.size ?: 0)
                         },
                         color = if (typingNames.isNotEmpty()) Primary else Muted,
                         fontSize = 12.sp,
@@ -822,7 +831,7 @@ fun ConversationScreen(
                             fontSize = 12.sp,
                         )
                         Text(
-                            if (r.type == "image") str(R.string.photo) else if (r.type == "video") "Video" else r.text,
+                            if (r.type == "image") str(R.string.photo) else if (r.type == "video") str(R.string.video) else r.text,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                             color = Ink,
@@ -943,9 +952,9 @@ private fun Bubble(
                         contentAlignment = Alignment.Center,
                     ) {
                         Box(Modifier.size(54.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.25f)), contentAlignment = Alignment.Center) {
-                            Icon(Icons.Filled.PlayArrow, "Play video", tint = Color.White, modifier = Modifier.size(34.dp))
+                            Icon(Icons.Filled.PlayArrow, str(R.string.play_video), tint = Color.White, modifier = Modifier.size(34.dp))
                         }
-                        Text("Video", color = Color.White.copy(alpha = 0.8f), fontSize = 12.sp, modifier = Modifier.align(Alignment.BottomStart).padding(10.dp))
+                        Text(str(R.string.video), color = Color.White.copy(alpha = 0.8f), fontSize = 12.sp, modifier = Modifier.align(Alignment.BottomStart).padding(10.dp))
                     }
                 else -> Text(m.text, color = ink, fontSize = 15.sp)
             }
@@ -964,9 +973,9 @@ private fun Bubble(
                             else -> Icons.Filled.DoneAll
                         },
                         when (d) {
-                            Delivery.Pending -> "Sending"
+                            Delivery.Pending -> str(R.string.sending)
                             Delivery.Sent -> str(R.string.sent)
-                            Delivery.Delivered -> "Received"
+                            Delivery.Delivered -> str(R.string.received)
                             Delivery.Read -> str(R.string.seen)
                         },
                         tint = if (d == Delivery.Read) clr(R.color.read_receipt) else ink.copy(alpha = 0.7f),
@@ -1086,19 +1095,19 @@ fun MessageActionsScreen(
         }
         if (mine) {
             val others = chat?.members.orEmpty().filter { it != me }
-            SectionTitle("Delivery")
+            SectionTitle(str(R.string.delivery))
             Card(padding = 12.dp) {
                 if (m.pending) {
-                    SettingRow("Sending", "Waiting for a connection", icon = Icons.Filled.Schedule, iconColor = Muted, divider = false)
+                    SettingRow(str(R.string.sending), str(R.string.waiting_for_connection), icon = Icons.Filled.Schedule, iconColor = Muted, divider = false)
                 } else {
-                    SettingRow("Sent", timeOf(m.millis()), icon = Icons.Filled.Done, iconColor = Muted, divider = others.isNotEmpty())
+                    SettingRow(str(R.string.sent), timeOf(m.millis()), icon = Icons.Filled.Done, iconColor = Muted, divider = others.isNotEmpty())
                     others.forEachIndexed { i, u ->
                         val n = chat?.memberNames?.get(u) ?: str(R.string.member)
                         val read = u in m.readBy
                         val got = read || u in m.deliveredTo
                         SettingRow(
                             n,
-                            if (read) "Read" else if (got) "Received" else "Not received yet",
+                            if (read) str(R.string.read) else if (got) str(R.string.received) else str(R.string.not_received_yet),
                             leading = { Avatar(n, colorKeyFor(u), 38.dp) },
                             trailing = {
                                 Icon(
@@ -1299,7 +1308,7 @@ fun ChatInfoScreen(
             c.members.forEachIndexed { i, uid ->
                 val n = c.memberNames[uid] ?: str(R.string.member)
                 SettingRow(
-                    if (uid == me) "$n (you)" else n,
+                    if (uid == me) str(R.string.name_you, n) else n,
                     if (uid == c.createdBy) str(R.string.admin) else "",
                     leading = { Avatar(n, colorKeyFor(uid)) },
                     onClick = if (uid != me && !direct) ({ nav.navigate(Routes.reportUser(id, uid)) }) else null,
