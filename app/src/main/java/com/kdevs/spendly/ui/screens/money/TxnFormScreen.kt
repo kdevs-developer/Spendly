@@ -157,10 +157,10 @@ fun TxnFormScreen(
                     ""
                 } else {
                     (
-                            parent?.name?.let { p ->
-                                if (subId.isNotBlank()) "$p · ${cat.name}" else p
-                            } ?: cat.name
-                            )
+                        parent?.name?.let { p ->
+                            if (subId.isNotBlank()) "$p · ${cat.name}" else p
+                        } ?: cat.name
+                    )
                 },
                 leading = { IconCircle(cat?.icon ?: "other", parent?.colorKey ?: cat?.colorKey ?: "slate", 38.dp) },
                 onClick = { nav.navigate(Routes.categoryPicker(type)) },

@@ -445,15 +445,15 @@ object Repo {
         val parents =
             listOf(
                 Triple(str(R.string.food), "food", "orange") to
-                        listOf(str(R.string.groceries) to "grocery", str(R.string.eating_out) to "food", str(R.string.coffee) to "coffee"),
+                    listOf(str(R.string.groceries) to "grocery", str(R.string.eating_out) to "food", str(R.string.coffee) to "coffee"),
                 Triple(str(R.string.transport), "transport", "blue") to
-                        listOf(str(R.string.fuel) to "fuel", str(R.string.bus_and_metro) to "transport", str(R.string.flights) to "flight"),
+                    listOf(str(R.string.fuel) to "fuel", str(R.string.bus_and_metro) to "transport", str(R.string.flights) to "flight"),
                 Triple(str(R.string.bills), "bills", "purple") to
-                        listOf(str(R.string.rent) to "rent", str(R.string.internet) to "wifi", str(R.string.electricity) to "bills"),
+                    listOf(str(R.string.rent) to "rent", str(R.string.internet) to "wifi", str(R.string.electricity) to "bills"),
                 Triple(str(R.string.shopping), "shopping", "pink") to
-                        listOf(str(R.string.clothes) to "clothes", str(R.string.gifts) to "gift"),
+                    listOf(str(R.string.clothes) to "clothes", str(R.string.gifts) to "gift"),
                 Triple(str(R.string.health), "health", "red") to
-                        listOf(str(R.string.doctor) to "health", str(R.string.fitness) to "fitness"),
+                    listOf(str(R.string.doctor) to "health", str(R.string.fitness) to "fitness"),
                 Triple(str(R.string.entertainment), "movie", "teal") to listOf(str(R.string.movies) to "movie"),
                 Triple(str(R.string.other), "other", "slate") to emptyList(),
             )
@@ -513,8 +513,8 @@ object Repo {
     ): Boolean {
         val transient =
             cause is FirebaseFirestoreException &&
-                    cause.code != FirebaseFirestoreException.Code.PERMISSION_DENIED &&
-                    cause.code != FirebaseFirestoreException.Code.UNAUTHENTICATED
+                cause.code != FirebaseFirestoreException.Code.PERMISSION_DENIED &&
+                cause.code != FirebaseFirestoreException.Code.UNAUTHENTICATED
         if (!transient || attempt >= 5) return false
         delay(3000)
         return true
@@ -909,8 +909,8 @@ object Repo {
                                 .collection("chats")
                                 .whereArrayContains("members", u)
                                 .addSnapshotListener {
-                                        s,
-                                        _,
+                                    s,
+                                    _,
                                     ->
                                     if (s != null) {
                                         trySend(
@@ -1038,8 +1038,8 @@ object Repo {
             val cut = cleared[chatId] ?: 0L
             list.filter {
                 it.id !in hidden &&
-                        it.senderId !in p.blocked &&
-                        (cut == 0L || (it.createdAt?.toDate()?.time ?: Long.MAX_VALUE) > cut)
+                    it.senderId !in p.blocked &&
+                    (cut == 0L || (it.createdAt?.toDate()?.time ?: Long.MAX_VALUE) > cut)
             }
         }
 
@@ -1148,11 +1148,11 @@ object Repo {
             batch.commit().await()
         }
         if ((
-                    chats.value
-                        .firstOrNull { it.id == chatId }
-                        ?.unread
-                        ?.get(uid) ?: 0L
-                    ) > 0L
+                chats.value
+                    .firstOrNull { it.id == chatId }
+                    ?.unread
+                    ?.get(uid) ?: 0L
+            ) > 0L
         ) {
             chatRef.update("unread.$uid", 0L).await()
         }
@@ -1172,8 +1172,8 @@ object Repo {
         val todo =
             recent.documents.filter { d ->
                 d.getString("senderId") != me &&
-                        d.getString("type") != "system" &&
-                        (d.get("deliveredTo") as? List<*>)?.contains(me) != true
+                    d.getString("type") != "system" &&
+                    (d.get("deliveredTo") as? List<*>)?.contains(me) != true
             }
         if (todo.isEmpty()) return
         val batch = db.batch()

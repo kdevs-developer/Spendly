@@ -72,14 +72,14 @@ fun TxnDetailScreen(
             Spacer(Modifier.height(12.dp))
             Text(
                 (
-                        if (t.kind == "expense") {
-                            "-"
-                        } else if (t.kind == "income") {
-                            "+"
-                        } else {
-                            ""
-                        }
-                        ) + formatPaise(t.amountPaise),
+                    if (t.kind == "expense") {
+                        "-"
+                    } else if (t.kind == "income") {
+                        "+"
+                    } else {
+                        ""
+                    }
+                ) + formatPaise(t.amountPaise),
                 color = Color.White,
                 fontWeight = FontWeight.ExtraBold,
                 fontSize = 40.sp,
@@ -119,7 +119,16 @@ fun TxnDetailScreen(
                 },
                 divider = t.note.isNotBlank(),
             )
-            if (t.note.isNotBlank()) PickRow(str(R.string.note), t.note, Icons.Filled.Notes, Muted, {}, divider = t.recurringId.isNotBlank())
+            if (t.note.isNotBlank()) {
+                PickRow(
+                    str(R.string.note),
+                    t.note,
+                    Icons.Filled.Notes,
+                    Muted,
+                    {},
+                    divider = t.recurringId.isNotBlank(),
+                )
+            }
             if (t.recurringId.isNotBlank()) {
                 PickRow(
                     str(R.string.created_by_recurring),

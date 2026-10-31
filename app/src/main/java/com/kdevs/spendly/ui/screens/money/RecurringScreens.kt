@@ -395,7 +395,9 @@ private fun RepeatTile(
             Modifier
                 .size(32.dp)
                 .clip(RoundedCornerShape(10.dp))
-                .background(if (selected) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
+                .background(
+                    if (selected) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                ),
             contentAlignment = Alignment.Center,
         ) {
             Icon(icon, null, tint = if (selected) accent else Muted, modifier = Modifier.size(18.dp))

@@ -21,12 +21,12 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.edit
 import com.kdevs.spendly.R
 import com.kdevs.spendly.data.str
 import com.kdevs.spendly.ui.theme.IconCircle
 import com.kdevs.spendly.ui.theme.Ink
 import com.kdevs.spendly.ui.theme.Muted
-import androidx.core.content.edit
 
 /**
  * Remembers, per transaction type ("expense" / "income"), the last account used and the
@@ -73,7 +73,8 @@ object RecentPicks {
                 putString("acc_$kind", accountId)
                     .putString(
                         "cat_$kind",
-                        list.take(MAX).joinToString(",") { "${it.first}|${it.second}" })
+                        list.take(MAX).joinToString(",") { "${it.first}|${it.second}" },
+                    )
             }
     }
 }

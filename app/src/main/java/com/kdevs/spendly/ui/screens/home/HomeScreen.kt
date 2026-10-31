@@ -155,7 +155,11 @@ fun HomeScreen(nav: NavController) {
             }
             Card(padding = 12.dp) {
                 upcoming.forEachIndexed { i, r ->
-                    RecurringRow(r, look, Modifier.fillMaxWidth().clickable { nav.navigate(Routes.recurringEdit(r.id)) }.padding(vertical = 8.dp))
+                    RecurringRow(
+                        r,
+                        look,
+                        Modifier.fillMaxWidth().clickable { nav.navigate(Routes.recurringEdit(r.id)) }.padding(vertical = 8.dp),
+                    )
                     if (i < upcoming.lastIndex) HorizontalDivider(color = Line)
                 }
             }
