@@ -32,8 +32,10 @@ fun TxnDetailScreen(
     id: String,
 ) {
     val txns by Repo.txns.collectAsState()
+    val recurring by Repo.recurring.collectAsState()
     val look = rememberLookup()
     val t = txns.firstOrNull { it.id == id }
+    val source = t?.recurringId?.takeIf { it.isNotBlank() }?.let { rid -> recurring.firstOrNull { it.id == rid } }
     var confirm by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val saver = rememberSaver()
@@ -70,14 +72,14 @@ fun TxnDetailScreen(
             Spacer(Modifier.height(12.dp))
             Text(
                 (
-                    if (t.kind == "expense") {
-                        "-"
-                    } else if (t.kind == "income") {
-                        "+"
-                    } else {
-                        ""
-                    }
-                ) + formatPaise(t.amountPaise),
+                        if (t.kind == "expense") {
+                            "-"
+                        } else if (t.kind == "income") {
+                            "+"
+                        } else {
+                            ""
+                        }
+                        ) + formatPaise(t.amountPaise),
                 color = Color.White,
                 fontWeight = FontWeight.ExtraBold,
                 fontSize = 40.sp,
@@ -117,14 +119,24 @@ fun TxnDetailScreen(
                 },
                 divider = t.note.isNotBlank(),
             )
-            if (t.note.isNotBlank()) PickRow(str(R.string.note), t.note, Icons.Filled.Notes, Muted, {}, divider = false)
+            if (t.note.isNotBlank()) PickRow(str(R.string.note), t.note, Icons.Filled.Notes, Muted, {}, divider = t.recurringId.isNotBlank())
+            if (t.recurringId.isNotBlank()) {
+                PickRow(
+                    str(R.string.created_by_recurring),
+                    source?.name ?: str(R.string.recurring_item_deleted),
+                    Icons.Filled.Repeat,
+                    clr(R.color.swatch_orange),
+                    { if (source != null) nav.navigate(Routes.recurringEdit(source.id)) },
+                    divider = false,
+                )
+            }
         }
         if (t.kind != "transfer") {
             SecondaryButton(str(R.string.duplicate), {
                 saver.run(
                     scope,
                     onDone = { nav.popBackStack() },
-                ) { Repo.put("txns", "", t.copy(id = "", dateMillis = withNowTime(todayMillis()))) }
+                ) { Repo.put("txns", "", t.copy(id = "", dateMillis = withNowTime(todayMillis()), recurringId = "")) }
             })
         }
         SecondaryButton(str(R.string.delete_transaction_2), { confirm = true }, danger = true)

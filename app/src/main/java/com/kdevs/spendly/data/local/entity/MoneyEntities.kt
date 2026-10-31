@@ -1,5 +1,6 @@
 package com.kdevs.spendly.data.local.entity
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
@@ -51,6 +52,7 @@ data class TxnEntity(
     val note: String,
     val dateMillis: Long,
     val syncState: Int = SyncState.PENDING,
+    @ColumnInfo(defaultValue = "") val recurringId: String = "",
 )
 
 @Entity(tableName = "budgets", indices = [Index("uid")])

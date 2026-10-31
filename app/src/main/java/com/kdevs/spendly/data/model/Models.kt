@@ -37,6 +37,7 @@ data class Txn(
     val subcategoryId: String = "",
     val note: String = "",
     val dateMillis: Long = 0,
+    val recurringId: String = "", // id of the Recurring item that created this transaction; empty = added by hand
 )
 
 data class Budget(

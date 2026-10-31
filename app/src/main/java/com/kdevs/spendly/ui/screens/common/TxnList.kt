@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -141,6 +142,20 @@ fun TxnRow(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
+                if (t.recurringId.isNotBlank()) {
+                    Spacer(Modifier.weight(1f))
+                    Row(
+                        Modifier
+                            .clip(RoundedCornerShape(50))
+                            .background(Primary.copy(alpha = 0.12f))
+                            .padding(horizontal = 8.dp, vertical = 2.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(3.dp),
+                    ) {
+                        Icon(Icons.Filled.Repeat, null, tint = Primary, modifier = Modifier.size(11.dp))
+                        Text(str(R.string.recurring), color = Primary, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                    }
+                }
             }
         }
     }

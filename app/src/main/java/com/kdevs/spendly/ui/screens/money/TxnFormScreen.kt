@@ -119,6 +119,7 @@ fun TxnFormScreen(
                                 subcategoryId = subId,
                                 note = note.trim(),
                                 dateMillis = date,
+                                recurringId = existing?.recurringId ?: "", // editing keeps the link to the recurring item
                             ),
                         )
                         if (!editing) RecentPicks.remember(ctx, type, accountId, catId, subId)

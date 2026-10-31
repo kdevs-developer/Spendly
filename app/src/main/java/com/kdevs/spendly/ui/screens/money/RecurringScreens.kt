@@ -135,7 +135,12 @@ fun RecurringRow(
             }
             if (where.isNotBlank()) Text(where, color = Muted, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Text(
-                str(R.string.next_2, formatPaise(r.amountPaise), everyText(r.every, r.interval), fullDate(r.nextMillis)),
+                str(
+                    R.string.next_2,
+                    formatPaise(r.amountPaise),
+                    everyText(r.every, r.interval),
+                    fullDate(r.nextMillis) + if (hasTime(r.nextMillis)) ", " + timeOf(r.nextMillis) else "",
+                ),
                 color = if (r.kind == "income") Success else Muted,
                 fontSize = 12.sp,
             )
@@ -163,7 +168,7 @@ fun RecurringEditScreen(
     var every by rememberSaveable(existing) { mutableStateOf(existing?.every ?: "monthly") }
     var interval by rememberSaveable(existing) { mutableStateOf(existing?.interval ?: 1) }
     var custom by rememberSaveable(existing) { mutableStateOf((existing?.interval ?: 1) > 1) }
-    var next by rememberSaveable(existing) { mutableStateOf(existing?.nextMillis ?: todayMillis()) }
+    var next by rememberSaveable(existing) { mutableStateOf(existing?.nextMillis ?: nowMillis()) }
     var active by rememberSaveable(existing) { mutableStateOf(existing?.active ?: true) }
     var confirm by remember { mutableStateOf(false) }
     val saver = rememberSaver()
@@ -175,7 +180,8 @@ fun RecurringEditScreen(
         catId = cat
         subId = sub
     }
-    entry.Picked<Long>("pickedDate") { next = it }
+    entry.Picked<Long>("pickedDate") { next = withTimeOf(it, next) }
+    entry.Picked<Int>("pickedTime") { next = withMinutes(next, it) }
     val paise = parseRupees(amount) ?: 0L
     val c = look.category(catId)
     val sub = if (subId.isBlank()) null else look.category(subId)
@@ -187,9 +193,7 @@ fun RecurringEditScreen(
         bottomBar = {
             SavedBar(str(R.string.save), saver, name.isNotBlank() && paise > 0 && accountId.isNotBlank(), onSave = {
                 saver.run(scope, onDone = { nav.popBackStack() }) {
-                    Repo.put(
-                        "recurring",
-                        id,
+                    val rec =
                         Recurring(
                             name = name.trim(),
                             kind = kind,
@@ -202,8 +206,10 @@ fun RecurringEditScreen(
                             nextMillis = next,
                             anchorDay = toLocalDate(next).dayOfMonth,
                             active = active,
-                        ),
-                    )
+                        )
+                    val savedId = Repo.put("recurring", id, rec)
+                    // A start date of today or earlier is already due: add those transactions now, not at the next app launch.
+                    Repo.runRecurring(rec.copy(id = savedId))
                 }
             })
         },
@@ -241,6 +247,13 @@ fun RecurringEditScreen(
                 IconCircle(a?.icon ?: "bank", a?.colorKey ?: "blue", 38.dp)
             }, { nav.navigate(Routes.accountPicker("account")) })
             PickRow(str(R.string.next_date), fullDate(next), Icons.Filled.CalendarMonth, Muted, { nav.navigate(Routes.datePicker(next)) })
+            PickRow(
+                str(R.string.time),
+                if (hasTime(next)) timeOf(next) else str(R.string.add_time),
+                Icons.Filled.Schedule,
+                Muted,
+                { nav.navigate(Routes.timePicker(minutesOfDay(next))) },
+            )
             SettingRow(str(R.string.active), icon = Icons.Filled.PowerSettingsNew, iconColor = Success, trailing = {
                 Switch(active, { active = it })
             }, divider = false)

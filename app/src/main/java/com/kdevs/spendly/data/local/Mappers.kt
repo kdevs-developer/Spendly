@@ -20,12 +20,12 @@ fun Category.toEntity(
     state: Int = SyncState.PENDING,
 ) = CategoryEntity(id, uid, name, icon, colorKey, parentId, kind, state)
 
-fun TxnEntity.toModel() = Txn(id, kind, amountPaise, accountId, toAccountId, categoryId, subcategoryId, note, dateMillis)
+fun TxnEntity.toModel() = Txn(id, kind, amountPaise, accountId, toAccountId, categoryId, subcategoryId, note, dateMillis, recurringId)
 
 fun Txn.toEntity(
     uid: String,
     state: Int = SyncState.PENDING,
-) = TxnEntity(id, uid, kind, amountPaise, accountId, toAccountId, categoryId, subcategoryId, note, dateMillis, state)
+) = TxnEntity(id, uid, kind, amountPaise, accountId, toAccountId, categoryId, subcategoryId, note, dateMillis, state, recurringId)
 
 fun BudgetEntity.toModel() = Budget(id, categoryId, limitPaise)
 
@@ -65,4 +65,3 @@ fun RecurringEntity.toModel() =
         active = active,
         anchorDay = anchorDay,
     )
-

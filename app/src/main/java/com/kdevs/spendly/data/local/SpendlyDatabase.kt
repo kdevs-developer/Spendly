@@ -2,6 +2,8 @@ package com.kdevs.spendly.data.local
 
 import androidx.room.Database
 import androidx.room.RoomDatabase
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 import com.kdevs.spendly.data.local.dao.*
 import com.kdevs.spendly.data.local.entity.*
 
@@ -22,7 +24,7 @@ import com.kdevs.spendly.data.local.entity.*
         TemplateEntity::class,
         RecurringEntity::class,
     ],
-    version = 1,
+    version = 2,
     exportSchema = true,
 )
 abstract class SpendlyDatabase : RoomDatabase() {
@@ -42,5 +44,13 @@ abstract class SpendlyDatabase : RoomDatabase() {
 
     companion object {
         const val NAME = "spendly.db"
+
+        /** v2: transactions remember which recurring item created them. Existing rows get "" (added by hand). */
+        val MIGRATION_1_2 =
+            object : Migration(1, 2) {
+                override fun migrate(db: SupportSQLiteDatabase) {
+                    db.execSQL("ALTER TABLE txns ADD COLUMN recurringId TEXT NOT NULL DEFAULT ''")
+                }
+            }
     }
 }

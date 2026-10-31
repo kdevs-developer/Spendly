@@ -17,7 +17,10 @@ object DatabaseModule {
     @Singleton
     fun database(
         @ApplicationContext ctx: Context,
-    ): SpendlyDatabase = Room.databaseBuilder(ctx, SpendlyDatabase::class.java, SpendlyDatabase.NAME).build()
+    ): SpendlyDatabase = Room
+        .databaseBuilder(ctx, SpendlyDatabase::class.java, SpendlyDatabase.NAME)
+        .addMigrations(SpendlyDatabase.MIGRATION_1_2)
+        .build()
 
     @Provides fun accounts(db: SpendlyDatabase) = db.accounts()
 

@@ -87,6 +87,8 @@
     <string name="transactions_already_made_from_it_stay">Transactions already made from it stay.</string>
     <string name="use">Use</string>
     <string name="use_overall_instead">Use overall instead</string>
+    <string name="created_by_recurring">Created by recurring</string>
+    <string name="recurring_item_deleted">Recurring item deleted</string>
     <string name="upcoming_recurring">Upcoming recurring</string>
     <string name="weekly">Weekly</string>
     <string name="yearly">Yearly</string>
