@@ -32,6 +32,7 @@ import com.kdevs.spendly.ui.screens.common.rememberLookup
 import com.kdevs.spendly.ui.screens.money.PickRow
 import com.kdevs.spendly.ui.screens.money.PickRowLeading
 import com.kdevs.spendly.ui.screens.money.SavedBar
+import com.kdevs.spendly.ui.screens.money.splitPick
 import com.kdevs.spendly.ui.theme.*
 
 @Composable
@@ -50,8 +51,11 @@ fun AddSplitScreen(
     var included by rememberSaveable(chat?.members) { mutableStateOf(chat?.members?.toSet() ?: emptySet()) }
     var values by rememberSaveable { mutableStateOf(mapOf<String, String>()) }
     var payerMenu by remember { mutableStateOf(false) }
-    var recordShare by remember { mutableStateOf(false) }
+    // rememberSaveable: the account picker is a separate screen, so plain remember would reset these on return.
+    var recordShare by rememberSaveable { mutableStateOf(false) }
     var shareAccount by rememberSaveable { mutableStateOf("") }
+    var catId by rememberSaveable { mutableStateOf("") }
+    var subId by rememberSaveable { mutableStateOf("") }
     val accounts by Repo.accounts.collectAsState()
     val look = rememberLookup()
     val saver = rememberSaver()
@@ -59,6 +63,12 @@ fun AddSplitScreen(
     LaunchedEffect(accounts) { if (shareAccount.isBlank()) shareAccount = accounts.firstOrNull { !it.archived }?.id ?: "" }
     entry.Picked<Long>("pickedDate") { date = it }
     entry.Picked<String>("pickedAccount") { shareAccount = it }
+    entry.Picked<String>("pickedCategory") { v ->
+        splitPick(v).let {
+            catId = it.first
+            subId = it.second
+        }
+    }
 
     val members = chat?.members.orEmpty()
     val total = parseRupees(amount) ?: 0L
@@ -100,8 +110,13 @@ fun AddSplitScreen(
             owed == null -> str(R.string.give_at_least_one_share)
             else -> null
         }
-    val myShare = owed?.get(me) ?: 0L
-    val ok = total > 0 && desc.isNotBlank() && owed != null && ids.isNotEmpty() && (!recordShare || shareAccount.isNotBlank())
+    // Only the person who paid has money leaving their account. The full amount goes in, so the account matches
+    // reality; the others' settle-up payments then come back as income. If someone else paid, the settle-up
+    // itself records your expense, so recording it here too would count it twice.
+    val record = recordShare && paidBy == me
+    val ok = total > 0 && desc.isNotBlank() && owed != null && ids.isNotEmpty() && (!record || shareAccount.isNotBlank())
+    val cat = look.category(subId.ifBlank { catId })
+    val parent = look.category(catId)
 
     ScreenScaffold(str(R.string.add_group_expense), { nav.popBackStack() }, bottomBar = {
         SavedBar(str(R.string.save_expense), saver, ok, onSave = {
@@ -116,17 +131,21 @@ fun AddSplitScreen(
                         splitType = listOf("equal", "exact", "percent", "shares")[type],
                         owed = owed!!.filterValues { it > 0 || type == 0 },
                         dateMillis = date,
+                        categoryId = catId,
+                        subcategoryId = subId,
                     ),
                 )
-                // Your own share also goes into your expenses, so your balances and reports include it.
-                if (recordShare && myShare > 0) {
+                // You paid the bill, so the full amount leaves your account. Also shows up in your transactions.
+                if (record) {
                     Repo.put(
                         "txns",
                         "",
                         Txn(
                             kind = "expense",
-                            amountPaise = myShare,
+                            amountPaise = total,
                             accountId = shareAccount,
+                            categoryId = catId,
+                            subcategoryId = subId,
                             note = desc.trim(),
                             dateMillis = withNowTime(date),
                         ),
@@ -138,6 +157,16 @@ fun AddSplitScreen(
         AmountField(amount, { amount = it }, Modifier.padding(vertical = 6.dp), color = Ink)
         AppTextField(desc, { desc = it }, str(R.string.what_was_it_for))
         Card(padding = 12.dp) {
+            PickRowLeading(
+                str(R.string.category),
+                if (cat == null) {
+                    ""
+                } else {
+                    parent?.name?.let { p -> if (subId.isNotBlank()) "$p · ${cat.name}" else p } ?: cat.name
+                },
+                leading = { IconCircle(cat?.icon ?: "other", parent?.colorKey ?: cat?.colorKey ?: "slate", 38.dp) },
+                onClick = { nav.navigate(Routes.categoryPicker("expense")) },
+            )
             PickRow(str(R.string.paid_by), chat?.nameOf(paidBy, me) ?: "", Icons.Filled.Person, Primary, { payerMenu = !payerMenu })
             if (payerMenu) {
                 members.forEach { u ->
@@ -201,24 +230,29 @@ fun AddSplitScreen(
                 if (i < members.lastIndex) HorizontalDivider(color = Line)
             }
         }
-        Card(padding = 12.dp) {
-            SettingRow(
-                str(R.string.add_my_share),
-                if (myShare > 0) formatPaise(myShare) else "",
-                icon = Icons.Filled.AccountBalanceWallet,
-                iconColor = Primary,
-                trailing = { Switch(recordShare, { recordShare = it }) },
-                divider = recordShare,
-            )
-            if (recordShare) {
-                PickRowLeading(
-                    str(R.string.account),
-                    look.account(shareAccount)?.name ?: "",
-                    { IconCircle(look.account(shareAccount)?.icon ?: "bank", look.account(shareAccount)?.colorKey ?: "blue", 38.dp) },
-                    { nav.navigate(Routes.accountPicker("account")) },
-                    divider = false,
+        if (paidBy == me) {
+            Card(padding = 12.dp) {
+                SettingRow(
+                    str(R.string.add_my_share),
+                    if (total > 0) formatPaise(total) else "",
+                    icon = Icons.Filled.AccountBalanceWallet,
+                    iconColor = Primary,
+                    trailing = { Switch(recordShare, { recordShare = it }) },
+                    divider = recordShare,
                 )
+                if (recordShare) {
+                    PickRowLeading(
+                        str(R.string.account),
+                        look.account(shareAccount)?.name ?: "",
+                        { IconCircle(look.account(shareAccount)?.icon ?: "bank", look.account(shareAccount)?.colorKey ?: "blue", 38.dp) },
+                        { nav.navigate(Routes.accountPicker("account")) },
+                        divider = false,
+                    )
+                }
             }
+            if (recordShare && total > 0) Hint(str(R.string.add_my_share_hint, formatPaise(total)))
+        } else {
+            Hint(str(R.string.other_paid_hint, chat?.nameOf(paidBy, me) ?: ""))
         }
         if (type in 2..3 && owed != null) Hint(ids.joinToString("  ·  ") { "${chat?.nameOf(it, me)} ${formatPaise(owed[it] ?: 0L)}" })
         problem?.let { Text(it, color = Danger, fontSize = 13.sp, fontWeight = FontWeight.SemiBold) }

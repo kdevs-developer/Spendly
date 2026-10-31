@@ -2,7 +2,10 @@
 <!-- Expense splits and settle up -->
 <resources>
     <string name="add_group_expense">Add group expense</string>
-    <string name="add_my_share">Add my share to my expenses</string>
+    <string name="split_category">Split</string>
+    <string name="add_my_share">Add to my expenses</string>
+    <string name="add_my_share_hint">Records the full %1$s you paid. When the others settle up, their payments come back as income.</string>
+    <string name="other_paid_hint">%1$s paid this, so nothing leaves your account yet. Your part is recorded as an expense when you settle up.</string>
     <string name="add_the_first_shared_expense">Add the first shared expense.</string>
     <string name="all_settled">All settled</string>
     <string name="all_settled_up">All settled up</string>

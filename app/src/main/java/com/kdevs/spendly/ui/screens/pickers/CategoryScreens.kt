@@ -52,7 +52,9 @@ fun CategoryPickerScreen(
     var open by remember { mutableStateOf(setOf<String>()) }
     val parents =
         look.parents(activeKind).filter { p ->
-            query.isBlank() || p.name.contains(query, true) || look.subs(p.id).any { it.name.contains(query, true) }
+            // The starter "Other" bucket is hidden when choosing; it stays in Settings so it can be managed or deleted.
+            (manage || activeKind != "expense" || p.name != str(R.string.other)) &&
+                (query.isBlank() || p.name.contains(query, true) || look.subs(p.id).any { it.name.contains(query, true) })
         }
     ScreenScaffold(
         if (slot == "manage") str(R.string.categories) else str(R.string.select_category),

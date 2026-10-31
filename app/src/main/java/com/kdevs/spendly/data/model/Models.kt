@@ -143,6 +143,8 @@ data class SplitEntry(
     val owed: Map<String, Long> = emptyMap(), // uid -> paise owed
     val dateMillis: Long = 0,
     val createdBy: String = "",
+    val categoryId: String = "", // expenses only; empty = no category
+    val subcategoryId: String = "",
 )
 
 data class Profile(

@@ -396,17 +396,34 @@ private fun RepeatTile(
                 .size(32.dp)
                 .clip(RoundedCornerShape(10.dp))
                 .background(
-                    if (selected) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                    if (selected) accent else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
                 ),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(icon, null, tint = if (selected) accent else Muted, modifier = Modifier.size(18.dp))
+            Icon(
+                icon,
+                null,
+                tint = if (selected) MaterialTheme.colorScheme.surface else Muted,
+                modifier = Modifier.size(18.dp),
+            )
         }
         Column(Modifier.weight(1f)) {
-            Text(title, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = if (selected) accent else Ink)
-            Text(sub, fontSize = 12.sp, color = if (selected) accent else Muted)
+            Text(
+                title,
+                fontWeight = FontWeight.Bold,
+                fontSize = 14.sp,
+                color = if (selected) accent else Ink,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                sub,
+                fontSize = 12.sp,
+                color = if (selected) accent else Muted,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
         }
-        if (selected) Icon(Icons.Filled.Check, null, tint = accent, modifier = Modifier.size(18.dp))
     }
 }
 

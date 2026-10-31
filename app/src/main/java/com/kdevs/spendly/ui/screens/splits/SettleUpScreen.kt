@@ -94,6 +94,7 @@ fun SettleUpScreen(
                             kind = if (iPay) "expense" else "income",
                             amountPaise = paise,
                             accountId = accountId,
+                            categoryId = Repo.splitCategoryId(if (iPay) "expense" else "income"),
                             note = str(R.string.settled_with, chat?.nameOf(other!!, me)),
                             dateMillis = withNowTime(date),
                         ),

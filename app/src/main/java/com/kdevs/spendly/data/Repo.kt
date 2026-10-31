@@ -455,7 +455,6 @@ object Repo {
                 Triple(str(R.string.health), "health", "red") to
                     listOf(str(R.string.doctor) to "health", str(R.string.fitness) to "fitness"),
                 Triple(str(R.string.entertainment), "movie", "teal") to listOf(str(R.string.movies) to "movie"),
-                Triple(str(R.string.other), "other", "slate") to emptyList(),
             )
         val col = db.collection("users").document(uid).collection("categories")
         parents.forEach { (p, subs) ->
@@ -545,6 +544,13 @@ object Repo {
         val ref = if (id.isBlank()) userCol(collection).document() else userCol(collection).document(id)
         ref.set(data).watch()
         return ref.id
+    }
+
+    /** Id of the top-level "Split" category for [kind] (expense | income); created the first time it is needed. */
+    suspend fun splitCategoryId(kind: String): String {
+        val name = str(R.string.split_category)
+        categories.value.firstOrNull { it.parentId.isBlank() && it.kind == kind && it.name == name }?.let { return it.id }
+        return put("categories", "", Category(name = name, icon = "exchange", colorKey = "teal", kind = kind))
     }
 
     suspend fun remove(

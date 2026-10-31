@@ -39,6 +39,9 @@ fun SplitsScreen(
     val balances = SplitMath.balances(entries)
     val mine = balances[me] ?: 0L
     val plan = SplitMath.simplify(balances)
+    val look =
+        com.kdevs.spendly.ui.screens.common
+            .rememberLookup()
 
     Box(Modifier.fillMaxSize()) {
         ScreenScaffold(chat?.name ?: str(R.string.splits), { nav.popBackStack() }) {
@@ -117,7 +120,13 @@ fun SplitsScreen(
                             } else {
                                 e.description
                             },
-                            str(R.string.text__2, fullDate(e.dateMillis)) + if (!settle) " · paid by ${chat?.nameOf(e.paidBy, me)}" else "",
+                            str(R.string.text__2, fullDate(e.dateMillis)) +
+                                if (!settle) {
+                                    (look.category(e.categoryId)?.name?.let { " · $it" } ?: "") +
+                                        " · paid by ${chat?.nameOf(e.paidBy, me)}"
+                                } else {
+                                    ""
+                                },
                             icon = if (settle) Icons.Filled.CheckCircle else Icons.Filled.Receipt,
                             iconColor = if (settle) Success else clr(R.color.swatch_teal),
                             trailing = { Text(formatPaise(e.totalPaise), fontWeight = FontWeight.ExtraBold, color = Ink) },
@@ -175,6 +184,9 @@ fun SplitEntryScreen(
     val chat = rememberChat(chatId)
     val entries = rememberSplits(chatId)
     val e = entries.firstOrNull { it.id == entryId }
+    val look =
+        com.kdevs.spendly.ui.screens.common
+            .rememberLookup()
     var confirm by remember { mutableStateOf(false) }
     val saver = rememberSaver()
     val scope = rememberCoroutineScope()
@@ -204,6 +216,18 @@ fun SplitEntryScreen(
                     icon = Icons.Filled.Person,
                     iconColor = Primary,
                 )
+            }
+            if (!settle) {
+                val c = look.category(e.subcategoryId.ifBlank { e.categoryId })
+                val pc = look.category(e.categoryId)
+                if (c != null) {
+                    SettingRow(
+                        str(R.string.category),
+                        pc?.name?.let { p -> if (e.subcategoryId.isNotBlank()) "$p · ${c.name}" else p } ?: c.name,
+                        icon = Icons.Filled.Category,
+                        iconColor = Primary,
+                    )
+                }
             }
             SettingRow(
                 str(R.string.date),
