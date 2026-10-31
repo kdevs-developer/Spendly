@@ -61,19 +61,46 @@ fun MessageActionsScreen(
         val left = 5 * 60_000L - (now - m.millis())
         val canDeleteAll = mine && left > 0 && !m.deleted
         Column(Modifier.fillMaxWidth(), horizontalAlignment = if (mine) Alignment.End else Alignment.Start) {
-            Box(Modifier.widthIn(max = 280.dp).clip(RoundedCornerShape(20.dp)).background(if (mine) Primary else Surface).padding(14.dp)) {
-                Text(if (m.type == "image") str(R.string.photo) else if (m.type == "video") "Video" else m.text, color = if (mine) Color.White else Ink, fontSize = 15.sp)
+            Box(
+                Modifier
+                    .widthIn(max = 280.dp)
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(if (mine) Primary else Surface)
+                    .padding(14.dp),
+            ) {
+                Text(
+                    if (m.type ==
+                        "image"
+                    ) {
+                        str(R.string.photo)
+                    } else if (m.type ==
+                        "video"
+                    ) {
+                        "Video"
+                    } else {
+                        m.text
+                    },
+                    color = if (mine) Color.White else Ink,
+                    fontSize = 15.sp,
+                )
             }
             Hint(timeOf(m.millis()) + " · " + fullDate(m.millis()))
         }
         Row(
-            Modifier.fillMaxWidth().clip(CircleShape).background(Surface).padding(horizontal = 10.dp, vertical = 8.dp),
+            Modifier
+                .fillMaxWidth()
+                .clip(CircleShape)
+                .background(Surface)
+                .padding(horizontal = 10.dp, vertical = 8.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             reactionIcons.forEach { (k, icon, tint) ->
                 val on = m.reactions[me] == k
                 Box(
-                    Modifier.size(46.dp).clip(CircleShape).background(if (on) tint.copy(alpha = 0.15f) else Color.Transparent)
+                    Modifier
+                        .size(46.dp)
+                        .clip(CircleShape)
+                        .background(if (on) tint.copy(alpha = 0.15f) else Color.Transparent)
                         .clickable {
                             scope.launchIO { Repo.react(chatId, m, k) }
                             nav.popBackStack()
@@ -120,16 +147,34 @@ fun MessageActionsScreen(
             SectionTitle(str(R.string.delivery))
             Card(padding = 12.dp) {
                 if (m.pending) {
-                    SettingRow(str(R.string.sending), str(R.string.waiting_for_connection), icon = Icons.Filled.Schedule, iconColor = Muted, divider = false)
+                    SettingRow(
+                        str(R.string.sending),
+                        str(R.string.waiting_for_connection),
+                        icon = Icons.Filled.Schedule,
+                        iconColor = Muted,
+                        divider = false,
+                    )
                 } else {
-                    SettingRow(str(R.string.sent), timeOf(m.millis()), icon = Icons.Filled.Done, iconColor = Muted, divider = others.isNotEmpty())
+                    SettingRow(
+                        str(R.string.sent),
+                        timeOf(m.millis()),
+                        icon = Icons.Filled.Done,
+                        iconColor = Muted,
+                        divider = others.isNotEmpty(),
+                    )
                     others.forEachIndexed { i, u ->
                         val n = chat?.memberNames?.get(u) ?: str(R.string.member)
                         val read = u in m.readBy
                         val got = read || u in m.deliveredTo
                         SettingRow(
                             n,
-                            if (read) str(R.string.read) else if (got) str(R.string.received) else str(R.string.not_received_yet),
+                            if (read) {
+                                str(R.string.read)
+                            } else if (got) {
+                                str(R.string.received)
+                            } else {
+                                str(R.string.not_received_yet)
+                            },
                             leading = { Avatar(n, colorKeyFor(u), 38.dp) },
                             trailing = {
                                 Icon(

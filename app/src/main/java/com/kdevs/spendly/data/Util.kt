@@ -22,7 +22,13 @@ fun formatPaise(
         if (s.length <= 3) {
             s
         } else {
-            val head = s.dropLast(3).reversed().chunked(2).joinToString(",").reversed()
+            val head =
+                s
+                    .dropLast(3)
+                    .reversed()
+                    .chunked(2)
+                    .joinToString(",")
+                    .reversed()
             "$head,${s.takeLast(3)}"
         }
     val frac = if (a % 100 == 0L) "" else "." + (a % 100).toString().padStart(2, '0')
@@ -54,14 +60,17 @@ fun todayMillis(): Long = LocalDate.now().startMillis()
 
 /** Pickers return midnight of the chosen day; this puts the current clock time on it. */
 fun withNowTime(dayMillis: Long): Long =
-    toLocalDate(dayMillis).atTime(java.time.LocalTime.now()).atZone(zone).toInstant().toEpochMilli()
+    toLocalDate(dayMillis)
+        .atTime(java.time.LocalTime.now())
+        .atZone(zone)
+        .toInstant()
+        .toEpochMilli()
 
 /** Keeps the saved time if the day didn't change, otherwise stamps the current time on the new day. */
 fun stampTime(
     dayMillis: Long,
     existingMillis: Long?,
-): Long =
-    if (existingMillis != null && toLocalDate(existingMillis) == toLocalDate(dayMillis)) existingMillis else withNowTime(dayMillis)
+): Long = if (existingMillis != null && toLocalDate(existingMillis) == toLocalDate(dayMillis)) existingMillis else withNowTime(dayMillis)
 
 /** False for older transactions that were saved at midnight with no time. */
 fun hasTime(millis: Long): Boolean = millis != toLocalDate(millis).startMillis()
@@ -74,7 +83,11 @@ fun withTimeOf(
     dayMillis: Long,
     timeSource: Long,
 ): Long =
-    toLocalDate(dayMillis).atTime(Instant.ofEpochMilli(timeSource).atZone(zone).toLocalTime()).atZone(zone).toInstant().toEpochMilli()
+    toLocalDate(dayMillis)
+        .atTime(Instant.ofEpochMilli(timeSource).atZone(zone).toLocalTime())
+        .atZone(zone)
+        .toInstant()
+        .toEpochMilli()
 
 /** Minutes since midnight (0 to 1439) of a moment. */
 fun minutesOfDay(millis: Long): Int = Instant.ofEpochMilli(millis).atZone(zone).let { it.hour * 60 + it.minute }
@@ -83,7 +96,12 @@ fun minutesOfDay(millis: Long): Int = Instant.ofEpochMilli(millis).atZone(zone).
 fun withMinutes(
     dayMillis: Long,
     minutes: Int,
-): Long = toLocalDate(dayMillis).atTime(minutes / 60, minutes % 60).atZone(zone).toInstant().toEpochMilli()
+): Long =
+    toLocalDate(dayMillis)
+        .atTime(minutes / 60, minutes % 60)
+        .atZone(zone)
+        .toInstant()
+        .toEpochMilli()
 
 /** Recurring entries are saved at midnight; give them a steady 9:00 AM so they show a time. */
 fun atNineIfNoTime(millis: Long): Long = if (hasTime(millis)) millis else withMinutes(millis, 9 * 60)
@@ -106,17 +124,25 @@ fun fullDate(millis: Long): String = toLocalDate(millis).format(DateTimeFormatte
 
 fun timeOf(millis: Long): String = Instant.ofEpochMilli(millis).atZone(zone).format(DateTimeFormatter.ofPattern("h:mm a"))
 
+/**
+ * The date after [millis]. For monthly and yearly items pass [anchorDay] (the day the item started on):
+ * a short month uses its last day, and the next month goes back to the anchor day (31 Jan, 28 Feb, 31 Mar).
+ */
 fun addPeriod(
     millis: Long,
     every: String,
+    anchorDay: Int = 0,
 ): Long {
     val d = toLocalDate(millis)
-    return when (every) {
-        "daily" -> d.plusDays(1)
-        "weekly" -> d.plusWeeks(1)
-        "yearly" -> d.plusYears(1)
-        else -> d.plusMonths(1)
-    }.startMillis()
+    val next =
+        when (every) {
+            "daily" -> d.plusDays(1)
+            "weekly" -> d.plusWeeks(1)
+            "yearly" -> d.plusYears(1)
+            else -> d.plusMonths(1)
+        }
+    val keepDay = anchorDay > 0 && every != "daily" && every != "weekly"
+    return (if (keepDay) next.withDayOfMonth(minOf(anchorDay, next.lengthOfMonth())) else next).startMillis()
 }
 
 // ---------- Split maths. Everything in whole paise; the parts always add up to the total. ----------
@@ -171,7 +197,11 @@ object SplitMath {
         return b
     }
 
-    data class Transfer(val from: String, val to: String, val paise: Long)
+    data class Transfer(
+        val from: String,
+        val to: String,
+        val paise: Long,
+    )
 
     /** Fewest payments that clear every balance. */
     fun simplify(balances: Map<String, Long>): List<Transfer> {

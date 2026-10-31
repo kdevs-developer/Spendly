@@ -112,15 +112,24 @@ fun ReportFilterScreen(
         // Accounts: a checklist. Nothing ticked means every account.
         Card {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Text(str(R.string.accounts), color = Muted, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
+                Text(
+                    str(R.string.accounts),
+                    color = Muted,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.weight(1f),
+                )
                 Text(
                     if (accs.isEmpty()) str(R.string.select_all) else str(R.string.clear),
                     color = Primary,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Bold,
-                    modifier = Modifier.clip(RoundedCornerShape(8.dp)).clickable {
-                        accs = if (accs.isEmpty()) live.map { it.id }.toSet() else emptySet()
-                    }.padding(horizontal = 6.dp, vertical = 4.dp),
+                    modifier =
+                        Modifier
+                            .clip(RoundedCornerShape(8.dp))
+                            .clickable {
+                                accs = if (accs.isEmpty()) live.map { it.id }.toSet() else emptySet()
+                            }.padding(horizontal = 6.dp, vertical = 4.dp),
                 )
             }
             live.forEachIndexed { i, a ->
@@ -151,7 +160,10 @@ private fun PeriodButton(
 ) {
     val shape = RoundedCornerShape(14.dp)
     Box(
-        Modifier.fillMaxWidth().height(46.dp).clip(shape)
+        Modifier
+            .fillMaxWidth()
+            .height(46.dp)
+            .clip(shape)
             .background(if (selected) PrimaryContainer else Surface)
             .border(if (selected) 1.5.dp else 1.dp, if (selected) Primary else FieldBorder, shape)
             .clickable(onClick = onClick),
@@ -171,7 +183,9 @@ private fun PeriodButton(
 @Composable
 private fun CheckBubble(on: Boolean) {
     Box(
-        Modifier.size(22.dp).clip(CircleShape)
+        Modifier
+            .size(22.dp)
+            .clip(CircleShape)
             .background(if (on) Primary else Color.Transparent)
             .border(1.5.dp, if (on) Primary else FieldBorder, CircleShape),
         contentAlignment = Alignment.Center,

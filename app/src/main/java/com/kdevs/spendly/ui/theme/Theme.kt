@@ -53,22 +53,34 @@ val ButtonBrush = Brush.linearGradient(listOf(clr(R.color.brand_light), clr(R.co
 
 private val lightScheme =
     lightColorScheme(
-        primary = clr(R.color.primary_light), onPrimary = Color.White,
-        primaryContainer = clr(R.color.primary_container_light), onPrimaryContainer = clr(R.color.brand_dark),
-        background = clr(R.color.bg_light), onBackground = clr(R.color.ink_light),
-        surface = clr(R.color.surface_light), onSurface = clr(R.color.ink_light),
-        surfaceVariant = clr(R.color.track_light), onSurfaceVariant = clr(R.color.muted_light),
-        error = clr(R.color.danger_light), outline = clr(R.color.faint_light),
+        primary = clr(R.color.primary_light),
+        onPrimary = Color.White,
+        primaryContainer = clr(R.color.primary_container_light),
+        onPrimaryContainer = clr(R.color.brand_dark),
+        background = clr(R.color.bg_light),
+        onBackground = clr(R.color.ink_light),
+        surface = clr(R.color.surface_light),
+        onSurface = clr(R.color.ink_light),
+        surfaceVariant = clr(R.color.track_light),
+        onSurfaceVariant = clr(R.color.muted_light),
+        error = clr(R.color.danger_light),
+        outline = clr(R.color.faint_light),
     )
 
 private val darkScheme =
     darkColorScheme(
-        primary = clr(R.color.primary_dark), onPrimary = Color.White,
-        primaryContainer = clr(R.color.primary_container_dark), onPrimaryContainer = clr(R.color.primary_container_light),
-        background = clr(R.color.bg_dark), onBackground = clr(R.color.ink_dark),
-        surface = clr(R.color.surface_dark), onSurface = clr(R.color.ink_dark),
-        surfaceVariant = clr(R.color.track_dark), onSurfaceVariant = clr(R.color.muted_dark),
-        error = clr(R.color.danger_dark), outline = clr(R.color.faint_dark),
+        primary = clr(R.color.primary_dark),
+        onPrimary = Color.White,
+        primaryContainer = clr(R.color.primary_container_dark),
+        onPrimaryContainer = clr(R.color.primary_container_light),
+        background = clr(R.color.bg_dark),
+        onBackground = clr(R.color.ink_dark),
+        surface = clr(R.color.surface_dark),
+        onSurface = clr(R.color.ink_dark),
+        surfaceVariant = clr(R.color.track_dark),
+        onSurfaceVariant = clr(R.color.muted_dark),
+        error = clr(R.color.danger_dark),
+        outline = clr(R.color.faint_dark),
     )
 
 private val type =

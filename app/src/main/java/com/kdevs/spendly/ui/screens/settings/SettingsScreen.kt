@@ -180,7 +180,8 @@ fun SettingsScreen(nav: NavController) {
                 iconColor = if (allowed) Success else Danger,
                 onClick = {
                     val i =
-                        android.content.Intent(android.provider.Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+                        android.content
+                            .Intent(android.provider.Settings.ACTION_APP_NOTIFICATION_SETTINGS)
                             .putExtra(android.provider.Settings.EXTRA_APP_PACKAGE, ctx.packageName)
                     runCatching { ctx.startActivity(i) }
                 },

@@ -59,8 +59,12 @@ fun RoundIconButton(
     bg: Color = Surface,
 ) {
     Box(
-        Modifier.size(40.dp).pressable(CircleShape, scaleTo = 0.92f, onClick = onClick)
-            .clip(CircleShape).background(bg).border(1.dp, Line, CircleShape),
+        Modifier
+            .size(40.dp)
+            .pressable(CircleShape, scaleTo = 0.92f, onClick = onClick)
+            .clip(CircleShape)
+            .background(bg)
+            .border(1.dp, Line, CircleShape),
         contentAlignment = Alignment.Center,
     ) { Icon(icon, description, tint = tint, modifier = Modifier.size(20.dp)) }
 }
@@ -76,13 +80,26 @@ fun PrimaryButton(
     val shape = RoundedCornerShape(18.dp)
     val source = remember { MutableInteractionSource() }
     val pressed by source.collectIsPressedAsState()
-    val lift by animateDpAsState(if (!enabled) 0.dp else if (pressed) 1.dp else 5.dp, tween(120), label = "lift")
+    val lift by animateDpAsState(
+        if (!enabled) {
+            0.dp
+        } else if (pressed) {
+            1.dp
+        } else {
+            5.dp
+        },
+        tween(120),
+        label = "lift",
+    )
     val glow = Brand.copy(alpha = 0.30f)
     Box(
-        modifier.fillMaxWidth().height(54.dp)
+        modifier
+            .fillMaxWidth()
+            .height(54.dp)
             .pressable(shape, enabled = enabled && !busy, veil = false, interactionSource = source, onClick = onClick)
             .shadow(lift, shape, ambientColor = glow, spotColor = glow)
-            .clip(shape).background(ButtonBrush),
+            .clip(shape)
+            .background(ButtonBrush),
         contentAlignment = Alignment.Center,
     ) {
         // The button always stays solid. Disabled is a pale wash on top, never see-through,
@@ -106,8 +123,12 @@ fun SecondaryButton(
     val c = if (danger) Danger else Primary
     val shape = RoundedCornerShape(18.dp)
     Box(
-        modifier.fillMaxWidth().height(50.dp).pressable(shape, onClick = onClick)
-            .clip(shape).background(if (danger) DangerBg else PrimaryContainer),
+        modifier
+            .fillMaxWidth()
+            .height(50.dp)
+            .pressable(shape, onClick = onClick)
+            .clip(shape)
+            .background(if (danger) DangerBg else PrimaryContainer),
         contentAlignment = Alignment.Center,
     ) { Text(text, color = c, fontWeight = FontWeight.Bold, fontSize = 15.sp) }
 }
@@ -122,8 +143,13 @@ fun GoogleButton(
 ) {
     val shape = RoundedCornerShape(18.dp)
     Row(
-        modifier.fillMaxWidth().height(52.dp).pressable(shape, enabled = enabled, onClick = onClick)
-            .clip(shape).background(Surface).border(1.dp, FieldBorder, shape),
+        modifier
+            .fillMaxWidth()
+            .height(52.dp)
+            .pressable(shape, enabled = enabled, onClick = onClick)
+            .clip(shape)
+            .background(Surface)
+            .border(1.dp, FieldBorder, shape),
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -154,8 +180,12 @@ fun Fab(
     val lift by animateDpAsState(if (pressed) 2.dp else 7.dp, tween(120), label = "fabLift")
     val glow = Brand.copy(alpha = 0.30f)
     Box(
-        Modifier.size(58.dp).pressable(CircleShape, scaleTo = 0.92f, veil = false, interactionSource = source, onClick = onClick)
-            .shadow(lift, CircleShape, ambientColor = glow, spotColor = glow).clip(CircleShape).background(ButtonBrush),
+        Modifier
+            .size(58.dp)
+            .pressable(CircleShape, scaleTo = 0.92f, veil = false, interactionSource = source, onClick = onClick)
+            .shadow(lift, CircleShape, ambientColor = glow, spotColor = glow)
+            .clip(CircleShape)
+            .background(ButtonBrush),
         contentAlignment = Alignment.Center,
     ) { Icon(icon, description, tint = Color.White) }
 }

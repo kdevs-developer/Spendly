@@ -54,14 +54,16 @@ fun SelectScreen(nav: NavController) {
                 color = Primary,
                 fontWeight = FontWeight.Bold,
                 modifier =
-                    Modifier.clip(CircleShape).clickable {
-                        if (chosen.size == list.size) {
-                            Selection.clear()
-                        } else {
-                            Selection.clear()
-                            Selection.ids.addAll(list.map { it.id })
-                        }
-                    }.padding(10.dp),
+                    Modifier
+                        .clip(CircleShape)
+                        .clickable {
+                            if (chosen.size == list.size) {
+                                Selection.clear()
+                            } else {
+                                Selection.clear()
+                                Selection.ids.addAll(list.map { it.id })
+                            }
+                        }.padding(10.dp),
             )
         },
         bottomBar = {
@@ -166,8 +168,8 @@ fun BulkScreen(
         SectionTitle(str(R.string.selected_items))
         Card(padding = 12.dp) {
             picked.forEachIndexed {
-                    i,
-                    t,
+                i,
+                t,
                 ->
                 TxnRow(t, look, {}, showDate = true)
                 if (i < picked.lastIndex) HorizontalDivider(color = Line)

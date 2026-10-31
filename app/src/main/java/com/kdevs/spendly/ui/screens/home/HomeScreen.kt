@@ -49,7 +49,7 @@ fun HomeScreen(nav: NavController) {
     val overall = budgets.firstOrNull { it.categoryId.isBlank() }
 
     TabScreen(
-        greeting(profile.name),
+        greeting(profile.name.ifBlank { Repo.authName }),
         Routes.HOME,
         nav,
         actions = { RoundIconButton(Icons.Filled.Settings, str(R.string.settings), { nav.navigate(Routes.SETTINGS) }) },
@@ -117,9 +117,11 @@ fun HomeScreen(nav: NavController) {
                 color = Primary,
                 fontWeight = FontWeight.Bold,
                 modifier =
-                    Modifier.clip(CircleShape).clickable {
-                        nav.navigate(Routes.ACTIVITY)
-                    }.padding(8.dp),
+                    Modifier
+                        .clip(CircleShape)
+                        .clickable {
+                            nav.navigate(Routes.ACTIVITY)
+                        }.padding(8.dp),
             )
         }
         val txnsLoaded = "txns" in Repo.loaded.collectAsState().value
@@ -159,7 +161,10 @@ fun HomeScreen(nav: NavController) {
 /** "Good evening, Krish" - first name only, by the hour. Falls back to a plain hello. */
 private fun greeting(fullName: String): String {
     val first = fullName.trim().substringBefore(' ')
-    val hour = java.time.LocalTime.now().hour
+    val hour =
+        java.time.LocalTime
+            .now()
+            .hour
     val part =
         when {
             hour < 5 -> str(R.string.hello)
@@ -192,7 +197,11 @@ private fun QuickAction(
     onClick: () -> Unit,
 ) {
     Column(
-        modifier.clip(RoundedCornerShape(20.dp)).background(Surface).clickable(onClick = onClick).padding(vertical = 14.dp),
+        modifier
+            .clip(RoundedCornerShape(20.dp))
+            .background(Surface)
+            .clickable(onClick = onClick)
+            .padding(vertical = 14.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {

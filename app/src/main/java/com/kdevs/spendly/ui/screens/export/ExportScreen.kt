@@ -56,10 +56,10 @@ import com.kdevs.spendly.ui.screens.money.PickRow
 import com.kdevs.spendly.ui.screens.money.SavedBar
 import com.kdevs.spendly.ui.state.TxnFilter
 import com.kdevs.spendly.ui.theme.*
-import java.time.LocalDate
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.time.LocalDate
 
 private const val XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 
@@ -150,8 +150,8 @@ fun ExportScreen(
                     TxnFilter.matches(t) { id -> look.categoryName(id) }
                 } else {
                     t.dateMillis in range.first until range.second &&
-                            t.kind in kinds &&
-                            (accountIds.isEmpty() || t.accountId in accountIds || t.toAccountId in accountIds)
+                        t.kind in kinds &&
+                        (accountIds.isEmpty() || t.accountId in accountIds || t.toAccountId in accountIds)
                 }
             }
         }
@@ -367,7 +367,9 @@ fun ExportScreen(
                     Box(Modifier.weight(1f)) {
                         SecondaryButton(str(R.string.share), {
                             val i =
-                                Intent(Intent.ACTION_SEND).setType(mime).putExtra(Intent.EXTRA_STREAM, uri)
+                                Intent(Intent.ACTION_SEND)
+                                    .setType(mime)
+                                    .putExtra(Intent.EXTRA_STREAM, uri)
                                     .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                             ctx.startActivity(Intent.createChooser(i, str(R.string.share)))
                         })
@@ -437,7 +439,14 @@ private fun OptionRow(
             fontSize = 14.sp,
             fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
         )
-        if (selected) Icon(Icons.Filled.Check, contentDescription = str(R.string.selected_2), tint = Primary, modifier = Modifier.size(18.dp))
+        if (selected) {
+            Icon(
+                Icons.Filled.Check,
+                contentDescription = str(R.string.selected_2),
+                tint = Primary,
+                modifier = Modifier.size(18.dp),
+            )
+        }
     }
 }
 

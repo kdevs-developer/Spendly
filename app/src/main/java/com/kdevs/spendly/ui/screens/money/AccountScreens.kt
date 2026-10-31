@@ -170,9 +170,11 @@ fun AccountDetailScreen(
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 Icon(iconFor(a.icon), null, tint = Color.White)
                 Text(
-                    AccountTypes.firstOrNull {
-                        it.key == a.type
-                    }?.label.orEmpty() + if (a.archived) " · " + str(R.string.archived) else "",
+                    AccountTypes
+                        .firstOrNull {
+                            it.key == a.type
+                        }?.label
+                        .orEmpty() + if (a.archived) " · " + str(R.string.archived) else "",
                     color =
                         Color.White.copy(
                             alpha = 0.9f,

@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Expense splits and settle up -->
+<resources>
+    <string name="add_group_expense">Add group expense</string>
+    <string name="add_my_share">Add my share to my expenses</string>
+    <string name="add_the_first_shared_expense">Add the first shared expense.</string>
+    <string name="all_settled">All settled</string>
+    <string name="all_settled_up">All settled up</string>
+    <string name="amounts_must_add_up_to_now">Amounts must add up to %1$s. Now %2$s.</string>
+    <string name="balances_will_be_recalculated">Balances will be recalculated.</string>
+    <string name="by_percentage">By percentage</string>
+    <string name="by_shares">By shares</string>
+    <string name="choose_at_least_one_person">Choose at least one person.</string>
+    <string name="delete_this_entry">Delete this entry?</string>
+    <string name="each_any_leftover_paise_go_one">%1$s ÷ %2$s = %3$s each. Any leftover paise go one by one to the first people.</string>
+    <string name="equal">Equal</string>
+    <string name="equally">Equally</string>
+    <string name="exact">Exact</string>
+    <string name="exact_amounts">Exact amounts</string>
+    <string name="expenses">Expenses</string>
+    <string name="give_at_least_one_share">Give at least one share.</string>
+    <string name="money_comes_out_of">Money comes out of</string>
+    <string name="money_goes_into">Money goes into</string>
+    <string name="no_expenses_yet">No expenses yet</string>
+    <string name="no_one_owes_you_and_you">No one owes you and you owe no one.</string>
+    <string name="nothing_to_settle">Nothing to settle</string>
+    <string name="only_adder_can_delete">Only the person who added this can delete it.</string>
+    <string name="paid_by">Paid by</string>
+    <string name="payment">Payment</string>
+    <string name="pays">%1$s pays %2$s</string>
+    <string name="pays_with_amount">%1$s pays %2$s %3$s</string>
+    <string name="percent">Percent</string>
+    <string name="percentages_must_add_up_to_100">Percentages must add up to 100.</string>
+    <string name="person_paid_person">%1$s paid %2$s</string>
+    <string name="record_paid">Record %1$s paid</string>
+    <string name="record_received">Record %1$s received</string>
+    <string name="save_expense">Save expense</string>
+    <string name="settle_up">Settle up</string>
+    <string name="settled_with">Settled with %1$s</string>
+    <string name="share_summary">Share summary</string>
+    <string name="shares">Shares</string>
+    <string name="spendly_only_records_this_payment_it">Spendly only records this payment. It does not move any money.</string>
+    <string name="spendly_split">Spendly split</string>
+    <string name="split_word">Split</string>
+    <string name="splits">Splits</string>
+    <string name="suggested">Suggested %1$s</string>
+    <string name="tap_entry_hint">Tap an entry to see who owes what.</string>
+    <string name="that_is_more_than_the_owed">That is more than the %1$s owed.</string>
+    <string name="to_settle_up">To settle up</string>
+    <string name="what_was_it_for">What was it for?</string>
+    <string name="who_owes_what">Who owes what</string>
+    <string name="you">You</string>
+    <string name="you_are_owed">You are owed</string>
+    <string name="you_owe">You owe</string>
+    <string name="you_pay">You pay %1$s</string>
+</resources>

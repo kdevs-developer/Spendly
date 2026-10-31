@@ -50,8 +50,7 @@ fun CategoryPickerScreen(
     var query by remember { mutableStateOf("") }
     var open by remember { mutableStateOf(setOf<String>()) }
     val parents =
-        look.parents(activeKind).filter {
-                p ->
+        look.parents(activeKind).filter { p ->
             query.isBlank() || p.name.contains(query, true) || look.subs(p.id).any { it.name.contains(query, true) }
         }
     ScreenScaffold(
@@ -81,14 +80,16 @@ fun CategoryPickerScreen(
             val subs = look.subs(p.id)
             Card(padding = 12.dp) {
                 Row(
-                    Modifier.fillMaxWidth().clickable {
-                        if (slot == "manage") {
-                            nav.navigate(Routes.categoryEdit(p.id, activeKind))
-                        } else {
-                            nav.setPicked("pickedCategory", "${p.id}|")
-                            nav.popBackStack()
-                        }
-                    }.padding(vertical = 6.dp),
+                    Modifier
+                        .fillMaxWidth()
+                        .clickable {
+                            if (slot == "manage") {
+                                nav.navigate(Routes.categoryEdit(p.id, activeKind))
+                            } else {
+                                nav.setPicked("pickedCategory", "${p.id}|")
+                                nav.popBackStack()
+                            }
+                        }.padding(vertical = 6.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
@@ -111,9 +112,11 @@ fun CategoryPickerScreen(
                             str(R.string.show_sub_categories),
                             tint = Muted,
                             modifier =
-                                Modifier.clip(
-                                    CircleShape,
-                                ).clickable { open = if (p.id in open) open - p.id else open + p.id }.padding(6.dp),
+                                Modifier
+                                    .clip(
+                                        CircleShape,
+                                    ).clickable { open = if (p.id in open) open - p.id else open + p.id }
+                                    .padding(6.dp),
                         )
                     }
                 }
@@ -121,10 +124,12 @@ fun CategoryPickerScreen(
                     subs.filter { query.isBlank() || it.name.contains(query, true) || p.name.contains(query, true) }.forEach { s ->
                         HorizontalDivider(color = Line)
                         Row(
-                            Modifier.fillMaxWidth().clickable {
-                                nav.setPicked("pickedCategory", "${p.id}|${s.id}")
-                                nav.popBackStack()
-                            }.padding(start = 24.dp, top = 10.dp, bottom = 10.dp),
+                            Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    nav.setPicked("pickedCategory", "${p.id}|${s.id}")
+                                    nav.popBackStack()
+                                }.padding(start = 24.dp, top = 10.dp, bottom = 10.dp),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(12.dp),
                         ) {

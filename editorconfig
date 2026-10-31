@@ -1,0 +1,24 @@
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+indent_style = space
+trim_trailing_whitespace = true
+
+[*.{kt,kts}]
+indent_size = 4
+ktlint_code_style = ktlint_official
+max_line_length = off
+ij_kotlin_allow_trailing_comma = true
+ij_kotlin_allow_trailing_comma_on_call_site = true
+# Theme colors like Bg, Ink, Primary are PascalCase on purpose
+ktlint_standard_property-naming = disabled
+# Files holding several related composables don't match a single class name
+ktlint_standard_filename = disabled
+
+# Compose functions are PascalCase
+ktlint_function_naming_ignore_when_annotated_with = Composable
+# Existing files use wildcard imports (androidx.compose.*); ktlintFormat cannot expand them
+ktlint_standard_no-wildcard-imports = disabled

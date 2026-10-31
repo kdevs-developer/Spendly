@@ -29,6 +29,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.kdevs.spendly.R
@@ -63,7 +64,14 @@ fun ScreenScaffold(
                     Spacer(Modifier.width(4.dp))
                 }
                 Spacer(Modifier.width(12.dp))
-                Text(title, style = MaterialTheme.typography.titleLarge, color = Ink, modifier = Modifier.weight(1f), maxLines = 1)
+                Text(
+                    title,
+                    style = MaterialTheme.typography.titleLarge,
+                    color = Ink,
+                    modifier = Modifier.weight(1f),
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
                 actions()
             }
             // Pinned part (like the amount): it never scrolls, so typing cannot push it out of view.
@@ -89,9 +97,13 @@ fun ScreenScaffold(
 @Composable
 fun BottomActionBar(content: @Composable ColumnScope.() -> Unit) {
     Column(
-        Modifier.fillMaxWidth().shadow(12.dp, RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
+        Modifier
+            .fillMaxWidth()
+            .shadow(12.dp, RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
             .background(Surface, RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
-            .navigationBarsPadding().imePadding().padding(horizontal = 20.dp, vertical = 14.dp),
+            .navigationBarsPadding()
+            .imePadding()
+            .padding(horizontal = 20.dp, vertical = 14.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
         content = content,
     )

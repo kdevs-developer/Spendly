@@ -1,12 +1,12 @@
 package com.kdevs.spendly.data
 
 import android.content.Context
-import android.net.Uri
 import androidx.credentials.CredentialManager
 import androidx.credentials.CustomCredential
 import androidx.credentials.GetCredentialRequest
 import androidx.credentials.exceptions.GetCredentialCancellationException
 import androidx.credentials.exceptions.NoCredentialException
+import com.google.android.gms.tasks.Task
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.firebase.FirebaseNetworkException
@@ -21,14 +21,15 @@ import com.google.firebase.auth.FirebaseAuthRecentLoginRequiredException
 import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.auth.userProfileChangeRequest
 import com.google.firebase.firestore.CollectionReference
+import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestoreException
 import com.google.firebase.firestore.MetadataChanges
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.SetOptions
 import com.google.firebase.firestore.Source
+import com.google.firebase.firestore.WriteBatch
 import com.google.firebase.messaging.FirebaseMessaging
 import com.google.firebase.storage.FirebaseStorage
 import com.kdevs.spendly.R
@@ -38,6 +39,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -47,8 +49,9 @@ import kotlin.random.Random
 
 /**
  * One place for every read and write. Screens only collect the StateFlows below
- * and call the suspend functions. There is no offline mode: every read and write
- * needs an internet connection and writes finish only once the server confirms.
+ * and call the suspend functions. The app is offline-first: Firestore keeps a copy on the phone, so reads
+ * work without internet and writes to the person's own data finish on the phone at once and sync later.
+ * Only chat, friends, friend codes and "delete everything" need the server.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 object Repo {
@@ -72,6 +75,18 @@ object Repo {
     val uid: String get() = auth.currentUser?.uid.orEmpty()
     val isSignedIn: Boolean get() = auth.currentUser != null
     val email: String get() = auth.currentUser?.email.orEmpty()
+
+    /**
+     * A name taken from the login itself (Google or email account), used while the saved profile is still
+     * empty or could not be read. Never blank for a signed-in person with an email.
+     */
+    val authName: String
+        get() {
+            val u = auth.currentUser ?: return ""
+            return u.displayName?.takeIf { it.isNotBlank() }
+                ?: u.providerData.firstNotNullOfOrNull { it.displayName?.takeIf { n -> n.isNotBlank() } }
+                ?: u.email?.substringBefore('@').orEmpty()
+        }
 
     suspend fun signIn(
         email: String,
@@ -99,7 +114,8 @@ object Repo {
         val resId = appContext.resources.getIdentifier("default_web_client_id", "string", appContext.packageName)
         if (resId == 0) error(str(R.string.google_sign_in_is_not_set))
         val option =
-            GetGoogleIdOption.Builder()
+            GetGoogleIdOption
+                .Builder()
                 .setFilterByAuthorizedAccounts(false)
                 .setServerClientId(appContext.getString(resId))
                 .build()
@@ -129,7 +145,12 @@ object Repo {
     }
 
     /** Which login methods this account uses: "password", "google.com", */
-    val signInMethods: List<String> get() = auth.currentUser?.providerData.orEmpty().map { it.providerId }.filter { it != "firebase" }
+    val signInMethods: List<String> get() =
+        auth.currentUser
+            ?.providerData
+            .orEmpty()
+            .map { it.providerId }
+            .filter { it != "firebase" }
     val usesPassword: Boolean get() = "password" in signInMethods
 
     /**
@@ -216,21 +237,51 @@ object Repo {
 
     private suspend fun wipe(u: String) {
         // 1. Chats: take my name off, leave, and delete the photos I uploaded.
-        val chatDocs = db.collection("chats").whereArrayContains("members", u).get(Source.SERVER).await().documents
+        val chatDocs =
+            db
+                .collection("chats")
+                .whereArrayContains("members", u)
+                .get(Source.SERVER)
+                .await()
+                .documents
         for (c in chatDocs) {
             runCatching {
-                FirebaseStorage.getInstance().reference.child("chats/${c.id}").listAll().await()
-                    .items.filter { it.name.endsWith("_$u.jpg") }.forEach { it.delete().await() }
+                FirebaseStorage
+                    .getInstance()
+                    .reference
+                    .child("chats/${c.id}")
+                    .listAll()
+                    .await()
+                    .items
+                    .filter { it.name.endsWith("_$u.jpg") }
+                    .forEach { it.delete().await() }
             }
             c.reference.update(mapOf("members" to FieldValue.arrayRemove(u), "memberNames.$u" to "Deleted user")).await()
         }
         // 2. Friend requests I sent or received.
         for (side in listOf("from", "to")) {
-            db.collection("requests").whereEqualTo(side, u).get(Source.SERVER).await().documents.forEach { it.reference.delete().await() }
+            db
+                .collection("requests")
+                .whereEqualTo(side, u)
+                .get(Source.SERVER)
+                .await()
+                .documents
+                .forEach { it.reference.delete().await() }
         }
         // 3. My private collections, in batches (a batch holds at most 500 writes).
         val me = db.collection("users").document(u)
-        for (name in listOf("accounts", "categories", "txns", "budgets", "goals", "templates", "recurring", "friends", "hidden", "hiddenChats")) {
+        for (name in listOf(
+            "accounts",
+            "categories",
+            "txns",
+            "budgets",
+            "goals",
+            "templates",
+            "recurring",
+            "friends",
+            "hidden",
+            "hiddenChats",
+        )) {
             me.collection(name).get(Source.SERVER).await().documents.chunked(400).forEach { part ->
                 val batch = db.batch()
                 part.forEach { batch.delete(it.reference) }
@@ -238,8 +289,20 @@ object Repo {
             }
         }
         // 4. The friend code lookup, then the profile itself.
-        val code = me.get(Source.SERVER).await().getString("code").orEmpty().replace(" ", "")
-        if (code.isNotBlank()) db.collection("userCodes").document(code).delete().await()
+        val code =
+            me
+                .get(Source.SERVER)
+                .await()
+                .getString("code")
+                .orEmpty()
+                .replace(" ", "")
+        if (code.isNotBlank()) {
+            db
+                .collection("userCodes")
+                .document(code)
+                .delete()
+                .await()
+        }
         me.delete().await()
     }
 
@@ -264,8 +327,24 @@ object Repo {
         if (!isSignedIn || deleting) return
         val u = uid
         val ref = db.collection("users").document(u)
-        val snap = runCatching { ref.get().await() }.getOrNull() ?: return
-        val p = snap.toObject(Profile::class.java) ?: Profile()
+        // A single failed read (sign-in just finished, network still waking up) used to end here silently,
+        // so the name, friend code and starter categories were never saved. Try a few times first.
+        var snap: DocumentSnapshot? = null
+        repeat(2) { attempt ->
+            if (snap == null) {
+                snap =
+                    try {
+                        ref.get().await()
+                    } catch (e: kotlinx.coroutines.CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        if (attempt < 1) delay(1500)
+                        null
+                    }
+            }
+        }
+        val got = snap ?: return
+        val p = got.toObject(Profile::class.java) ?: Profile()
         val user = auth.currentUser
         val typed = nameHint?.trim().orEmpty()
         val fallback =
@@ -340,12 +419,20 @@ object Repo {
     /** Saves this phone's push token. Called on every app start, because a token created while signed out would be lost. */
     suspend fun refreshToken() {
         if (!isSignedIn) return
-        FirebaseMessaging.getInstance().token.await().let { saveToken(it) }
+        FirebaseMessaging
+            .getInstance()
+            .token
+            .await()
+            .let { saveToken(it) }
     }
 
     fun saveToken(token: String) {
         if (!isSignedIn) return
-        db.collection("users").document(uid).set(mapOf("fcmToken" to token), com.google.firebase.firestore.SetOptions.merge())
+        db.collection("users").document(uid).set(
+            mapOf("fcmToken" to token),
+            com.google.firebase.firestore.SetOptions
+                .merge(),
+        )
     }
 
     private fun newFriendCode(): String {
@@ -357,11 +444,16 @@ object Repo {
     private suspend fun seedCategories() {
         val parents =
             listOf(
-                Triple(str(R.string.food), "food", "orange") to listOf(str(R.string.groceries) to "grocery", str(R.string.eating_out) to "food", str(R.string.coffee) to "coffee"),
-                Triple(str(R.string.transport), "transport", "blue") to listOf(str(R.string.fuel) to "fuel", str(R.string.bus_and_metro) to "transport", str(R.string.flights) to "flight"),
-                Triple(str(R.string.bills), "bills", "purple") to listOf(str(R.string.rent) to "rent", str(R.string.internet) to "wifi", str(R.string.electricity) to "bills"),
-                Triple(str(R.string.shopping), "shopping", "pink") to listOf(str(R.string.clothes) to "clothes", str(R.string.gifts) to "gift"),
-                Triple(str(R.string.health), "health", "red") to listOf(str(R.string.doctor) to "health", str(R.string.fitness) to "fitness"),
+                Triple(str(R.string.food), "food", "orange") to
+                    listOf(str(R.string.groceries) to "grocery", str(R.string.eating_out) to "food", str(R.string.coffee) to "coffee"),
+                Triple(str(R.string.transport), "transport", "blue") to
+                    listOf(str(R.string.fuel) to "fuel", str(R.string.bus_and_metro) to "transport", str(R.string.flights) to "flight"),
+                Triple(str(R.string.bills), "bills", "purple") to
+                    listOf(str(R.string.rent) to "rent", str(R.string.internet) to "wifi", str(R.string.electricity) to "bills"),
+                Triple(str(R.string.shopping), "shopping", "pink") to
+                    listOf(str(R.string.clothes) to "clothes", str(R.string.gifts) to "gift"),
+                Triple(str(R.string.health), "health", "red") to
+                    listOf(str(R.string.doctor) to "health", str(R.string.fitness) to "fitness"),
                 Triple(str(R.string.entertainment), "movie", "teal") to listOf(str(R.string.movies) to "movie"),
                 Triple(str(R.string.other), "other", "slate") to emptyList(),
             )
@@ -369,8 +461,7 @@ object Repo {
         parents.forEach { (p, subs) ->
             val ref = col.document()
             ref.set(Category(name = p.first, icon = p.second, colorKey = p.third, kind = "expense")).await()
-            subs.forEach {
-                    (n, i) ->
+            subs.forEach { (n, i) ->
                 col.add(Category(name = n, icon = i, colorKey = p.third, parentId = ref.id, kind = "expense")).await()
             }
         }
@@ -379,22 +470,12 @@ object Repo {
             str(R.string.interest) to "savings",
             str(R.string.gifts_received) to "gift",
             str(R.string.other_income) to "other",
-        ).forEach {
-                (n, i) ->
+        ).forEach { (n, i) ->
             col.add(Category(name = n, icon = i, colorKey = "green", kind = "income")).await()
         }
     }
 
     // ---------- Generic helpers ----------
-    /** Throws a clear message instead of letting a save wait forever when the phone has no internet. */
-    private fun requireOnline() {
-        val cm = appContext.getSystemService(Context.CONNECTIVITY_SERVICE) as android.net.ConnectivityManager
-        val caps = cm.getNetworkCapabilities(cm.activeNetwork)
-        if (caps?.hasCapability(android.net.NetworkCapabilities.NET_CAPABILITY_INTERNET) != true) {
-            error(str(R.string.no_internet_connection_try_again_when))
-        }
-    }
-
     private fun userCol(name: String): CollectionReference = db.collection("users").document(uid).collection(name)
 
     private inline fun <reified T : Any> live(
@@ -405,24 +486,55 @@ object Repo {
             if (u == null) {
                 flowOf(emptyList())
             } else {
-                callbackFlow {
+                callbackFlow<List<T>> {
                     val q = order(db.collection("users").document(u).collection(name))
                     val reg =
-                        q.addSnapshotListener { s, _ ->
-                            if (s != null) {
+                        q.addSnapshotListener { s, e ->
+                            if (e != null) {
+                                close(e) // a dead listener never recovers by itself; retryWhen below re-attaches it
+                            } else if (s != null) {
                                 runCatching { s.toObjects(T::class.java) }.onSuccess { trySend(it) }
                                 loaded.value = loaded.value + name
                             }
                         }
                     awaitClose { reg.remove() }
-                }
+                }.retryWhen { cause, attempt -> retryListener(cause, attempt) }
+                    .catch { }
             }
         }
+
+    /**
+     * Re-attach a dead snapshot listener, but only for errors that can clear up by themselves and only a few
+     * times. PERMISSION_DENIED (rules not deployed) would otherwise retry forever on every collection.
+     */
+    private suspend fun retryListener(
+        cause: Throwable,
+        attempt: Long,
+    ): Boolean {
+        val transient =
+            cause is FirebaseFirestoreException &&
+                cause.code != FirebaseFirestoreException.Code.PERMISSION_DENIED &&
+                cause.code != FirebaseFirestoreException.Code.UNAUTHENTICATED
+        if (!transient || attempt >= 5) return false
+        delay(3000)
+        return true
+    }
 
     /** Names of collections that have delivered their first snapshot, so screens can show a loader instead of "empty". */
     val loaded = kotlinx.coroutines.flow.MutableStateFlow(setOf<String>())
 
     private fun <T> Flow<T>.hot(initial: T): StateFlow<T> = stateIn(scope, SharingStarted.Eagerly, initial)
+
+    /** Set when a queued write was later refused by the server (rules, quota). Screens may show it. */
+    val writeProblem = MutableStateFlow<String?>(null)
+
+    /**
+     * Writes to the person's own data are applied to the phone's copy at once and sent when there is internet.
+     * Waiting for the server here is what made Save spin forever offline, so failures are reported here instead.
+     */
+    private fun Task<*>.watch() {
+        addOnFailureListener { e -> writeProblem.value = friendlyFirestoreError(e) }
+    }
 
     /** Save or update. A blank id creates a new document and returns its id. */
     suspend fun put(
@@ -431,8 +543,7 @@ object Repo {
         data: Any,
     ): String {
         val ref = if (id.isBlank()) userCol(collection).document() else userCol(collection).document(id)
-        requireOnline()
-        ref.set(data).await()
+        ref.set(data).watch()
         return ref.id
     }
 
@@ -440,38 +551,43 @@ object Repo {
         collection: String,
         id: String,
     ) {
-        requireOnline()
-        userCol(collection).document(id).delete().await()
+        userCol(collection).document(id).delete().watch()
     }
 
     suspend fun removeMany(
         collection: String,
         ids: Collection<String>,
     ) {
-        requireOnline()
-        val batch = db.batch()
-        ids.forEach { batch.delete(userCol(collection).document(it)) }
-        batch.commit().await()
+        // A batch holds at most 500 writes.
+        ids.chunked(400).forEach { chunk ->
+            val batch = db.batch()
+            chunk.forEach { batch.delete(userCol(collection).document(it)) }
+            batch.commit().watch()
+        }
     }
 
     // ---------- Money data ----------
     val profile: StateFlow<Profile> =
-        uidFlow.flatMapLatest { u ->
-            if (u == null) {
-                flowOf(Profile())
-            } else {
-                callbackFlow {
-                    val reg =
-                        db.collection("users").document(u).addSnapshotListener {
-                                s,
-                                _,
-                            ->
-                            trySend(s?.toObject(Profile::class.java) ?: Profile())
-                        }
-                    awaitClose { reg.remove() }
+        uidFlow
+            .flatMapLatest { u ->
+                if (u == null) {
+                    flowOf(Profile())
+                } else {
+                    callbackFlow<Profile> {
+                        val reg =
+                            db.collection("users").document(u).addSnapshotListener { s, e ->
+                                // An error used to publish an empty Profile (name gone) and the listener never came back.
+                                if (e != null) {
+                                    close(e)
+                                } else if (s != null) {
+                                    trySend(s.toObject(Profile::class.java) ?: Profile())
+                                }
+                            }
+                        awaitClose { reg.remove() }
+                    }.retryWhen { cause, attempt -> retryListener(cause, attempt) }
+                        .catch { }
                 }
-            }
-        }.hot(Profile())
+            }.hot(Profile())
 
     val accounts: StateFlow<List<Account>> = live<Account>("accounts") { it.orderBy("createdAt") }.hot(emptyList())
     val categories: StateFlow<List<Category>> = live<Category>("categories").hot(emptyList())
@@ -520,14 +636,64 @@ object Repo {
         }
     }
 
+    /**
+     * Deletes a category and its sub-categories without leaving anything pointing at them:
+     * transactions lose the deleted category (a deleted sub-category keeps its parent), recurring items and
+     * templates move to the parent (or to none), and budgets for the category are removed.
+     * Everything goes in batches, so it works offline and never ends half done.
+     */
     suspend fun deleteCategory(id: String) {
-        categories.value.filter { it.parentId == id }.forEach { remove("categories", it.id) }
-        remove("categories", id)
+        val cats = categories.value
+        val parentId = cats.firstOrNull { it.id == id }?.parentId.orEmpty()
+        val gone = (listOf(id) + cats.filter { it.parentId == id }.map { it.id }).toSet()
+        val ops = mutableListOf<(WriteBatch) -> Unit>()
+
+        for (t in txns.value) {
+            val cat = if (t.categoryId in gone) parentId else t.categoryId
+            val sub = if (t.subcategoryId in gone) "" else t.subcategoryId
+            if (cat != t.categoryId || sub != t.subcategoryId) {
+                val ref = userCol("txns").document(t.id)
+                ops += { b -> b.update(ref, mapOf("categoryId" to cat, "subcategoryId" to sub)) }
+            }
+        }
+        for (r in recurring.value.filter { it.categoryId in gone }) {
+            val ref = userCol("recurring").document(r.id)
+            ops += { b -> b.update(ref, "categoryId", parentId) }
+        }
+        for (t in templates.value.filter { it.categoryId in gone }) {
+            val ref = userCol("templates").document(t.id)
+            ops += { b -> b.update(ref, "categoryId", parentId) }
+        }
+        // A blank categoryId on a budget means "overall budget", so these are deleted, never blanked.
+        for (bd in budgets.value.filter { it.categoryId in gone }) {
+            val ref = userCol("budgets").document(bd.id)
+            ops += { b -> b.delete(ref) }
+        }
+        for (c in gone) {
+            val ref = userCol("categories").document(c)
+            ops += { b -> b.delete(ref) }
+        }
+        ops.chunked(400).forEach { chunk ->
+            val batch = db.batch()
+            chunk.forEach { it(batch) }
+            batch.commit().watch()
+        }
     }
 
     suspend fun updateProfileName(name: String) {
-        db.collection("users").document(uid).set(mapOf("name" to name), com.google.firebase.firestore.SetOptions.merge()).await()
-        db.collection("userCodes").document(profile.value.code.replace(" ", "")).set(mapOf("uid" to uid, "name" to name)).await()
+        db
+            .collection("users")
+            .document(uid)
+            .set(
+                mapOf("name" to name),
+                com.google.firebase.firestore.SetOptions
+                    .merge(),
+            ).await()
+        db
+            .collection("userCodes")
+            .document(profile.value.code.replace(" ", ""))
+            .set(mapOf("uid" to uid, "name" to name))
+            .await()
     }
 
     /** Creates the next expense for every recurring item that is due. Call when the app opens. */
@@ -535,6 +701,8 @@ object Repo {
         val now = System.currentTimeMillis()
         for (r in recurring.value.filter { it.active && it.nextMillis in 1..now }) {
             var next = r.nextMillis
+            // The day the item started on, so the 31st does not slide to the 28th after February.
+            val anchor = r.anchorDay.takeIf { it > 0 } ?: toLocalDate(r.nextMillis).dayOfMonth
             var guard = 0
             while (next <= now && guard++ < 60) {
                 put(
@@ -549,42 +717,54 @@ object Repo {
                         dateMillis = next,
                     ),
                 )
-                next = addPeriod(next, r.every)
+                next = addPeriod(next, r.every, anchor)
             }
-            put("recurring", r.id, r.copy(nextMillis = next))
+            put("recurring", r.id, r.copy(nextMillis = next, anchorDay = anchor))
         }
     }
 
     // ---------- Friends ----------
-    data class RequestView(val id: String, val fromUid: String, val fromName: String)
+    data class RequestView(
+        val id: String,
+        val fromUid: String,
+        val fromName: String,
+    )
 
     val incomingRequests: StateFlow<List<FriendRequest>> =
-        uidFlow.flatMapLatest { u ->
-            if (u == null) {
-                flowOf(emptyList())
-            } else {
-                callbackFlow {
-                    val reg =
-                        db.collection("requests").whereEqualTo("to", u).whereEqualTo("status", "pending")
-                            .addSnapshotListener { s, _ -> if (s != null) trySend(s.toObjects(FriendRequest::class.java)) }
-                    awaitClose { reg.remove() }
+        uidFlow
+            .flatMapLatest { u ->
+                if (u == null) {
+                    flowOf(emptyList())
+                } else {
+                    callbackFlow {
+                        val reg =
+                            db
+                                .collection("requests")
+                                .whereEqualTo("to", u)
+                                .whereEqualTo("status", "pending")
+                                .addSnapshotListener { s, _ -> if (s != null) trySend(s.toObjects(FriendRequest::class.java)) }
+                        awaitClose { reg.remove() }
+                    }
                 }
-            }
-        }.hot(emptyList())
+            }.hot(emptyList())
 
     val outgoingRequests: StateFlow<List<FriendRequest>> =
-        uidFlow.flatMapLatest { u ->
-            if (u == null) {
-                flowOf(emptyList())
-            } else {
-                callbackFlow {
-                    val reg =
-                        db.collection("requests").whereEqualTo("from", u).whereEqualTo("status", "pending")
-                            .addSnapshotListener { s, _ -> if (s != null) trySend(s.toObjects(FriendRequest::class.java)) }
-                    awaitClose { reg.remove() }
+        uidFlow
+            .flatMapLatest { u ->
+                if (u == null) {
+                    flowOf(emptyList())
+                } else {
+                    callbackFlow {
+                        val reg =
+                            db
+                                .collection("requests")
+                                .whereEqualTo("from", u)
+                                .whereEqualTo("status", "pending")
+                                .addSnapshotListener { s, _ -> if (s != null) trySend(s.toObjects(FriendRequest::class.java)) }
+                        awaitClose { reg.remove() }
+                    }
                 }
-            }
-        }.hot(emptyList())
+            }.hot(emptyList())
 
     /** Returns null on success or a short message the screen can show. */
     suspend fun sendFriendRequest(rawCode: String): String? {
@@ -592,7 +772,11 @@ object Repo {
         if (code.length != 8) return str(R.string.friend_code_length_hint)
         val doc =
             try {
-                db.collection("userCodes").document(code).get(Source.SERVER).await()
+                db
+                    .collection("userCodes")
+                    .document(code)
+                    .get(Source.SERVER)
+                    .await()
             } catch (e: FirebaseFirestoreException) {
                 return friendlyFirestoreError(e)
             }
@@ -602,17 +786,20 @@ object Repo {
         if (friends.value.any { it.id == other }) return str(R.string.already_friends)
         if (other in profile.value.blocked) return str(R.string.unblock_this_person_first)
         val id = "${uid}_$other"
-        db.collection("requests").document(id).set(
-            FriendRequest(
-                from = uid,
-                fromName = profile.value.name,
-                fromCode = profile.value.code,
-                to = other,
-                toName = doc.getString("name").orEmpty(),
-                toCode = code,
-                status = "pending",
-            ),
-        ).await()
+        db
+            .collection("requests")
+            .document(id)
+            .set(
+                FriendRequest(
+                    from = uid,
+                    fromName = profile.value.name,
+                    fromCode = profile.value.code,
+                    to = other,
+                    toName = doc.getString("name").orEmpty(),
+                    toCode = code,
+                    status = "pending",
+                ),
+            ).await()
         return null
     }
 
@@ -622,13 +809,23 @@ object Repo {
     ) {
         // Add the friend first: if the second step fails the person can simply tap Accept again.
         if (accept) put("friends", req.from, Friend(name = req.fromName, code = req.fromCode))
-        db.collection("requests").document(req.id).update("status", if (accept) "accepted" else "declined").await()
+        db
+            .collection("requests")
+            .document(req.id)
+            .update("status", if (accept) "accepted" else "declined")
+            .await()
         // The sender adds us on their side as soon as they are online (see syncAccepted).
     }
 
     /** Adds friends whose requests we sent and they accepted. */
     suspend fun syncAccepted() {
-        val snap = db.collection("requests").whereEqualTo("from", uid).whereEqualTo("status", "accepted").get().await()
+        val snap =
+            db
+                .collection("requests")
+                .whereEqualTo("from", uid)
+                .whereEqualTo("status", "accepted")
+                .get()
+                .await()
         for (d in snap.documents) {
             val other = d.getString("to").orEmpty()
             // Another person's profile is private, so the name and code come from the request itself.
@@ -651,7 +848,11 @@ object Repo {
 
     /** Withdraws a request we sent. */
     suspend fun cancelRequest(req: FriendRequest) {
-        db.collection("requests").document(req.id).delete().await()
+        db
+            .collection("requests")
+            .document(req.id)
+            .delete()
+            .await()
     }
 
     suspend fun removeFriend(id: String) {
@@ -659,11 +860,19 @@ object Repo {
     }
 
     suspend fun block(id: String) {
-        db.collection("users").document(uid).update("blocked", FieldValue.arrayUnion(id)).await()
+        db
+            .collection("users")
+            .document(uid)
+            .update("blocked", FieldValue.arrayUnion(id))
+            .await()
     }
 
     suspend fun unblock(id: String) {
-        db.collection("users").document(uid).update("blocked", FieldValue.arrayRemove(id)).await()
+        db
+            .collection("users")
+            .document(uid)
+            .update("blocked", FieldValue.arrayRemove(id))
+            .await()
     }
 
     suspend fun report(
@@ -671,35 +880,43 @@ object Repo {
         chatId: String,
         reason: String,
     ) {
-        db.collection("reports").add(
-            mapOf("reporter" to uid, "target" to targetUid, "chatId" to chatId, "reason" to reason, "at" to Timestamp.now()),
-        ).await()
+        db
+            .collection("reports")
+            .add(
+                mapOf("reporter" to uid, "target" to targetUid, "chatId" to chatId, "reason" to reason, "at" to Timestamp.now()),
+            ).await()
     }
 
     // ---------- Chats ----------
     val chats: StateFlow<List<Chat>> =
-        uidFlow.flatMapLatest { u ->
-            if (u == null) {
-                flowOf(emptyList())
-            } else {
-                callbackFlow {
-                    val reg =
-                        db.collection("chats").whereArrayContains("members", u)
-                            .addSnapshotListener {
+        uidFlow
+            .flatMapLatest { u ->
+                if (u == null) {
+                    flowOf(emptyList())
+                } else {
+                    callbackFlow {
+                        val reg =
+                            db
+                                .collection("chats")
+                                .whereArrayContains("members", u)
+                                .addSnapshotListener {
                                     s,
                                     _,
-                                ->
-                                if (s != null) {
-                                    trySend(
-                                        s.toObjects(Chat::class.java).sortedByDescending { it.lastAt?.toDate()?.time ?: Long.MAX_VALUE },
-                                    )
-                                    loaded.value = loaded.value + "chats"
+                                    ->
+                                    if (s != null) {
+                                        trySend(
+                                            s
+                                                .toObjects(
+                                                    Chat::class.java,
+                                                ).sortedByDescending { it.lastAt?.toDate()?.time ?: Long.MAX_VALUE },
+                                        )
+                                        loaded.value = loaded.value + "chats"
+                                    }
                                 }
-                            }
-                    awaitClose { reg.remove() }
+                        awaitClose { reg.remove() }
+                    }
                 }
-            }
-        }.hot(emptyList())
+            }.hot(emptyList())
 
     fun chat(id: String): Flow<Chat?> =
         callbackFlow {
@@ -712,15 +929,16 @@ object Repo {
         val ref = db.collection("chats").document(id)
         val existing = runCatching { ref.get().await() }.getOrNull()
         if (existing == null || !existing.exists()) {
-            ref.set(
-                Chat(
-                    type = "direct",
-                    name = "",
-                    members = listOf(uid, friend.id),
-                    memberNames = mapOf(uid to profile.value.name, friend.id to friend.name),
-                    createdBy = uid,
-                ),
-            ).await()
+            ref
+                .set(
+                    Chat(
+                        type = "direct",
+                        name = "",
+                        members = listOf(uid, friend.id),
+                        memberNames = mapOf(uid to profile.value.name, friend.id to friend.name),
+                        createdBy = uid,
+                    ),
+                ).await()
         }
         return id
     }
@@ -761,28 +979,42 @@ object Repo {
      */
     suspend fun deleteChatForMe(chatId: String) {
         put("hiddenChats", chatId, HiddenChat(at = System.currentTimeMillis()))
-        runCatching { db.collection("chats").document(chatId).update("unread.$uid", 0L).await() }
+        runCatching {
+            db
+                .collection("chats")
+                .document(chatId)
+                .update("unread.$uid", 0L)
+                .await()
+        }
     }
 
     suspend fun renameChat(
         chatId: String,
         name: String,
     ) {
-        db.collection("chats").document(chatId).update("name", name).await()
+        db
+            .collection("chats")
+            .document(chatId)
+            .update("name", name)
+            .await()
     }
 
     fun messages(chatId: String): Flow<List<Message>> =
         combine(
             callbackFlow {
                 val reg =
-                    db.collection("chats").document(chatId).collection("messages")
+                    db
+                        .collection("chats")
+                        .document(chatId)
+                        .collection("messages")
                         .orderBy("createdAt")
                         // Metadata changes tell us when a message moves from "on this phone" to "on the server".
                         .addSnapshotListener(MetadataChanges.INCLUDE) { s, _ ->
                             if (s != null) {
                                 trySend(
                                     s.documents.mapNotNull { d ->
-                                        d.toObject(Message::class.java, DocumentSnapshot.ServerTimestampBehavior.ESTIMATE)
+                                        d
+                                            .toObject(Message::class.java, DocumentSnapshot.ServerTimestampBehavior.ESTIMATE)
                                             ?.also { it.pending = d.metadata.hasPendingWrites() }
                                     },
                                 )
@@ -796,8 +1028,9 @@ object Repo {
         ) { list, hidden, p, cleared ->
             val cut = cleared[chatId] ?: 0L
             list.filter {
-                it.id !in hidden && it.senderId !in p.blocked &&
-                        (cut == 0L || (it.createdAt?.toDate()?.time ?: Long.MAX_VALUE) > cut)
+                it.id !in hidden &&
+                    it.senderId !in p.blocked &&
+                    (cut == 0L || (it.createdAt?.toDate()?.time ?: Long.MAX_VALUE) > cut)
             }
         }
 
@@ -806,7 +1039,11 @@ object Repo {
         chatId: String,
         preview: String,
     ): Map<String, Any> {
-        val members = chats.value.firstOrNull { it.id == chatId }?.members.orEmpty()
+        val members =
+            chats.value
+                .firstOrNull { it.id == chatId }
+                ?.members
+                .orEmpty()
         val m =
             mutableMapOf<String, Any>(
                 "lastMessage" to preview,
@@ -836,13 +1073,14 @@ object Repo {
                 text = text.trim(),
                 replyToId = replyTo?.id.orEmpty(),
                 replyPreview =
-                    replyTo?.let {
-                        when (it.type) {
-                            "image" -> str(R.string.photo)
-                            "video" -> "Video"
-                            else -> it.text.take(80)
-                        }
-                    }.orEmpty(),
+                    replyTo
+                        ?.let {
+                            when (it.type) {
+                                "image" -> str(R.string.photo)
+                                "video" -> "Video"
+                                else -> it.text.take(80)
+                            }
+                        }.orEmpty(),
                 readBy = listOf(uid),
                 deliveredTo = listOf(uid),
             )
@@ -856,9 +1094,11 @@ object Repo {
         text: String,
     ) {
         val chatRef = db.collection("chats").document(chatId)
-        chatRef.collection(
-            "messages",
-        ).add(Message(senderId = uid, senderName = "", type = "system", text = text, readBy = listOf(uid))).await()
+        chatRef
+            .collection(
+                "messages",
+            ).add(Message(senderId = uid, senderName = "", type = "system", text = text, readBy = listOf(uid)))
+            .await()
         // lastSenderId is cleared so a system line (member added, expense split) never triggers a message alert.
         chatRef.update(mapOf("lastMessage" to text, "lastAt" to FieldValue.serverTimestamp(), "lastSenderId" to "")).await()
     }
@@ -868,7 +1108,12 @@ object Repo {
         msg: Message,
         key: String,
     ) {
-        val ref = db.collection("chats").document(chatId).collection("messages").document(msg.id)
+        val ref =
+            db
+                .collection("chats")
+                .document(chatId)
+                .collection("messages")
+                .document(msg.id)
         if (msg.reactions[uid] == key) {
             ref.update("reactions.$uid", FieldValue.delete()).await()
         } else {
@@ -893,7 +1138,15 @@ object Repo {
             }
             batch.commit().await()
         }
-        if ((chats.value.firstOrNull { it.id == chatId }?.unread?.get(uid) ?: 0L) > 0L) chatRef.update("unread.$uid", 0L).await()
+        if ((
+                chats.value
+                    .firstOrNull { it.id == chatId }
+                    ?.unread
+                    ?.get(uid) ?: 0L
+            ) > 0L
+        ) {
+            chatRef.update("unread.$uid", 0L).await()
+        }
     }
 
     /** A message reached this phone (chat not open): lets the sender see the double grey tick. */
@@ -901,11 +1154,17 @@ object Repo {
         val me = uid
         if (me.isBlank()) return
         val col = db.collection("chats").document(chatId).collection("messages")
-        val recent = col.orderBy("createdAt", Query.Direction.DESCENDING).limit(30).get().await()
+        val recent =
+            col
+                .orderBy("createdAt", Query.Direction.DESCENDING)
+                .limit(30)
+                .get()
+                .await()
         val todo =
             recent.documents.filter { d ->
-                d.getString("senderId") != me && d.getString("type") != "system" &&
-                        (d.get("deliveredTo") as? List<*>)?.contains(me) != true
+                d.getString("senderId") != me &&
+                    d.getString("type") != "system" &&
+                    (d.get("deliveredTo") as? List<*>)?.contains(me) != true
             }
         if (todo.isEmpty()) return
         val batch = db.batch()
@@ -925,8 +1184,13 @@ object Repo {
         chatId: String,
         msg: Message,
     ) {
-        db.collection("chats").document(chatId).collection("messages").document(msg.id)
-            .update(mapOf("deleted" to true, "text" to "", "imageUrl" to "")).await()
+        db
+            .collection("chats")
+            .document(chatId)
+            .collection("messages")
+            .document(msg.id)
+            .update(mapOf("deleted" to true, "text" to "", "imageUrl" to ""))
+            .await()
     }
 
     suspend fun deleteForMe(msg: Message) {
@@ -937,7 +1201,10 @@ object Repo {
     fun splits(chatId: String): Flow<List<SplitEntry>> =
         callbackFlow {
             val reg =
-                db.collection("chats").document(chatId).collection("splits")
+                db
+                    .collection("chats")
+                    .document(chatId)
+                    .collection("splits")
                     .orderBy("dateMillis", Query.Direction.DESCENDING)
                     .addSnapshotListener { s, _ -> if (s != null) trySend(s.toObjects(SplitEntry::class.java)) }
             awaitClose { reg.remove() }
@@ -965,6 +1232,12 @@ object Repo {
         chatId: String,
         id: String,
     ) {
-        db.collection("chats").document(chatId).collection("splits").document(id).delete().await()
+        db
+            .collection("chats")
+            .document(chatId)
+            .collection("splits")
+            .document(id)
+            .delete()
+            .await()
     }
 }

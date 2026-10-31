@@ -10,7 +10,11 @@ import com.kdevs.spendly.data.clr
 import com.kdevs.spendly.data.str
 
 /** Solid colours and gradients. A colour is stored as a key string; "g_" keys are gradients. */
-data class ColorSpec(val key: String, val label: String, val colors: List<Color>) {
+data class ColorSpec(
+    val key: String,
+    val label: String,
+    val colors: List<Color>,
+) {
     val isGradient get() = colors.size > 1
     val solid get() = colors.first()
     val brush: Brush get() = if (isGradient) Brush.linearGradient(colors) else Brush.linearGradient(listOf(colors[0], colors[0]))
@@ -53,18 +57,54 @@ val GradientColors =
         ColorSpec("g_ocean", str(R.string.ocean), listOf(clr(R.color.swatch_sky), clr(R.color.swatch_teal))),
         ColorSpec("g_aurora", str(R.string.aurora), listOf(clr(R.color.swatch_blue), clr(R.color.swatch_purple))),
         ColorSpec("g_forest", str(R.string.forest), listOf(clr(R.color.swatch_green), clr(R.color.swatch_teal))),
-        ColorSpec("g_berry", str(R.string.palette_g_berry_name), listOf(clr(R.color.palette_g_berry_start), clr(R.color.palette_g_berry_end))),
-        ColorSpec("g_lagoon", str(R.string.palette_g_lagoon_name), listOf(clr(R.color.palette_g_lagoon_start), clr(R.color.palette_g_lagoon_end))),
-        ColorSpec("g_mango", str(R.string.palette_g_mango_name), listOf(clr(R.color.palette_g_mango_start), clr(R.color.palette_g_mango_end))),
+        ColorSpec(
+            "g_berry",
+            str(R.string.palette_g_berry_name),
+            listOf(clr(R.color.palette_g_berry_start), clr(R.color.palette_g_berry_end)),
+        ),
+        ColorSpec(
+            "g_lagoon",
+            str(R.string.palette_g_lagoon_name),
+            listOf(clr(R.color.palette_g_lagoon_start), clr(R.color.palette_g_lagoon_end)),
+        ),
+        ColorSpec(
+            "g_mango",
+            str(R.string.palette_g_mango_name),
+            listOf(clr(R.color.palette_g_mango_start), clr(R.color.palette_g_mango_end)),
+        ),
         ColorSpec("g_mint", str(R.string.palette_g_mint_name), listOf(clr(R.color.palette_g_mint_start), clr(R.color.palette_g_mint_end))),
         ColorSpec("g_dusk", str(R.string.palette_g_dusk_name), listOf(clr(R.color.palette_g_dusk_start), clr(R.color.palette_g_dusk_end))),
         ColorSpec("g_lime", str(R.string.palette_g_lime_name), listOf(clr(R.color.palette_g_lime_start), clr(R.color.palette_g_lime_end))),
-        ColorSpec("g_flame", str(R.string.palette_g_flame_name), listOf(clr(R.color.palette_g_flame_start), clr(R.color.palette_g_flame_end))),
-        ColorSpec("g_midnight", str(R.string.palette_g_midnight_name), listOf(clr(R.color.palette_g_midnight_start), clr(R.color.palette_g_midnight_end))),
-        ColorSpec("g_peach", str(R.string.palette_g_peach_name), listOf(clr(R.color.palette_g_peach_start), clr(R.color.palette_g_peach_end))),
-        ColorSpec("g_steel", str(R.string.palette_g_steel_name), listOf(clr(R.color.palette_g_steel_start), clr(R.color.palette_g_steel_end))),
-        ColorSpec("g_royal", str(R.string.palette_g_royal_name), listOf(clr(R.color.palette_g_royal_start), clr(R.color.palette_g_royal_end))),
-        ColorSpec("g_cherry", str(R.string.palette_g_cherry_name), listOf(clr(R.color.palette_g_cherry_start), clr(R.color.palette_g_cherry_end))),
+        ColorSpec(
+            "g_flame",
+            str(R.string.palette_g_flame_name),
+            listOf(clr(R.color.palette_g_flame_start), clr(R.color.palette_g_flame_end)),
+        ),
+        ColorSpec(
+            "g_midnight",
+            str(R.string.palette_g_midnight_name),
+            listOf(clr(R.color.palette_g_midnight_start), clr(R.color.palette_g_midnight_end)),
+        ),
+        ColorSpec(
+            "g_peach",
+            str(R.string.palette_g_peach_name),
+            listOf(clr(R.color.palette_g_peach_start), clr(R.color.palette_g_peach_end)),
+        ),
+        ColorSpec(
+            "g_steel",
+            str(R.string.palette_g_steel_name),
+            listOf(clr(R.color.palette_g_steel_start), clr(R.color.palette_g_steel_end)),
+        ),
+        ColorSpec(
+            "g_royal",
+            str(R.string.palette_g_royal_name),
+            listOf(clr(R.color.palette_g_royal_start), clr(R.color.palette_g_royal_end)),
+        ),
+        ColorSpec(
+            "g_cherry",
+            str(R.string.palette_g_cherry_name),
+            listOf(clr(R.color.palette_g_cherry_start), clr(R.color.palette_g_cherry_end)),
+        ),
     )
 
 val AllColors = SolidColors + GradientColors

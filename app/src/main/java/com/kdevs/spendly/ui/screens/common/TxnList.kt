@@ -114,7 +114,11 @@ fun TxnRow(
                 Text(
                     t.note,
                     modifier =
-                        Modifier.padding(top = 6.dp).fillMaxWidth().clip(RoundedCornerShape(8.dp)).background(Bg)
+                        Modifier
+                            .padding(top = 6.dp)
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(Bg)
                             .padding(horizontal = 10.dp, vertical = 7.dp),
                     color = Muted,
                     fontSize = 12.sp,
@@ -145,7 +149,10 @@ fun TxnRow(
 @Composable
 fun TickBox(on: Boolean) {
     Box(
-        Modifier.size(24.dp).clip(RoundedCornerShape(8.dp)).background(if (on) Primary else Color.Transparent)
+        Modifier
+            .size(24.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .background(if (on) Primary else Color.Transparent)
             .let { if (on) it else it.background(Track) },
         contentAlignment = Alignment.Center,
     ) { if (on) Icon(Icons.Filled.Check, null, tint = Color.White, modifier = Modifier.size(16.dp)) }

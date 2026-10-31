@@ -88,10 +88,12 @@ fun DatePickerScreen(
                 color = Primary,
                 fontWeight = FontWeight.Bold,
                 modifier =
-                    Modifier.clip(CircleShape).clickable {
-                        picked = LocalDate.now()
-                        ym = YearMonth.now()
-                    }.padding(10.dp),
+                    Modifier
+                        .clip(CircleShape)
+                        .clickable {
+                            picked = LocalDate.now()
+                            ym = YearMonth.now()
+                        }.padding(10.dp),
             )
         },
         bottomBar = {
@@ -108,9 +110,11 @@ fun DatePickerScreen(
                 Icon(
                     Icons.AutoMirrored.Filled.ArrowBack,
                     str(R.string.previous_month),
-                    Modifier.clip(CircleShape).clickable {
-                        ym = ym.minusMonths(1)
-                    }.padding(8.dp),
+                    Modifier
+                        .clip(CircleShape)
+                        .clickable {
+                            ym = ym.minusMonths(1)
+                        }.padding(8.dp),
                 )
                 Text(
                     str(R.string.text__4, ym.month.getDisplayName(TextStyle.FULL, Locale.getDefault()), ym.year),
@@ -123,9 +127,11 @@ fun DatePickerScreen(
                 Icon(
                     Icons.AutoMirrored.Filled.ArrowForward,
                     str(R.string.next_month),
-                    Modifier.clip(CircleShape).clickable {
-                        ym = ym.plusMonths(1)
-                    }.padding(8.dp),
+                    Modifier
+                        .clip(CircleShape)
+                        .clickable {
+                            ym = ym.plusMonths(1)
+                        }.padding(8.dp),
                 )
             }
             Spacer(Modifier.height(8.dp))
@@ -143,29 +149,34 @@ fun DatePickerScreen(
             }
             val lead = ym.atDay(1).dayOfWeek.value - 1
             val days = ym.lengthOfMonth()
-            for (r in 0 until (lead + days + 6) / 7) Row(Modifier.fillMaxWidth().padding(top = 4.dp)) {
-                for (c in 0 until 7) {
-                    val day = r * 7 + c - lead + 1
-                    Box(Modifier.weight(1f).height(44.dp), contentAlignment = Alignment.Center) {
-                        if (day in 1..days) {
-                            val d = ym.atDay(day)
-                            val on = d == picked
-                            Box(
-                                Modifier.size(40.dp).clip(CircleShape).background(if (on) Primary else Color.Transparent)
-                                    .let {
-                                        if (d == LocalDate.now() && !on) {
-                                            it.border(
-                                                1.5.dp,
-                                                Primary,
-                                                CircleShape,
-                                            )
-                                        } else {
-                                            it
-                                        }
-                                    }.clickable { picked = d },
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                Text(str(R.string.text__2, day), color = if (on) Color.White else Ink, fontWeight = FontWeight.Bold)
+            for (r in 0 until (lead + days + 6) / 7) {
+                Row(Modifier.fillMaxWidth().padding(top = 4.dp)) {
+                    for (c in 0 until 7) {
+                        val day = r * 7 + c - lead + 1
+                        Box(Modifier.weight(1f).height(44.dp), contentAlignment = Alignment.Center) {
+                            if (day in 1..days) {
+                                val d = ym.atDay(day)
+                                val on = d == picked
+                                Box(
+                                    Modifier
+                                        .size(40.dp)
+                                        .clip(CircleShape)
+                                        .background(if (on) Primary else Color.Transparent)
+                                        .let {
+                                            if (d == LocalDate.now() && !on) {
+                                                it.border(
+                                                    1.5.dp,
+                                                    Primary,
+                                                    CircleShape,
+                                                )
+                                            } else {
+                                                it
+                                            }
+                                        }.clickable { picked = d },
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    Text(str(R.string.text__2, day), color = if (on) Color.White else Ink, fontWeight = FontWeight.Bold)
+                                }
                             }
                         }
                     }

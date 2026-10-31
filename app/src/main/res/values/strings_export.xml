@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Export and exporter output -->
+<resources>
+    <string name="all_time">All time</string>
+    <string name="col_account">Account</string>
+    <string name="col_amount">Amount</string>
+    <string name="col_amount_inr">Amount (INR)</string>
+    <string name="col_category">Category</string>
+    <string name="col_date">Date</string>
+    <string name="col_note">Note</string>
+    <string name="col_share">Share</string>
+    <string name="col_sub_category">Sub-category</string>
+    <string name="col_to_account">To account</string>
+    <string name="col_type">Type</string>
+    <string name="could_not_save_the_file">Could not save the file.</string>
+    <string name="current_activity_filter">Current Activity filter</string>
+    <string name="custom_range">Custom range</string>
+    <string name="every_transaction">Every transaction</string>
+    <string name="excel_xlsx">Excel (.xlsx)</string>
+    <string name="expenses_by_category">Expenses by category</string>
+    <string name="expenses_word">Expenses</string>
+    <string name="export">Export</string>
+    <string name="export_excel_hint">Opens in Excel, Google Sheets and Numbers. One sheet of transactions and one summary sheet.</string>
+    <string name="export_pdf_hint">A printable report with totals and a table of every transaction.</string>
+    <string name="export_to_excel">Export to Excel</string>
+    <string name="export_to_pdf">Export to PDF</string>
+    <string name="export_what_you_see">Export what you see on the Activity tab</string>
+    <string name="file_saved">File saved</string>
+    <string name="net_income_expenses">Net (income - expenses)</string>
+    <string name="net_word">Net</string>
+    <string name="no_activity_filter_set">No filter is set on the Activity tab, so everything is included.</string>
+    <string name="no_app_can_open">No app on this phone can open this file.</string>
+    <string name="no_transactions_in_period">No transactions in this period.</string>
+    <string name="nothing_to_export">Nothing to export for these choices.</string>
+    <string name="one_account">1 account</string>
+    <string name="pdf">PDF</string>
+    <string name="pdf_created">Created %1$s  |  %2$s transactions</string>
+    <string name="pdf_page_footer">Spendly  |  page %1$s</string>
+    <string name="pdf_title">Spendly transactions</string>
+    <string name="preparing_your_file">Preparing your file…</string>
+    <string name="saving_your_file">Saving your file…</string>
+    <string name="spendly_export">Spendly export</string>
+    <string name="total_expenses">Total expenses</string>
+    <string name="total_income">Total income</string>
+    <string name="use_activity_filter">Use Activity filter</string>
+</resources>

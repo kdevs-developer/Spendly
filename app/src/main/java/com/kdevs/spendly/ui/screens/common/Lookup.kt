@@ -9,7 +9,10 @@ import com.kdevs.spendly.data.str
 import com.kdevs.spendly.ui.theme.*
 
 /** Looks up names and icons from the live lists. */
-class Lookup(val accounts: List<Account>, val categories: List<Category>) {
+class Lookup(
+    val accounts: List<Account>,
+    val categories: List<Category>,
+) {
     fun account(id: String) = accounts.firstOrNull { it.id == id }
 
     fun category(id: String) = categories.firstOrNull { it.id == id }

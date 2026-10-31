@@ -43,7 +43,9 @@ fun SplitsScreen(
     Box(Modifier.fillMaxSize()) {
         ScreenScaffold(chat?.name ?: str(R.string.splits), { nav.popBackStack() }) {
             HeroCard(
-                brush = androidx.compose.ui.graphics.Brush.linearGradient(listOf(clr(R.color.swatch_teal), clr(R.color.swatch_teal_dark))),
+                brush =
+                    androidx.compose.ui.graphics.Brush
+                        .linearGradient(listOf(clr(R.color.swatch_teal), clr(R.color.swatch_teal_dark))),
             ) {
                 Text(
                     if (mine == 0L) {
@@ -106,7 +108,15 @@ fun SplitsScreen(
                     entries.forEachIndexed { i, e ->
                         val settle = e.kind == "settlement"
                         SettingRow(
-                            if (settle) str(R.string.person_paid_person, chat?.nameOf(e.paidBy, me), chat?.nameOf(e.settleTo, me)) else e.description,
+                            if (settle) {
+                                str(
+                                    R.string.person_paid_person,
+                                    chat?.nameOf(e.paidBy, me),
+                                    chat?.nameOf(e.settleTo, me),
+                                )
+                            } else {
+                                e.description
+                            },
                             str(R.string.text__2, fullDate(e.dateMillis)) + if (!settle) " · paid by ${chat?.nameOf(e.paidBy, me)}" else "",
                             icon = if (settle) Icons.Filled.CheckCircle else Icons.Filled.Receipt,
                             iconColor = if (settle) Success else clr(R.color.swatch_teal),
@@ -126,10 +136,23 @@ fun SplitsScreen(
                             if (plan.isEmpty()) {
                                 append(str(R.string.all_settled_up))
                             } else {
-                                plan.forEach { t -> append(str(R.string.pays_with_amount, chat?.nameOf(t.from, me), chat?.nameOf(t.to, me), formatPaise(t.paise))).append("\n") }
+                                plan.forEach { t ->
+                                    append(
+                                        str(
+                                            R.string.pays_with_amount,
+                                            chat?.nameOf(t.from, me),
+                                            chat?.nameOf(t.to, me),
+                                            formatPaise(t.paise),
+                                        ),
+                                    ).append("\n")
+                                }
                             }
                         }.trim()
-                    val i = Intent(Intent.ACTION_SEND).apply { type = "text/plain"; putExtra(Intent.EXTRA_TEXT, text) }
+                    val i =
+                        Intent(Intent.ACTION_SEND).apply {
+                            type = "text/plain"
+                            putExtra(Intent.EXTRA_TEXT, text)
+                        }
                     ctx.startActivity(Intent.createChooser(i, "Share summary"))
                 })
             }
@@ -161,7 +184,11 @@ fun SplitEntryScreen(
             return@ScreenScaffold
         }
         val settle = e.kind == "settlement"
-        HeroCard(brush = androidx.compose.ui.graphics.Brush.linearGradient(listOf(clr(R.color.swatch_teal), clr(R.color.swatch_teal_dark)))) {
+        HeroCard(
+            brush =
+                androidx.compose.ui.graphics.Brush
+                    .linearGradient(listOf(clr(R.color.swatch_teal), clr(R.color.swatch_teal_dark))),
+        ) {
             Text(
                 if (settle) str(R.string.person_paid_person, chat?.nameOf(e.paidBy, me), chat?.nameOf(e.settleTo, me)) else e.description,
                 color = Color.White.copy(alpha = 0.9f),
@@ -170,7 +197,14 @@ fun SplitEntryScreen(
             Text(formatPaise(e.totalPaise), color = Color.White, fontWeight = FontWeight.ExtraBold, fontSize = 38.sp)
         }
         Card(padding = 12.dp) {
-            if (!settle) SettingRow(str(R.string.paid_by), chat?.nameOf(e.paidBy, me) ?: "", icon = Icons.Filled.Person, iconColor = Primary)
+            if (!settle) {
+                SettingRow(
+                    str(R.string.paid_by),
+                    chat?.nameOf(e.paidBy, me) ?: "",
+                    icon = Icons.Filled.Person,
+                    iconColor = Primary,
+                )
+            }
             SettingRow(
                 str(R.string.date),
                 fullDate(e.dateMillis),

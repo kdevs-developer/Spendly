@@ -1,8 +1,8 @@
 package com.kdevs.spendly.data
 
-import com.kdevs.spendly.R
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
+import com.kdevs.spendly.R
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob

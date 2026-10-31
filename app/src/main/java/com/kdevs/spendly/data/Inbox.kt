@@ -14,10 +14,10 @@ import com.kdevs.spendly.MainActivity
 import com.kdevs.spendly.R
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.launch
 
 /**
@@ -31,7 +31,12 @@ object Inbox {
     const val CHANNEL = "chat"
     const val EXTRA_CHAT = "chatId"
 
-    data class Banner(val chatId: String, val title: String, val body: String, val key: Long = System.nanoTime())
+    data class Banner(
+        val chatId: String,
+        val title: String,
+        val body: String,
+        val key: Long = System.nanoTime(),
+    )
 
     /** The message strip shown at the top of the app. Cleared by the banner itself. */
     val banner = MutableStateFlow<Banner?>(null)
@@ -47,10 +52,11 @@ object Inbox {
 
     /** Total unread messages across all chats, for the badge on the Chat tab. */
     val unreadTotal: StateFlow<Int> by lazy {
-        Repo.chats.map { list ->
-            val me = Repo.uid
-            list.sumOf { (it.unread[me] ?: 0L).toInt() }
-        }.stateIn(CoroutineScope(kotlinx.coroutines.Dispatchers.Main.immediate), SharingStarted.Eagerly, 0)
+        Repo.chats
+            .map { list ->
+                val me = Repo.uid
+                list.sumOf { (it.unread[me] ?: 0L).toInt() }
+            }.stateIn(CoroutineScope(kotlinx.coroutines.Dispatchers.Main.immediate), SharingStarted.Eagerly, 0)
     }
 
     fun createChannel(ctx: Context) {
@@ -64,7 +70,7 @@ object Inbox {
         val nm = ctx.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         if (!nm.areNotificationsEnabled()) return false
         return Build.VERSION.SDK_INT < 33 ||
-                ContextCompat.checkSelfPermission(ctx, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
+            ContextCompat.checkSelfPermission(ctx, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
     }
 
     /** Puts a message in the notification bar. Same chat = same notification, so pushes and local alerts never double up. */
@@ -83,14 +89,18 @@ object Inbox {
             }
         val pi = PendingIntent.getActivity(ctx, chatId.hashCode(), open, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
         val n =
-            NotificationCompat.Builder(ctx, CHANNEL)
+            NotificationCompat
+                .Builder(ctx, CHANNEL)
                 .setSmallIcon(R.drawable.ic_notification)
                 .setColor(ContextCompat.getColor(ctx, R.color.notification_accent))
-                .setContentTitle(title).setContentText(body)
+                .setContentTitle(title)
+                .setContentText(body)
                 .setStyle(NotificationCompat.BigTextStyle().bigText(body))
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
                 .setCategory(NotificationCompat.CATEGORY_MESSAGE)
-                .setContentIntent(pi).setAutoCancel(true).build()
+                .setContentIntent(pi)
+                .setAutoCancel(true)
+                .build()
         (ctx.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).notify(chatId.hashCode(), n)
     }
 

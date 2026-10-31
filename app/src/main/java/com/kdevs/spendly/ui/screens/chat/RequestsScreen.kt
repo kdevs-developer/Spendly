@@ -53,7 +53,12 @@ fun RequestsScreen(nav: NavController) {
             HeroCard {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     Column(Modifier.weight(1f)) {
-                        Text(str(R.string.your_friend_code), color = Color.White.copy(alpha = 0.85f), fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
+                        Text(
+                            str(R.string.your_friend_code),
+                            color = Color.White.copy(alpha = 0.85f),
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 13.sp,
+                        )
                         Text(
                             myProfile.code.ifBlank { "..." },
                             color = Color.White,
@@ -66,7 +71,11 @@ fun RequestsScreen(nav: NavController) {
                 }
             }
             SegmentedControl(
-                listOf(str(R.string.tab_friends, friends.size), str(R.string.tab_requests, incoming.size), str(R.string.tab_sent, outgoing.size)),
+                listOf(
+                    str(R.string.tab_friends, friends.size),
+                    str(R.string.tab_requests, incoming.size),
+                    str(R.string.tab_sent, outgoing.size),
+                ),
                 tab,
                 { tab = it },
             )
@@ -75,7 +84,11 @@ fun RequestsScreen(nav: NavController) {
         saver.error?.let { Text(it, color = Danger, fontWeight = FontWeight.SemiBold) }
         when (tab) {
             0 -> {
-                if (friends.size > 5) AppTextField(query, { query = it }, str(R.string.search_friends), leading = { Icon(Icons.Filled.Search, null) })
+                if (friends.size >
+                    5
+                ) {
+                    AppTextField(query, { query = it }, str(R.string.search_friends), leading = { Icon(Icons.Filled.Search, null) })
+                }
                 if (friends.isEmpty()) {
                     EmptyState(Icons.Filled.People, str(R.string.no_friends_yet), str(R.string.share_code_or_scan))
                     PrimaryButton(str(R.string.add_friend), { nav.navigate(Routes.ADD_FRIEND) })
@@ -106,7 +119,9 @@ fun RequestsScreen(nav: NavController) {
                     }
                 }
                 Card(padding = 12.dp) {
-                    SettingRow(str(R.string.blocked_people), icon = Icons.Filled.Block, iconColor = Danger, onClick = { nav.navigate(Routes.BLOCKED) }, divider = false)
+                    SettingRow(str(R.string.blocked_people), icon = Icons.Filled.Block, iconColor = Danger, onClick = {
+                        nav.navigate(Routes.BLOCKED)
+                    }, divider = false)
                 }
             }
             1 -> {
@@ -126,10 +141,18 @@ fun RequestsScreen(nav: NavController) {
                         Spacer(Modifier.height(12.dp))
                         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                             Box(Modifier.weight(1f)) {
-                                SecondaryButton(str(R.string.decline), { saver.run(scope, {}) { Repo.answerRequest(r, false) } }, danger = true)
+                                SecondaryButton(
+                                    str(R.string.decline),
+                                    { saver.run(scope, {}) { Repo.answerRequest(r, false) } },
+                                    danger = true,
+                                )
                             }
                             Box(Modifier.weight(1f)) {
-                                PrimaryButton(str(R.string.accept), { saver.run(scope, {}) { Repo.answerRequest(r, true) } }, busy = saver.busy)
+                                PrimaryButton(
+                                    str(R.string.accept),
+                                    { saver.run(scope, {}) { Repo.answerRequest(r, true) } },
+                                    busy = saver.busy,
+                                )
                             }
                         }
                     }
@@ -144,7 +167,12 @@ fun RequestsScreen(nav: NavController) {
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                             Avatar(r.toName.ifBlank { "?" }, colorKeyFor(r.to), 48.dp)
                             Column(Modifier.weight(1f)) {
-                                Text(r.toName.ifBlank { str(R.string.friend) }, fontWeight = FontWeight.ExtraBold, color = Ink, maxLines = 1)
+                                Text(
+                                    r.toName.ifBlank { str(R.string.friend) },
+                                    fontWeight = FontWeight.ExtraBold,
+                                    color = Ink,
+                                    maxLines = 1,
+                                )
                                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                                     Icon(Icons.Filled.Schedule, null, tint = Faint, modifier = Modifier.size(14.dp))
                                     Text(str(R.string.pending), color = Muted, fontSize = 12.sp)
@@ -154,7 +182,12 @@ fun RequestsScreen(nav: NavController) {
                                 "Cancel",
                                 color = Danger,
                                 fontWeight = FontWeight.Bold,
-                                modifier = Modifier.clip(CircleShape).clickable { saver.run(scope, {}) { Repo.cancelRequest(r) } }.padding(10.dp),
+                                modifier =
+                                    Modifier
+                                        .clip(
+                                            CircleShape,
+                                        ).clickable { saver.run(scope, {}) { Repo.cancelRequest(r) } }
+                                        .padding(10.dp),
                             )
                         }
                     }
@@ -185,7 +218,11 @@ private fun FriendAction(
     onClick: () -> Unit,
 ) {
     Row(
-        modifier.clip(RoundedCornerShape(12.dp)).background(Bg).clickable(onClick = onClick).padding(vertical = 9.dp),
+        modifier
+            .clip(RoundedCornerShape(12.dp))
+            .background(Bg)
+            .clickable(onClick = onClick)
+            .padding(vertical = 9.dp),
         horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -224,9 +261,11 @@ fun BlockedScreen(nav: NavController) {
                                 color = Primary,
                                 fontWeight = FontWeight.Bold,
                                 modifier =
-                                    Modifier.clip(CircleShape).clickable {
-                                        saver.run(scope, {}) { Repo.unblock(id) }
-                                    }.padding(8.dp),
+                                    Modifier
+                                        .clip(CircleShape)
+                                        .clickable {
+                                            saver.run(scope, {}) { Repo.unblock(id) }
+                                        }.padding(8.dp),
                             )
                         },
                     )

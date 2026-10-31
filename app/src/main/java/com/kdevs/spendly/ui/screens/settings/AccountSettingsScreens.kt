@@ -24,7 +24,9 @@ fun DeleteAccountScreen(nav: NavController) {
     val saver = rememberSaver()
     val scope = rememberCoroutineScope()
     val ctx = LocalContext.current
-    ScreenScaffold(str(R.string.delete_my_data), { if (!saver.busy) nav.popBackStack() }, busy = saver.busy, busyText = str(R.string.deleting_your_data)) {
+    ScreenScaffold(str(R.string.delete_my_data), {
+        if (!saver.busy) nav.popBackStack()
+    }, busy = saver.busy, busyText = str(R.string.deleting_your_data)) {
         Hint(str(R.string.this_removes_your_accounts_transaction))
         when {
             Repo.usesPassword -> {
@@ -35,8 +37,12 @@ fun DeleteAccountScreen(nav: NavController) {
                     label = { Text(str(R.string.password)) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
-                    shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
-                    visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation(),
+                    shape =
+                        androidx.compose.foundation.shape
+                            .RoundedCornerShape(16.dp),
+                    visualTransformation =
+                        androidx.compose.ui.text.input
+                            .PasswordVisualTransformation(),
                     colors =
                         androidx.compose.material3.OutlinedTextFieldDefaults.colors(
                             focusedContainerColor = Surface,

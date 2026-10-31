@@ -70,15 +70,17 @@ fun AddSplitScreen(
             0 -> SplitMath.equal(total, ids)
             1 -> ids.associateWith { parseRupees(values[it].orEmpty()) ?: 0L }.takeIf { it.values.sum() == total }
             2 ->
-                ids.associateWith { ((values[it]?.toDoubleOrNull() ?: 0.0) * 100).toInt() }.takeIf {
-                        m ->
-                    m.values.sum() == 10000
-                }?.let { SplitMath.percent(total, it) }
+                ids
+                    .associateWith { ((values[it]?.toDoubleOrNull() ?: 0.0) * 100).toInt() }
+                    .takeIf { m ->
+                        m.values.sum() == 10000
+                    }?.let { SplitMath.percent(total, it) }
             else ->
-                ids.associateWith { values[it]?.toIntOrNull() ?: 0 }.takeIf {
-                        m ->
-                    m.values.sum() > 0
-                }?.let { SplitMath.shares(total, it) }
+                ids
+                    .associateWith { values[it]?.toIntOrNull() ?: 0 }
+                    .takeIf { m ->
+                        m.values.sum() > 0
+                    }?.let { SplitMath.shares(total, it) }
         }
     val problem =
         when {
@@ -121,7 +123,13 @@ fun AddSplitScreen(
                     Repo.put(
                         "txns",
                         "",
-                        Txn(kind = "expense", amountPaise = myShare, accountId = shareAccount, note = desc.trim(), dateMillis = withNowTime(date)),
+                        Txn(
+                            kind = "expense",
+                            amountPaise = myShare,
+                            accountId = shareAccount,
+                            note = desc.trim(),
+                            dateMillis = withNowTime(date),
+                        ),
                     )
                 }
             }
@@ -134,10 +142,12 @@ fun AddSplitScreen(
             if (payerMenu) {
                 members.forEach { u ->
                     Row(
-                        Modifier.fillMaxWidth().clickable {
-                            paidBy = u
-                            payerMenu = false
-                        }.padding(vertical = 10.dp, horizontal = 8.dp),
+                        Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                paidBy = u
+                                payerMenu = false
+                            }.padding(vertical = 10.dp, horizontal = 8.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(10.dp),
                     ) {

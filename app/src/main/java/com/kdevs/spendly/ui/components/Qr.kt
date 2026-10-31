@@ -14,7 +14,13 @@ fun friendQrPayload(code: String): String = "spendly:friend:" + code.filter { it
 
 /** Pulls the 8-character friend code out of a scanned value. Accepts our QR text or a bare code. */
 fun parseFriendCode(raw: String?): String? {
-    val v = raw.orEmpty().trim().uppercase().removePrefix("SPENDLY:FRIEND:").filter { it.isLetterOrDigit() }
+    val v =
+        raw
+            .orEmpty()
+            .trim()
+            .uppercase()
+            .removePrefix("SPENDLY:FRIEND:")
+            .filter { it.isLetterOrDigit() }
     return v.takeIf { it.length == 8 }
 }
 

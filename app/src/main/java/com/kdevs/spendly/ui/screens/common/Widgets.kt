@@ -40,9 +40,21 @@ fun LabeledBar(
             Text(right, fontWeight = FontWeight.Bold, color = Muted, fontSize = 13.sp)
         }
         Spacer(Modifier.height(6.dp))
-        Box(Modifier.fillMaxWidth().height(8.dp).clip(CircleShape).background(Track)) {
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .height(8.dp)
+                .clip(CircleShape)
+                .background(Track),
+        ) {
             val f = if (max <= 0) 0f else (value.toFloat() / max).coerceIn(0f, 1f)
-            Box(Modifier.fillMaxWidth(f).fillMaxHeight().clip(CircleShape).background(color))
+            Box(
+                Modifier
+                    .fillMaxWidth(f)
+                    .fillMaxHeight()
+                    .clip(CircleShape)
+                    .background(color),
+            )
         }
     }
 }

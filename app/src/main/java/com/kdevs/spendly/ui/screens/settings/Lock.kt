@@ -64,8 +64,8 @@ import com.kdevs.spendly.data.str
 import com.kdevs.spendly.ui.components.pressable
 import com.kdevs.spendly.ui.theme.Brand
 import com.kdevs.spendly.ui.theme.HeroBrush
-import kotlin.math.roundToInt
 import kotlinx.coroutines.delay
+import kotlin.math.roundToInt
 
 /**
  * Covers the whole app until the person proves it is them. [active] turns true once the splash
@@ -147,7 +147,9 @@ fun LockScreen(
     }
 
     Box(
-        Modifier.fillMaxSize().background(HeroBrush)
+        Modifier
+            .fillMaxSize()
+            .background(HeroBrush)
             // Swallow touches so nothing underneath can be tapped while locked.
             .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) {},
     ) {
@@ -158,7 +160,11 @@ fun LockScreen(
         }
 
         Column(
-            Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().padding(horizontal = 28.dp, vertical = 24.dp),
+            Modifier
+                .fillMaxSize()
+                .statusBarsPadding()
+                .navigationBarsPadding()
+                .padding(horizontal = 28.dp, vertical = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Spacer(Modifier.weight(1f))
@@ -169,7 +175,8 @@ fun LockScreen(
                     drawCircle(clr(R.color.lock_ring).copy(alpha = (1f - ring) * 0.30f), radius = r * (0.55f + 0.45f * ring))
                 }
                 Box(
-                    Modifier.size(112.dp)
+                    Modifier
+                        .size(112.dp)
                         .pressable(CircleShape, scaleTo = 0.94f, veil = false, onClick = { ask() })
                         .clip(CircleShape)
                         .background(onBrand.copy(alpha = 0.16f))
@@ -201,7 +208,11 @@ fun LockScreen(
 
             if (failed) {
                 Row(
-                    Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(onBrand.copy(alpha = 0.14f)).padding(12.dp),
+                    Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(onBrand.copy(alpha = 0.14f))
+                        .padding(12.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
@@ -213,9 +224,12 @@ fun LockScreen(
 
             val buttonShape = RoundedCornerShape(18.dp)
             Row(
-                Modifier.fillMaxWidth().height(56.dp)
+                Modifier
+                    .fillMaxWidth()
+                    .height(56.dp)
                     .pressable(buttonShape, enabled = !waiting, onClick = { ask() })
-                    .clip(buttonShape).background(onBrand),
+                    .clip(buttonShape)
+                    .background(onBrand),
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically,
             ) {

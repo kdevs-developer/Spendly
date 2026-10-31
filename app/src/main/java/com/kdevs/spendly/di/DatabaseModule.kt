@@ -15,8 +15,9 @@ import javax.inject.Singleton
 object DatabaseModule {
     @Provides
     @Singleton
-    fun database(@ApplicationContext ctx: Context): SpendlyDatabase =
-        Room.databaseBuilder(ctx, SpendlyDatabase::class.java, SpendlyDatabase.NAME).build()
+    fun database(
+        @ApplicationContext ctx: Context,
+    ): SpendlyDatabase = Room.databaseBuilder(ctx, SpendlyDatabase::class.java, SpendlyDatabase.NAME).build()
 
     @Provides fun accounts(db: SpendlyDatabase) = db.accounts()
 

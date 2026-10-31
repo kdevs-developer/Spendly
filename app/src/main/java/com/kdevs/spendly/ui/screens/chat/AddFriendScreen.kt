@@ -70,7 +70,9 @@ fun AddFriendScreen(nav: NavController) {
     fun scan() {
         msg = null
         val options = GmsBarcodeScannerOptions.Builder().setBarcodeFormats(Barcode.FORMAT_QR_CODE).build()
-        GmsBarcodeScanning.getClient(ctx, options).startScan()
+        GmsBarcodeScanning
+            .getClient(ctx, options)
+            .startScan()
             .addOnSuccessListener { result ->
                 val found = parseFriendCode(result.rawValue)
                 if (found == null) {
@@ -80,8 +82,7 @@ fun AddFriendScreen(nav: NavController) {
                     code = found
                     send(found)
                 }
-            }
-            .addOnFailureListener {
+            }.addOnFailureListener {
                 ok = false
                 msg = str(R.string.could_not_open_the_scanner_type)
             }
@@ -145,10 +146,11 @@ fun AddFriendScreen(nav: NavController) {
         SectionTitle(str(R.string.or_enter_a_friend_s_code))
         AppTextField(code, {
             code =
-                it.uppercase().filter {
-                        c ->
-                    c.isLetterOrDigit() || c == ' '
-                }.take(9)
+                it
+                    .uppercase()
+                    .filter { c ->
+                        c.isLetterOrDigit() || c == ' '
+                    }.take(9)
         }, str(R.string.text_8_letters_and_numbers))
         msg?.let { Text(it, color = if (ok) Success else Danger, fontWeight = FontWeight.SemiBold) }
         PrimaryButton(
@@ -161,8 +163,8 @@ fun AddFriendScreen(nav: NavController) {
             SectionTitle(str(R.string.waiting_for_a_reply))
             Card(padding = 12.dp) {
                 outgoing.forEachIndexed {
-                        i,
-                        r,
+                    i,
+                    r,
                     ->
                     SettingRow(
                         r.toName.ifBlank { str(R.string.request, i + 1) },

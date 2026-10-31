@@ -153,9 +153,11 @@ fun GoalEditScreen(
                 color = Primary,
                 fontWeight = FontWeight.Bold,
                 modifier =
-                    Modifier.clip(CircleShape).clickable {
-                        deadline = 0
-                    }.padding(8.dp),
+                    Modifier
+                        .clip(CircleShape)
+                        .clickable {
+                            deadline = 0
+                        }.padding(8.dp),
             )
         }
     }

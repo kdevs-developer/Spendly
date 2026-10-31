@@ -42,9 +42,13 @@ fun ColorPickerScreen(
     @Composable fun Swatch(c: ColorSpec) {
         val on = c.key == chosen
         Box(
-            Modifier.size(64.dp).clip(CircleShape).background(c.brush).let {
-                if (on) it.border(3.dp, Ink, CircleShape) else it
-            }.clickable { chosen = c.key },
+            Modifier
+                .size(64.dp)
+                .clip(CircleShape)
+                .background(c.brush)
+                .let {
+                    if (on) it.border(3.dp, Ink, CircleShape) else it
+                }.clickable { chosen = c.key },
             contentAlignment = Alignment.Center,
         ) { if (on) Icon(Icons.Filled.Check, str(R.string.selected_2), tint = Color.White) }
     }
@@ -57,7 +61,11 @@ fun ColorPickerScreen(
         }
     }) {
         Box(
-            Modifier.fillMaxWidth().height(110.dp).clip(RoundedCornerShape(28.dp)).background(colorSpec(chosen).brush),
+            Modifier
+                .fillMaxWidth()
+                .height(110.dp)
+                .clip(RoundedCornerShape(28.dp))
+                .background(colorSpec(chosen).brush),
             contentAlignment = Alignment.Center,
         ) {
             Text(colorSpec(chosen).label, color = Color.White, fontWeight = FontWeight.ExtraBold, fontSize = 22.sp)
@@ -100,8 +108,12 @@ fun IconPickerScreen(
                 g.keys.forEach { k ->
                     val on = k == chosen
                     Box(
-                        Modifier.size(64.dp).clip(RoundedCornerShape(20.dp)).background(if (on) PrimaryContainer else Surface)
-                            .let { if (on) it.border(2.dp, Primary, RoundedCornerShape(20.dp)) else it }.clickable { chosen = k },
+                        Modifier
+                            .size(64.dp)
+                            .clip(RoundedCornerShape(20.dp))
+                            .background(if (on) PrimaryContainer else Surface)
+                            .let { if (on) it.border(2.dp, Primary, RoundedCornerShape(20.dp)) else it }
+                            .clickable { chosen = k },
                         contentAlignment = Alignment.Center,
                     ) {
                         Icon(iconFor(k), iconLabel(k), tint = if (on) Primary else Muted, modifier = Modifier.size(28.dp))

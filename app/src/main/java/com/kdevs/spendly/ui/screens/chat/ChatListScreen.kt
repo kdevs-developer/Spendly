@@ -80,10 +80,19 @@ fun ChatListScreen(nav: NavController) {
                     RoundIconButton(Icons.Filled.PersonAdd, str(R.string.friend_requests), { nav.navigate(Routes.REQUESTS) })
                     if (incoming.isNotEmpty()) {
                         Box(
-                            Modifier.align(Alignment.TopEnd).size(16.dp).clip(CircleShape).background(Danger),
+                            Modifier
+                                .align(Alignment.TopEnd)
+                                .size(16.dp)
+                                .clip(CircleShape)
+                                .background(Danger),
                             contentAlignment = Alignment.Center,
                         ) {
-                            Text(str(R.string.text__2, incoming.size), color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.ExtraBold)
+                            Text(
+                                str(R.string.text__2, incoming.size),
+                                color = Color.White,
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.ExtraBold,
+                            )
                         }
                     }
                 }
@@ -103,7 +112,10 @@ fun ChatListScreen(nav: NavController) {
                     val isPicked = c.id in selected
                     val rowShape = RoundedCornerShape(16.dp)
                     Row(
-                        Modifier.fillMaxWidth().clip(rowShape).background(if (isPicked) PrimaryContainer else Color.Transparent)
+                        Modifier
+                            .fillMaxWidth()
+                            .clip(rowShape)
+                            .background(if (isPicked) PrimaryContainer else Color.Transparent)
                             .combinedClickable(
                                 onClick = {
                                     if (selecting) {
@@ -113,8 +125,7 @@ fun ChatListScreen(nav: NavController) {
                                     }
                                 },
                                 onLongClick = { selected = if (isPicked) selected - c.id else selected + c.id },
-                            )
-                            .padding(horizontal = 4.dp, vertical = 10.dp),
+                            ).padding(horizontal = 4.dp, vertical = 10.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
@@ -149,11 +160,25 @@ fun ChatListScreen(nav: NavController) {
                             }
                             if (unread > 0) {
                                 Box(
-                                    Modifier.defaultMinSize(minWidth = 20.dp, minHeight = 20.dp).clip(CircleShape).background(Primary)
+                                    Modifier
+                                        .defaultMinSize(minWidth = 20.dp, minHeight = 20.dp)
+                                        .clip(CircleShape)
+                                        .background(Primary)
                                         .padding(horizontal = 6.dp),
                                     contentAlignment = Alignment.Center,
                                 ) {
-                                    Text(if (unread > 99) "99+" else "$unread", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.ExtraBold)
+                                    Text(
+                                        if (unread >
+                                            99
+                                        ) {
+                                            "99+"
+                                        } else {
+                                            "$unread"
+                                        },
+                                        color = Color.White,
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.ExtraBold,
+                                    )
                                 }
                             }
                         }
@@ -234,7 +259,10 @@ fun HeroPill(
 ) {
     val shape = RoundedCornerShape(14.dp)
     Row(
-        Modifier.pressable(shape, onClick = onClick).clip(shape).background(Color.White.copy(alpha = 0.2f))
+        Modifier
+            .pressable(shape, onClick = onClick)
+            .clip(shape)
+            .background(Color.White.copy(alpha = 0.2f))
             .padding(horizontal = 16.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),

@@ -101,11 +101,15 @@ fun ConversationScreen(
         }
     }
     val typingNames =
-        chat?.typing?.filter { it.key != me && now - it.value < 5000 }?.keys?.mapNotNull {
-            chat?.memberNames?.get(
-                it,
-            )
-        }.orEmpty()
+        chat
+            ?.typing
+            ?.filter { it.key != me && now - it.value < 5000 }
+            ?.keys
+            ?.mapNotNull {
+                chat?.memberNames?.get(
+                    it,
+                )
+            }.orEmpty()
 
     val c = chat
     Column(Modifier.fillMaxSize().background(Bg).statusBarsPadding()) {
@@ -196,14 +200,22 @@ fun ConversationScreen(
             item { Spacer(Modifier.height(6.dp)) }
         }
         Column(
-            Modifier.fillMaxWidth().background(
-                Surface,
-                RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
-            ).navigationBarsPadding().imePadding().padding(12.dp),
+            Modifier
+                .fillMaxWidth()
+                .background(
+                    Surface,
+                    RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
+                ).navigationBarsPadding()
+                .imePadding()
+                .padding(12.dp),
         ) {
             replyTo?.let { r ->
                 Row(
-                    Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(PrimaryContainer).padding(10.dp),
+                    Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(PrimaryContainer)
+                        .padding(10.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Column(Modifier.weight(1f)) {
@@ -214,7 +226,13 @@ fun ConversationScreen(
                             fontSize = 12.sp,
                         )
                         Text(
-                            if (r.type == "image") str(R.string.photo) else if (r.type == "video") str(R.string.video) else r.text,
+                            if (r.type == "image") {
+                                str(R.string.photo)
+                            } else if (r.type == "video") {
+                                str(R.string.video)
+                            } else {
+                                r.text
+                            },
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                             color = Ink,
@@ -287,7 +305,9 @@ private fun Bubble(
             )
         }
         Column(
-            Modifier.widthIn(max = 290.dp).clip(shape)
+            Modifier
+                .widthIn(max = 290.dp)
+                .clip(shape)
                 .background(
                     if (m.deleted) {
                         Track
@@ -296,12 +316,10 @@ private fun Bubble(
                     } else {
                         Surface
                     },
-                )
-                .combinedClickable(
+                ).combinedClickable(
                     onClick = { if ((m.type == "image" || m.type == "video") && !m.deleted) onImage() },
                     onLongClick = { if (!m.deleted) onLong() },
-                )
-                .padding(horizontal = 12.dp, vertical = 8.dp),
+                ).padding(horizontal = 12.dp, vertical = 8.dp),
         ) {
             val ink = if (mine && !m.deleted) Color.White else Ink
             if (m.replyPreview.isNotBlank() && !m.deleted) {
@@ -334,10 +352,18 @@ private fun Bubble(
                         Modifier.size(220.dp).clip(RoundedCornerShape(14.dp)).background(Color.Black.copy(alpha = 0.85f)),
                         contentAlignment = Alignment.Center,
                     ) {
-                        Box(Modifier.size(54.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.25f)), contentAlignment = Alignment.Center) {
+                        Box(
+                            Modifier.size(54.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.25f)),
+                            contentAlignment = Alignment.Center,
+                        ) {
                             Icon(Icons.Filled.PlayArrow, str(R.string.play_video), tint = Color.White, modifier = Modifier.size(34.dp))
                         }
-                        Text(str(R.string.video), color = Color.White.copy(alpha = 0.8f), fontSize = 12.sp, modifier = Modifier.align(Alignment.BottomStart).padding(10.dp))
+                        Text(
+                            str(R.string.video),
+                            color = Color.White.copy(alpha = 0.8f),
+                            fontSize = 12.sp,
+                            modifier = Modifier.align(Alignment.BottomStart).padding(10.dp),
+                        )
                     }
                 else -> Text(m.text, color = ink, fontSize = 15.sp)
             }
@@ -369,14 +395,17 @@ private fun Bubble(
         }
         if (m.reactions.isNotEmpty() && !m.deleted) {
             Row(
-                Modifier.padding(
-                    horizontal = 6.dp,
-                ).offset(y = (-6).dp).clip(CircleShape).background(Surface).padding(horizontal = 6.dp, vertical = 2.dp),
+                Modifier
+                    .padding(
+                        horizontal = 6.dp,
+                    ).offset(y = (-6).dp)
+                    .clip(CircleShape)
+                    .background(Surface)
+                    .padding(horizontal = 6.dp, vertical = 2.dp),
                 horizontalArrangement = Arrangement.spacedBy(2.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                m.reactions.values.distinct().forEach {
-                        k ->
+                m.reactions.values.distinct().forEach { k ->
                     reactionIcon(k)?.let { Icon(it.second, k, tint = it.third, modifier = Modifier.size(14.dp)) }
                 }
                 if (m.reactions.size > 1) {

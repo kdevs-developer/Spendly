@@ -340,9 +340,15 @@ fun SpendlyNav() {
             screen("pick/category/{kind}/{slot}", listOf("kind", "slot")) { e -> CategoryPickerScreen(nav, e.s("kind"), e.s("slot")) }
             screen("category/edit/{id}/{kind}", listOf("id", "kind")) { e -> CategoryEditScreen(nav, e, e.s("id"), e.s("kind")) }
             screen("category/sub/{id}/{parent}", listOf("id", "parent")) { e -> SubcategoryEditScreen(nav, e, e.s("id"), e.s("parent")) }
-            screen("pick/color/{current}/{locked}", listOf("current", "locked")) { e -> ColorPickerScreen(nav, e.s("current"), e.s("locked")) }
+            screen(
+                "pick/color/{current}/{locked}",
+                listOf("current", "locked"),
+            ) { e -> ColorPickerScreen(nav, e.s("current"), e.s("locked")) }
             screen("pick/icon/{group}/{current}", listOf("group", "current")) { e -> IconPickerScreen(nav, e.s("group"), e.s("current")) }
-            screen("pick/account/{slot}/{exclude}", listOf("slot", "exclude")) { e -> AccountPickerScreen(nav, e.s("slot"), e.s("exclude")) }
+            screen(
+                "pick/account/{slot}/{exclude}",
+                listOf("slot", "exclude"),
+            ) { e -> AccountPickerScreen(nav, e.s("slot"), e.s("exclude")) }
             screen("pick/date/{millis}", listOf("millis")) { e -> DatePickerScreen(nav, e.s("millis").toLongOrNull() ?: 0L) }
             screen("pick/time/{minutes}", listOf("minutes")) { e -> TimePickerScreen(nav, e.s("minutes").toIntOrNull() ?: 0) }
 

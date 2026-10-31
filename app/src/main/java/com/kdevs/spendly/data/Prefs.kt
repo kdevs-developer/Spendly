@@ -9,7 +9,9 @@ import androidx.compose.runtime.setValue
 import androidx.core.content.edit
 import com.kdevs.spendly.R
 
-enum class ThemeMode(val label: String) {
+enum class ThemeMode(
+    val label: String,
+) {
     SYSTEM(str(R.string.system)),
     LIGHT(str(R.string.light)),
     DARK(str(R.string.dark)),

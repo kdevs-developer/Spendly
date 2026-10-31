@@ -1,15 +1,15 @@
 *.iml
 .gradle/
-/local.properties
+.kotlin/
 .idea/
+/local.properties
 build/
 app/build/
 .DS_Store
 functions/node_modules/
-# Download this from your Firebase console and put it in app/
-# app/google-services.json
 
-# Signing details and keys never go in version control
+# Secrets and per-developer files. Download google-services.json from the Firebase console into app/.
+app/google-services.json
 keystore.properties
 *.keystore
 *.jks

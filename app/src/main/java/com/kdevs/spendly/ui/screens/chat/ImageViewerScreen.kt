@@ -44,7 +44,12 @@ fun ImageViewerScreen(
     val ctx = LocalContext.current
     val scope = rememberCoroutineScope()
     Column(
-        Modifier.fillMaxSize().background(clr(R.color.viewer_bg)).statusBarsPadding().navigationBarsPadding().padding(20.dp),
+        Modifier
+            .fillMaxSize()
+            .background(clr(R.color.viewer_bg))
+            .statusBarsPadding()
+            .navigationBarsPadding()
+            .padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -68,7 +73,11 @@ fun ImageViewerScreen(
             Spacer(Modifier.size(40.dp))
         }
         Box(
-            Modifier.weight(1f).fillMaxWidth().clip(RoundedCornerShape(24.dp)).background(clr(R.color.viewer_surface)),
+            Modifier
+                .weight(1f)
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(24.dp))
+                .background(clr(R.color.viewer_surface)),
             contentAlignment = Alignment.Center,
         ) {
             if (cur != null) AsyncImage(cur.imageUrl, str(R.string.photo), Modifier.fillMaxSize(), contentScale = ContentScale.Fit)
@@ -79,11 +88,15 @@ fun ImageViewerScreen(
                     AsyncImage(
                         m.imageUrl,
                         null,
-                        Modifier.size(52.dp).clip(RoundedCornerShape(14.dp)).clickable {
-                            index = i
-                        }.background(
-                            if (i == index) Color.White else Color.Transparent,
-                        ).padding(if (i == index) 2.dp else 0.dp).clip(RoundedCornerShape(12.dp)),
+                        Modifier
+                            .size(52.dp)
+                            .clip(RoundedCornerShape(14.dp))
+                            .clickable {
+                                index = i
+                            }.background(
+                                if (i == index) Color.White else Color.Transparent,
+                            ).padding(if (i == index) 2.dp else 0.dp)
+                            .clip(RoundedCornerShape(12.dp)),
                         contentScale = ContentScale.Crop,
                         alpha = if (i == index) 1f else 0.6f,
                     )

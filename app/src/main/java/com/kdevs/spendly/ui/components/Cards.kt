@@ -54,7 +54,11 @@ fun Card(
 ) {
     val shape = RoundedCornerShape(22.dp)
     Column(
-        modifier.fillMaxWidth().shadow(1.dp, shape).clip(shape).background(Surface)
+        modifier
+            .fillMaxWidth()
+            .shadow(1.dp, shape)
+            .clip(shape)
+            .background(Surface)
             .let { if (onClick != null) it.clickable(onClick = onClick) else it }
             .padding(padding),
         content = content,
@@ -68,8 +72,12 @@ fun HeroCard(
     content: @Composable ColumnScope.() -> Unit,
 ) {
     Column(
-        modifier.fillMaxWidth().shadow(10.dp, RoundedCornerShape(28.dp), ambientColor = Brand, spotColor = Brand)
-            .clip(RoundedCornerShape(28.dp)).background(brush).padding(22.dp),
+        modifier
+            .fillMaxWidth()
+            .shadow(10.dp, RoundedCornerShape(28.dp), ambientColor = Brand, spotColor = Brand)
+            .clip(RoundedCornerShape(28.dp))
+            .background(brush)
+            .padding(22.dp),
         content = content,
     )
 }
@@ -112,8 +120,11 @@ fun SettingRow(
 ) {
     Column {
         Row(
-            Modifier.fillMaxWidth().let { if (onClick != null) it.clickable(onClick = onClick) else it }
-                .heightIn(min = 56.dp).padding(vertical = 8.dp),
+            Modifier
+                .fillMaxWidth()
+                .let { if (onClick != null) it.clickable(onClick = onClick) else it }
+                .heightIn(min = 56.dp)
+                .padding(vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {

@@ -14,7 +14,10 @@ import com.kdevs.spendly.data.str
 import com.kdevs.spendly.ui.components.*
 import com.kdevs.spendly.ui.theme.*
 
-data class LegalSection(val head: String, val body: String)
+data class LegalSection(
+    val head: String,
+    val body: String,
+)
 
 val privacy =
     listOf(

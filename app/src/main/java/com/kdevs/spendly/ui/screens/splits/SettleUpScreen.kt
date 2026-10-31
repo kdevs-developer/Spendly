@@ -109,15 +109,17 @@ fun SettleUpScreen(
         if (plan.size > 1) {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 plan.forEachIndexed {
-                        i,
-                        p,
+                    i,
+                    p,
                     ->
                     SelectChip(chat?.nameOf(if (p.from == me) p.to else p.from, me) ?: "?", i == sel) { sel = i }
                 }
             }
         }
         HeroCard(
-            brush = androidx.compose.ui.graphics.Brush.linearGradient(listOf(clr(R.color.swatch_teal), clr(R.color.swatch_teal_dark))),
+            brush =
+                androidx.compose.ui.graphics.Brush
+                    .linearGradient(listOf(clr(R.color.swatch_teal), clr(R.color.swatch_teal_dark))),
         ) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
                 Avatar(chat?.nameOf(t.from, me) ?: "?", colorKeyFor(t.from), 56.dp)

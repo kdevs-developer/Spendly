@@ -12,9 +12,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.drawOutline
@@ -43,10 +41,8 @@ fun Modifier.pressable(
             .graphicsLayer {
                 scaleX = scale
                 scaleY = scale
-            }
-            .drawWithContent {
+            }.drawWithContent {
                 drawContent()
                 if (shade > 0f) drawOutline(shape.createOutline(size, layoutDirection, this), Color.Black.copy(alpha = shade))
-            }
-            .clickable(interactionSource = source, indication = null, enabled = enabled, onClick = onClick)
+            }.clickable(interactionSource = source, indication = null, enabled = enabled, onClick = onClick)
     }

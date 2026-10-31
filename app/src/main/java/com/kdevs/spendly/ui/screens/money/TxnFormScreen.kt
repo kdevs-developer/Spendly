@@ -64,7 +64,8 @@ fun TxnFormScreen(
     val acc = look.account(accountId)
     val tint by androidx.compose.animation.animateColorAsState(
         if (type == "income") Success else Danger,
-        androidx.compose.animation.core.tween(220),
+        androidx.compose.animation.core
+            .tween(220),
         label = "txnTint",
     )
 
@@ -118,11 +119,10 @@ fun TxnFormScreen(
                     ""
                 } else {
                     (
-                            parent?.name?.let {
-                                    p ->
-                                if (subId.isNotBlank()) "$p · ${cat.name}" else p
-                            } ?: cat.name
-                            )
+                        parent?.name?.let { p ->
+                            if (subId.isNotBlank()) "$p · ${cat.name}" else p
+                        } ?: cat.name
+                    )
                 },
                 leading = { IconCircle(cat?.icon ?: "other", parent?.colorKey ?: cat?.colorKey ?: "slate", 38.dp) },
                 onClick = { nav.navigate(Routes.categoryPicker(type)) },

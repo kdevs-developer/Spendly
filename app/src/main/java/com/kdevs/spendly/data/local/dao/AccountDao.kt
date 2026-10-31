@@ -6,7 +6,10 @@ import com.kdevs.spendly.data.local.entity.AccountEntity
 import kotlinx.coroutines.flow.Flow
 
 /** One row of [AccountDao.observeBalances]. */
-data class AccountBalance(val accountId: String, val balancePaise: Long)
+data class AccountBalance(
+    val accountId: String,
+    val balancePaise: Long,
+)
 
 @Dao
 interface AccountDao : BaseDao<AccountEntity> {

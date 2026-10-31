@@ -32,7 +32,9 @@ import com.kdevs.spendly.ui.theme.Surface
 @Composable
 fun LoadingOverlay(message: String? = null) {
     Box(
-        Modifier.fillMaxSize().background(clr(R.color.scrim))
+        Modifier
+            .fillMaxSize()
+            .background(clr(R.color.scrim))
             .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) {},
         contentAlignment = Alignment.Center,
     ) {

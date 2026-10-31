@@ -42,7 +42,7 @@ import kotlinx.coroutines.launch
 // The "S" from the launcher icon, in the same 108 x 108 space.
 private const val S_PATH =
     "M66,43 C66,37 60.5,33.5 54,33.5 C46.5,33.5 42,37.5 42,43 C42,49 47,51 54,54 " +
-            "C61,57 66,59 66,65 C66,70.5 61.5,74.5 54,74.5 C47,74.5 42,71 42,65"
+        "C61,57 66,59 66,65 C66,70.5 61.5,74.5 54,74.5 C47,74.5 42,71 42,65"
 private val CoinGold get() = clr(R.color.coin_gold)
 
 /**
@@ -90,7 +90,11 @@ fun SplashOverlay(onFinished: () -> Unit) {
         Canvas(Modifier.size(132.dp)) {
             val s = size.width / 108f
             withTransform({ scale(s, s, Offset.Zero) }) {
-                drawCircle(Color.White.copy(alpha = 0.14f * halo.value), radius = 44f * (0.8f + 0.2f * halo.value), center = Offset(54f, 54f))
+                drawCircle(
+                    Color.White.copy(alpha = 0.14f * halo.value),
+                    radius = 44f * (0.8f + 0.2f * halo.value),
+                    center = Offset(54f, 54f),
+                )
                 val seg = Path()
                 measure.setPath(sPath, false)
                 measure.getSegment(0f, sLength * draw.value, seg, true)

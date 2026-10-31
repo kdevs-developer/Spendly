@@ -4,7 +4,7 @@ import android.app.Activity
 import android.app.Application
 import android.os.Bundle
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.MemoryCacheSettings
+import com.google.firebase.firestore.PersistentCacheSettings
 import com.google.firebase.firestore.firestoreSettings
 import com.kdevs.spendly.data.Inbox
 import com.kdevs.spendly.data.Prefs
@@ -20,10 +20,11 @@ class SpendlyApp : Application() {
     override fun onCreate() {
         super.onCreate()
         Res.init(this) // first: strings and colours are read from XML by everything below
-        // No offline mode: the cache lives in memory only and nothing is kept on the phone between launches.
+        // Offline-first: Firestore keeps a copy on the phone, so screens load without internet and saves
+        // are queued and sent later. Must be set before Firestore is first used.
         FirebaseFirestore.getInstance().firestoreSettings =
             firestoreSettings {
-                setLocalCacheSettings(MemoryCacheSettings.newBuilder().build())
+                setLocalCacheSettings(PersistentCacheSettings.newBuilder().build())
             }
         Prefs.init(this)
         Repo.init(this)
@@ -47,13 +48,19 @@ class SpendlyApp : Application() {
                     if (started == 0) Inbox.inForeground = false
                 }
 
-                override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {}
+                override fun onActivityCreated(
+                    activity: Activity,
+                    savedInstanceState: Bundle?,
+                ) {}
 
                 override fun onActivityResumed(activity: Activity) {}
 
                 override fun onActivityPaused(activity: Activity) {}
 
-                override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) {}
+                override fun onActivitySaveInstanceState(
+                    activity: Activity,
+                    outState: Bundle,
+                ) {}
 
                 override fun onActivityDestroyed(activity: Activity) {}
             },

@@ -70,14 +70,14 @@ fun TxnDetailScreen(
             Spacer(Modifier.height(12.dp))
             Text(
                 (
-                        if (t.kind == "expense") {
-                            "-"
-                        } else if (t.kind == "income") {
-                            "+"
-                        } else {
-                            ""
-                        }
-                        ) + formatPaise(t.amountPaise),
+                    if (t.kind == "expense") {
+                        "-"
+                    } else if (t.kind == "income") {
+                        "+"
+                    } else {
+                        ""
+                    }
+                ) + formatPaise(t.amountPaise),
                 color = Color.White,
                 fontWeight = FontWeight.ExtraBold,
                 fontSize = 40.sp,
@@ -106,12 +106,25 @@ fun TxnDetailScreen(
                     )
                 }
             }
-            PickRow(str(R.string.date), fullDate(t.dateMillis) + if (hasTime(t.dateMillis)) ", " + timeOf(t.dateMillis) else "", Icons.Filled.CalendarMonth, Muted, {}, divider = t.note.isNotBlank())
+            PickRow(
+                str(
+                    R.string.date,
+                ),
+                fullDate(t.dateMillis) + if (hasTime(t.dateMillis)) ", " + timeOf(t.dateMillis) else "",
+                Icons.Filled.CalendarMonth,
+                Muted,
+                {
+                },
+                divider = t.note.isNotBlank(),
+            )
             if (t.note.isNotBlank()) PickRow(str(R.string.note), t.note, Icons.Filled.Notes, Muted, {}, divider = false)
         }
         if (t.kind != "transfer") {
             SecondaryButton(str(R.string.duplicate), {
-                saver.run(scope, onDone = { nav.popBackStack() }) { Repo.put("txns", "", t.copy(id = "", dateMillis = withNowTime(todayMillis()))) }
+                saver.run(
+                    scope,
+                    onDone = { nav.popBackStack() },
+                ) { Repo.put("txns", "", t.copy(id = "", dateMillis = withNowTime(todayMillis()))) }
             })
         }
         SecondaryButton(str(R.string.delete_transaction_2), { confirm = true }, danger = true)

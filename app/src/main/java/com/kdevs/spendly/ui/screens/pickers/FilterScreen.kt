@@ -151,12 +151,12 @@ fun FilterScreen(
 
     val activeCount =
         (if (query.isNotBlank()) 1 else 0) +
-                (if (kinds.isNotEmpty()) 1 else 0) +
-                (if (from != 0L || to != 0L) 1 else 0) +
-                (if (accs.isNotEmpty()) 1 else 0) +
-                (if (cats.isNotEmpty()) 1 else 0) +
-                (if (min.isNotBlank()) 1 else 0) +
-                (if (max.isNotBlank()) 1 else 0)
+            (if (kinds.isNotEmpty()) 1 else 0) +
+            (if (from != 0L || to != 0L) 1 else 0) +
+            (if (accs.isNotEmpty()) 1 else 0) +
+            (if (cats.isNotEmpty()) 1 else 0) +
+            (if (min.isNotBlank()) 1 else 0) +
+            (if (max.isNotBlank()) 1 else 0)
 
     ScreenScaffold(
         str(R.string.filter),
@@ -167,20 +167,22 @@ fun FilterScreen(
                 color = Primary,
                 fontWeight = FontWeight.Bold,
                 modifier =
-                    Modifier.clip(CircleShape).clickable {
-                        query = ""
-                        kinds = emptySet()
-                        accs = emptySet()
-                        cats = emptySet()
-                        from = 0L
-                        to = 0L
-                        period = "any"
-                        min = ""
-                        max = ""
-                        periodOpen = false
-                        accountsOpen = false
-                        categoriesOpen = false
-                    }.padding(10.dp),
+                    Modifier
+                        .clip(CircleShape)
+                        .clickable {
+                            query = ""
+                            kinds = emptySet()
+                            accs = emptySet()
+                            cats = emptySet()
+                            from = 0L
+                            to = 0L
+                            period = "any"
+                            min = ""
+                            max = ""
+                            periodOpen = false
+                            accountsOpen = false
+                            categoriesOpen = false
+                        }.padding(10.dp),
             )
         },
         bottomBar = {
@@ -302,11 +304,21 @@ fun FilterScreen(
             Spacer(Modifier.height(8.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
                 Box(Modifier.weight(1f)) {
-                    AppTextField(min, { v -> if (v.all { it.isDigit() || it == '.' }) min = v }, str(R.string.min), keyboard = KeyboardType.Decimal)
+                    AppTextField(
+                        min,
+                        { v -> if (v.all { it.isDigit() || it == '.' }) min = v },
+                        str(R.string.min),
+                        keyboard = KeyboardType.Decimal,
+                    )
                 }
                 Text(str(R.string.to_lower), color = Muted, fontSize = 12.sp)
                 Box(Modifier.weight(1f)) {
-                    AppTextField(max, { v -> if (v.all { it.isDigit() || it == '.' }) max = v }, str(R.string.max), keyboard = KeyboardType.Decimal)
+                    AppTextField(
+                        max,
+                        { v -> if (v.all { it.isDigit() || it == '.' }) max = v },
+                        str(R.string.max),
+                        keyboard = KeyboardType.Decimal,
+                    )
                 }
             }
             if (badRange) {
@@ -374,7 +386,14 @@ private fun FilterOption(
             fontSize = 14.sp,
             fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
         )
-        if (selected) Icon(Icons.Filled.Check, contentDescription = str(R.string.selected_2), tint = Primary, modifier = Modifier.size(18.dp))
+        if (selected) {
+            Icon(
+                Icons.Filled.Check,
+                contentDescription = str(R.string.selected_2),
+                tint = Primary,
+                modifier = Modifier.size(18.dp),
+            )
+        }
     }
 }
 

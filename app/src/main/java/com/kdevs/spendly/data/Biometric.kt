@@ -39,8 +39,10 @@ object Biometric {
                 },
             )
         val info =
-            BiometricPrompt.PromptInfo.Builder()
-                .setTitle(title).setSubtitle(subtitle)
+            BiometricPrompt.PromptInfo
+                .Builder()
+                .setTitle(title)
+                .setSubtitle(subtitle)
                 .setAllowedAuthenticators(AUTH)
                 .build()
         bp.authenticate(info)

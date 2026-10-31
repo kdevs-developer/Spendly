@@ -72,30 +72,33 @@ fun TemplatesScreen(nav: NavController) {
                         }
                     }
                     Box(
-                        Modifier.clip(CircleShape).background(PrimaryContainer).clickable {
-                            val acc = t.accountId.ifBlank { accounts.firstOrNull { !it.archived }?.id ?: "" }
-                            if (acc.isBlank()) {
-                                saver.error = str(R.string.add_an_account_first)
-                                return@clickable
-                            }
-                            saver.run(scope, onDone = { nav.popBackStack() }) {
-                                Repo.put(
-                                    "txns",
-                                    "",
-                                    Txn(
-                                        kind = t.kind,
-                                        amountPaise = t.amountPaise,
-                                        accountId = acc,
-                                        categoryId = t.categoryId,
-                                        note =
-                                            t.note.ifBlank {
-                                                t.name
-                                            },
-                                        dateMillis = withNowTime(todayMillis()),
-                                    ),
-                                )
-                            }
-                        }.padding(horizontal = 16.dp, vertical = 9.dp),
+                        Modifier
+                            .clip(CircleShape)
+                            .background(PrimaryContainer)
+                            .clickable {
+                                val acc = t.accountId.ifBlank { accounts.firstOrNull { !it.archived }?.id ?: "" }
+                                if (acc.isBlank()) {
+                                    saver.error = str(R.string.add_an_account_first)
+                                    return@clickable
+                                }
+                                saver.run(scope, onDone = { nav.popBackStack() }) {
+                                    Repo.put(
+                                        "txns",
+                                        "",
+                                        Txn(
+                                            kind = t.kind,
+                                            amountPaise = t.amountPaise,
+                                            accountId = acc,
+                                            categoryId = t.categoryId,
+                                            note =
+                                                t.note.ifBlank {
+                                                    t.name
+                                                },
+                                            dateMillis = withNowTime(todayMillis()),
+                                        ),
+                                    )
+                                }
+                            }.padding(horizontal = 16.dp, vertical = 9.dp),
                     ) { Text(str(R.string.use), color = Primary, fontWeight = FontWeight.ExtraBold) }
                 }
             }

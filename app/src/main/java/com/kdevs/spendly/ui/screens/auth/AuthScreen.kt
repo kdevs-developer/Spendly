@@ -43,7 +43,18 @@ fun AuthScreen(nav: NavController) {
             else -> null
         }
 
-    ScreenScaffold(if (mode == 0) str(R.string.welcome_back) else str(R.string.create_account), onBack = { nav.popBackStack() }, busy = saver.busy, busyText = str(R.string.signing_you_in)) {
+    ScreenScaffold(
+        if (mode ==
+            0
+        ) {
+            str(R.string.welcome_back)
+        } else {
+            str(R.string.create_account)
+        },
+        onBack = { nav.popBackStack() },
+        busy = saver.busy,
+        busyText = str(R.string.signing_you_in),
+    ) {
         Spacer(Modifier.height(4.dp))
         SegmentedControl(listOf(str(R.string.sign_in), str(R.string.create_account)), mode, {
             mode = it
@@ -54,8 +65,14 @@ fun AuthScreen(nav: NavController) {
         AppTextField(email, { email = it }, str(R.string.email), keyboard = KeyboardType.Email)
         var show by remember { mutableStateOf(false) }
         androidx.compose.material3.OutlinedTextField(
-            value = pass, onValueChange = { pass = it }, label = { Text(str(R.string.password)) }, singleLine = true,
-            modifier = Modifier.fillMaxWidth(), shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
+            value = pass,
+            onValueChange = { pass = it },
+            label = { Text(str(R.string.password)) },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth(),
+            shape =
+                androidx.compose.foundation.shape
+                    .RoundedCornerShape(16.dp),
             visualTransformation = if (show) androidx.compose.ui.text.input.VisualTransformation.None else PasswordVisualTransformation(),
             trailingIcon = {
                 Icon(
@@ -63,9 +80,11 @@ fun AuthScreen(nav: NavController) {
                     str(
                         R.string.show_password,
                     ),
-                    Modifier.clip(CircleShape).clickable {
-                        show = !show
-                    }.padding(6.dp),
+                    Modifier
+                        .clip(CircleShape)
+                        .clickable {
+                            show = !show
+                        }.padding(6.dp),
                 )
             },
             colors =
@@ -91,8 +110,10 @@ fun AuthScreen(nav: NavController) {
                 color = Primary,
                 fontWeight = FontWeight.Bold,
                 modifier =
-                    Modifier.align(Alignment.CenterHorizontally)
-                        .clip(CircleShape).clickable {
+                    Modifier
+                        .align(Alignment.CenterHorizontally)
+                        .clip(CircleShape)
+                        .clickable {
                             // Clear the old message first, otherwise it would hide the real result of this try.
                             note = null
                             if (!email.contains("@") || !email.contains(".")) {

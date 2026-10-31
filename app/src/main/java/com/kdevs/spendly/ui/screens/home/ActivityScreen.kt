@@ -48,8 +48,16 @@ fun ActivityScreen(nav: NavController) {
     var view by remember { mutableIntStateOf(0) } // 0 list, 1 calendar
     val filtered =
         remember(
-            txns, look, TxnFilter.query, TxnFilter.kinds, TxnFilter.accountIds, TxnFilter.categoryIds,
-            TxnFilter.fromMillis, TxnFilter.toMillis, TxnFilter.minPaise, TxnFilter.maxPaise,
+            txns,
+            look,
+            TxnFilter.query,
+            TxnFilter.kinds,
+            TxnFilter.accountIds,
+            TxnFilter.categoryIds,
+            TxnFilter.fromMillis,
+            TxnFilter.toMillis,
+            TxnFilter.minPaise,
+            TxnFilter.maxPaise,
         ) {
             txns.filter { TxnFilter.matches(it) { id -> look.categoryName(id) } }
         }
@@ -63,7 +71,11 @@ fun ActivityScreen(nav: NavController) {
                 RoundIconButton(Icons.Filled.FilterList, str(R.string.filter), { nav.navigate(Routes.FILTER) })
                 if (TxnFilter.activeCount > 0) {
                     Box(
-                        Modifier.align(Alignment.TopEnd).size(16.dp).clip(CircleShape).background(Danger),
+                        Modifier
+                            .align(Alignment.TopEnd)
+                            .size(16.dp)
+                            .clip(CircleShape)
+                            .background(Danger),
                         contentAlignment = Alignment.Center,
                     ) {
                         Text(
@@ -121,9 +133,11 @@ private fun CalendarView(
             Icon(
                 Icons.AutoMirrored.Filled.ArrowBack,
                 str(R.string.previous_month),
-                Modifier.clip(CircleShape).clickable {
-                    ym = ym.minusMonths(1)
-                }.padding(8.dp),
+                Modifier
+                    .clip(CircleShape)
+                    .clickable {
+                        ym = ym.minusMonths(1)
+                    }.padding(8.dp),
             )
             Text(
                 str(R.string.text__4, ym.month.getDisplayName(TextStyle.FULL, Locale.getDefault()), ym.year),
@@ -136,9 +150,11 @@ private fun CalendarView(
             Icon(
                 Icons.AutoMirrored.Filled.ArrowForward,
                 str(R.string.next_month),
-                Modifier.clip(CircleShape).clickable {
-                    ym = ym.plusMonths(1)
-                }.padding(8.dp),
+                Modifier
+                    .clip(CircleShape)
+                    .clickable {
+                        ym = ym.plusMonths(1)
+                    }.padding(8.dp),
             )
         }
         Spacer(Modifier.height(8.dp))
@@ -157,38 +173,43 @@ private fun CalendarView(
         val lead = ym.atDay(1).dayOfWeek.value - 1
         val days = ym.lengthOfMonth()
         val byDay =
-            list.filter { it.kind == "expense" }.groupBy { toLocalDate(it.dateMillis) }.mapValues {
-                    e ->
+            list.filter { it.kind == "expense" }.groupBy { toLocalDate(it.dateMillis) }.mapValues { e ->
                 e.value.sumOf { it.amountPaise }
             }
         val rows = (lead + days + 6) / 7
-        for (r in 0 until rows) Row(Modifier.fillMaxWidth().padding(top = 4.dp)) {
-            for (c in 0 until 7) {
-                val day = r * 7 + c - lead + 1
-                Box(Modifier.weight(1f).height(48.dp), contentAlignment = Alignment.Center) {
-                    if (day in 1..days) {
-                        val date = ym.atDay(day)
-                        val on = date == picked
-                        val total = byDay[date] ?: 0L
-                        Column(
-                            Modifier.fillMaxSize().padding(1.dp).clip(RoundedCornerShape(12.dp))
-                                .background(if (on) Primary else Color.Transparent).clickable { picked = date },
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center,
-                        ) {
-                            Text(
-                                str(R.string.text__2, day),
-                                color = if (on) Color.White else Ink,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 14.sp,
-                            )
-                            if (total > 0) {
+        for (r in 0 until rows) {
+            Row(Modifier.fillMaxWidth().padding(top = 4.dp)) {
+                for (c in 0 until 7) {
+                    val day = r * 7 + c - lead + 1
+                    Box(Modifier.weight(1f).height(48.dp), contentAlignment = Alignment.Center) {
+                        if (day in 1..days) {
+                            val date = ym.atDay(day)
+                            val on = date == picked
+                            val total = byDay[date] ?: 0L
+                            Column(
+                                Modifier
+                                    .fillMaxSize()
+                                    .padding(1.dp)
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(if (on) Primary else Color.Transparent)
+                                    .clickable { picked = date },
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center,
+                            ) {
                                 Text(
-                                    compact(total),
-                                    color = if (on) Color.White.copy(alpha = 0.85f) else Danger,
-                                    fontSize = 9.sp,
+                                    str(R.string.text__2, day),
+                                    color = if (on) Color.White else Ink,
                                     fontWeight = FontWeight.Bold,
+                                    fontSize = 14.sp,
                                 )
+                                if (total > 0) {
+                                    Text(
+                                        compact(total),
+                                        color = if (on) Color.White.copy(alpha = 0.85f) else Danger,
+                                        fontSize = 9.sp,
+                                        fontWeight = FontWeight.Bold,
+                                    )
+                                }
                             }
                         }
                     }

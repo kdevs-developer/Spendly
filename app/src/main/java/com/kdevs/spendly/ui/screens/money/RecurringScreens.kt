@@ -72,9 +72,10 @@ fun RecurringScreen(nav: NavController) {
                                 str(
                                     R.string.next_2,
                                     formatPaise(r.amountPaise),
-                                    everyLabels.first {
-                                        it.first == r.every
-                                    }.second,
+                                    everyLabels
+                                        .first {
+                                            it.first == r.every
+                                        }.second,
                                     fullDate(r.nextMillis),
                                 ),
                                 color = Muted,
@@ -135,6 +136,7 @@ fun RecurringEditScreen(
                             categoryId = catId,
                             every = every,
                             nextMillis = next,
+                            anchorDay = toLocalDate(next).dayOfMonth,
                             active = active,
                         ),
                     )

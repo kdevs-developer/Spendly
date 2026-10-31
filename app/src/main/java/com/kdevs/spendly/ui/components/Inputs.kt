@@ -61,11 +61,17 @@ fun AppTextField(
     minLines: Int = 1,
 ) {
     OutlinedTextField(
-        value = value, onValueChange = onChange, label = { Text(label) },
-        modifier = modifier.fillMaxWidth(), singleLine = singleLine, minLines = minLines,
+        value = value,
+        onValueChange = onChange,
+        label = { Text(label) },
+        modifier = modifier.fillMaxWidth(),
+        singleLine = singleLine,
+        minLines = minLines,
         keyboardOptions = KeyboardOptions(keyboardType = keyboard),
-        isError = error != null, supportingText = error?.let { { Text(it) } },
-        leadingIcon = leading, shape = RoundedCornerShape(16.dp),
+        isError = error != null,
+        supportingText = error?.let { { Text(it) } },
+        leadingIcon = leading,
+        shape = RoundedCornerShape(16.dp),
         colors =
             OutlinedTextFieldDefaults.colors(
                 focusedContainerColor = Surface,
@@ -103,13 +109,29 @@ fun AmountField(
             color = color,
             textAlign = TextAlign.Start,
         )
-    val measurer = androidx.compose.ui.text.rememberTextMeasurer()
+    val measurer =
+        androidx.compose.ui.text
+            .rememberTextMeasurer()
     val density = androidx.compose.ui.platform.LocalDensity.current
     val textWidth =
-        with(density) { measurer.measure(androidx.compose.ui.text.AnnotatedString(value.ifEmpty { "0" }), style).size.width.toDp() }
-    val focus = remember { androidx.compose.ui.focus.FocusRequester() }
+        with(density) {
+            measurer
+                .measure(
+                    androidx.compose.ui.text
+                        .AnnotatedString(value.ifEmpty { "0" }),
+                    style,
+                ).size.width
+                .toDp()
+        }
+    val focus =
+        remember {
+            androidx.compose.ui.focus
+                .FocusRequester()
+        }
     Row(
-        modifier.fillMaxWidth().height(76.dp)
+        modifier
+            .fillMaxWidth()
+            .height(76.dp)
             .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { focus.requestFocus() },
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center,
@@ -123,14 +145,15 @@ fun AmountField(
         )
         androidx.compose.foundation.text.BasicTextField(
             value = value,
-            onValueChange = {
-                    v ->
+            onValueChange = { v ->
                 if (v.count { it == '.' } <= 1 && v.all { it.isDigit() || it == '.' } && v.substringAfter('.', "").length <= 2) onChange(v)
             },
             textStyle = style,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
             singleLine = true,
-            cursorBrush = androidx.compose.ui.graphics.SolidColor(color),
+            cursorBrush =
+                androidx.compose.ui.graphics
+                    .SolidColor(color),
             modifier = Modifier.width((textWidth + 4.dp).coerceIn(28.dp, 250.dp)).focusRequester(focus),
             decorationBox = { inner ->
                 Box(contentAlignment = Alignment.CenterStart) {
@@ -153,18 +176,31 @@ fun SegmentedControl(
 ) {
     val outer = RoundedCornerShape(16.dp)
     val inner = RoundedCornerShape(12.dp)
-    BoxWithConstraints(modifier.fillMaxWidth().clip(outer).background(Track).padding(4.dp)) {
+    BoxWithConstraints(
+        modifier
+            .fillMaxWidth()
+            .clip(outer)
+            .background(Track)
+            .padding(4.dp),
+    ) {
         val segment = maxWidth / options.size
         val x by animateDpAsState(segment * selected, spring(dampingRatio = 0.85f, stiffness = 380f), label = "segX")
         Box(
-            Modifier.offset { IntOffset(x.roundToPx(), 0) }.width(segment).height(38.dp)
-                .shadow(2.dp, inner).background(Surface, inner),
+            Modifier
+                .offset { IntOffset(x.roundToPx(), 0) }
+                .width(segment)
+                .height(38.dp)
+                .shadow(2.dp, inner)
+                .background(Surface, inner),
         )
         Row(Modifier.fillMaxWidth()) {
             options.forEachIndexed { i, label ->
                 val c by animateColorAsState(if (i == selected) Primary else Muted, tween(180), label = "segText")
                 Box(
-                    Modifier.weight(1f).height(38.dp).clip(inner)
+                    Modifier
+                        .weight(1f)
+                        .height(38.dp)
+                        .clip(inner)
                         .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { onSelect(i) },
                     contentAlignment = Alignment.Center,
                 ) { Text(label, fontWeight = FontWeight.Bold, fontSize = 13.sp, color = c) }
@@ -183,7 +219,10 @@ fun SelectChip(
     val bg by animateColorAsState(if (selected) PrimaryContainer else Surface, tween(160), label = "chip")
     val fg by animateColorAsState(if (selected) Primary else Muted, tween(160), label = "chipText")
     Box(
-        Modifier.pressable(pill, scaleTo = 0.95f, veil = false, onClick = onClick)
-            .clip(pill).background(bg).padding(horizontal = 16.dp, vertical = 9.dp),
+        Modifier
+            .pressable(pill, scaleTo = 0.95f, veil = false, onClick = onClick)
+            .clip(pill)
+            .background(bg)
+            .padding(horizontal = 16.dp, vertical = 9.dp),
     ) { Text(label, fontWeight = FontWeight.Bold, fontSize = 13.sp, color = fg) }
 }

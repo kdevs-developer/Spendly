@@ -15,9 +15,10 @@ import com.kdevs.spendly.ui.theme.*
 
 fun Chat.title(me: String): String =
     if (type == "direct") {
-        memberNames.entries.firstOrNull {
-            it.key != me
-        }?.value ?: str(R.string.chat)
+        memberNames.entries
+            .firstOrNull {
+                it.key != me
+            }?.value ?: str(R.string.chat)
     } else {
         name.ifBlank { str(R.string.group) }
     }

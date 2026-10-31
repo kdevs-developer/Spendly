@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -5,6 +7,15 @@ plugins {
     id("com.google.gms.google-services")
     id("com.google.devtools.ksp")
     id("com.google.dagger.hilt.android")
+    id("org.jlleitschuh.gradle.ktlint")
+}
+
+ktlint {
+    android.set(false)
+    ignoreFailures.set(true)
+    filter {
+        exclude { it.file.path.contains("/build/") }
+    }
 }
 
 android {
@@ -21,16 +32,35 @@ android {
         checkReleaseBuilds = false
         abortOnError = false
     }
+    // Without it Android's normal debug key is used.
+    val keystoreProps =
+        Properties().apply {
+            val f = rootProject.file("keystore.properties")
+            if (f.exists()) f.inputStream().use { load(it) }
+        }
     signingConfigs {
-        getByName("debug") {
-            storeFile = file("C:/Users/krish/AndroidStudioProjects/spendly-android/debug.keystore")
-            storePassword = "03101996"
-            keyAlias = "androiddebugkey"
-            keyPassword = "03101996"
+        if (keystoreProps.containsKey("storeFile")) {
+            getByName("debug") {
+                storeFile = rootProject.file(keystoreProps.getProperty("storeFile"))
+                storePassword = keystoreProps.getProperty("storePassword")
+                keyAlias = keystoreProps.getProperty("keyAlias")
+                keyPassword = keystoreProps.getProperty("keyPassword")
+            }
+        }
+        // Optional: add releaseStoreFile, releaseStorePassword, releaseKeyAlias, releaseKeyPassword to
+        // keystore.properties and the release build is signed with them.
+        if (keystoreProps.containsKey("releaseStoreFile")) {
+            create("release") {
+                storeFile = rootProject.file(keystoreProps.getProperty("releaseStoreFile"))
+                storePassword = keystoreProps.getProperty("releaseStorePassword")
+                keyAlias = keystoreProps.getProperty("releaseKeyAlias")
+                keyPassword = keystoreProps.getProperty("releaseKeyPassword")
+            }
         }
     }
     buildTypes {
         release {
+            signingConfigs.findByName("release")?.let { signingConfig = it }
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
@@ -44,13 +74,9 @@ android {
     buildFeatures { compose = true }
 }
 
-// Room writes its schema as JSON here. Commit the files: they are how migrations get tested.
-ksp {
-    arg("room.schemaLocation", "$projectDir/schemas")
-    arg("room.generateKotlin", "true")
-}
-
 dependencies {
+    implementation("androidx.room:room-common:2.8.5")
+    implementation("androidx.room:room-ktx:2.8.5")
     val composeBom = platform("androidx.compose:compose-bom:2024.10.01")
     implementation(composeBom)
     implementation("androidx.compose.ui:ui")
@@ -62,7 +88,6 @@ dependencies {
     implementation("androidx.navigation:navigation-compose:2.8.3")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.7")
-    implementation("androidx.datastore:datastore-preferences:1.1.1")
     implementation("io.coil-kt:coil-compose:2.7.0")
 
     // Biometric lock (FragmentActivity is what the system prompt attaches to)
@@ -91,13 +116,7 @@ dependencies {
     ksp("com.google.dagger:hilt-android-compiler:2.52")
     implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
 
-    // Room: local database, exposes Flow
-    implementation("androidx.room:room-runtime:2.6.1")
-    implementation("androidx.room:room-ktx:2.6.1")
-    ksp("androidx.room:room-compiler:2.6.1")
-
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.9.0")
-    androidTestImplementation("androidx.room:room-testing:2.6.1")
     androidTestImplementation("androidx.test.ext:junit:1.2.1")
     androidTestImplementation("androidx.test:runner:1.6.2")
     testImplementation("junit:junit:4.13.2")

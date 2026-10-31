@@ -75,6 +75,7 @@ data class Recurring(
     val every: String = "monthly", // daily | weekly | monthly | yearly
     val nextMillis: Long = 0,
     val active: Boolean = true,
+    val anchorDay: Int = 0, // day of the month it started on (0 = not set yet); keeps the 31st from drifting
 )
 
 data class Friend(

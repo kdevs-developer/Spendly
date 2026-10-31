@@ -66,17 +66,29 @@ fun MessageBanner(nav: NavController) {
             if (b != null) {
                 val shape = RoundedCornerShape(20.dp)
                 Row(
-                    Modifier.fillMaxWidth().shadow(8.dp, shape).clip(shape).background(Surface).clickable {
-                        visible = false
-                        Inbox.banner.value = null
-                        nav.navigate(Routes.chat(b.chatId)) { launchSingleTop = true }
-                    }.padding(14.dp),
+                    Modifier
+                        .fillMaxWidth()
+                        .shadow(8.dp, shape)
+                        .clip(shape)
+                        .background(Surface)
+                        .clickable {
+                            visible = false
+                            Inbox.banner.value = null
+                            nav.navigate(Routes.chat(b.chatId)) { launchSingleTop = true }
+                        }.padding(14.dp),
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Avatar(b.title, colorKeyFor(b.chatId), 40.dp)
                     Column(Modifier.weight(1f)) {
-                        Text(b.title, color = Ink, fontWeight = FontWeight.ExtraBold, fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text(
+                            b.title,
+                            color = Ink,
+                            fontWeight = FontWeight.ExtraBold,
+                            fontSize = 14.sp,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
                         Text(b.body, color = Muted, fontSize = 13.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
                     }
                 }

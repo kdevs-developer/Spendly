@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Settings, lock, delete data -->
+<resources>
+    <string name="about">About</string>
+    <string name="all_your_data_and_your_login">All your data and your login will be removed for good.</string>
+    <string name="appearance">Appearance</string>
+    <string name="biometric_lock">Biometric lock</string>
+    <string name="confirm_it_is_you">Confirm it is you</string>
+    <string name="delete_all_my_data">Delete all my data</string>
+    <string name="delete_everything">Delete everything?</string>
+    <string name="delete_everything_2">Delete everything</string>
+    <string name="delete_my_data">Delete my data</string>
+    <string name="deleting_keep_the_app_open_and">Deleting. Keep the app open and stay online until it finishes.</string>
+    <string name="deleting_removes_every_account_transac">Deleting removes every account, transaction, chat entry and your login. This cannot be undone.</string>
+    <string name="deleting_your_data">Deleting your data…</string>
+    <string name="display_name">Display name</string>
+    <string name="enter_your_password_to_confirm_it">Enter your password to confirm it is you.</string>
+    <string name="excel_or_pdf">Excel or PDF</string>
+    <string name="export_data">Export data</string>
+    <string name="fingerprint_face_or_screen_lock">Fingerprint, face or screen lock</string>
+    <string name="friend_code_2">Friend code %1$s</string>
+    <string name="google_will_ask_you_to_pick">Google will ask you to pick your account once more to confirm it is you.</string>
+    <string name="lock_footer">Your money data stays private on this phone.</string>
+    <string name="message_notifications">Message notifications</string>
+    <string name="off_tap_to_turn_on">Off. Tap to turn on</string>
+    <string name="on">On</string>
+    <string name="security">Security</string>
+    <string name="set_up_a_fingerprint_face_or">Set up a fingerprint, face or screen lock in your phone settings first.</string>
+    <string name="sign_out">Sign out</string>
+    <string name="sign_out_2">Sign out?</string>
+    <string name="spendly_continue">Continue</string>
+    <string name="spendly_is_locked">Spendly is locked</string>
+    <string name="spendly_user">Spendly user</string>
+    <string name="system_follows_your_phone_light_and">System follows your phone. Light and Dark stay as you choose.</string>
+    <string name="that_did_not_work_tap_unlock">That did not work. Tap Unlock to try again.</string>
+    <string name="this_is_the_name_your_friends">This is the name your friends see in chat.</string>
+    <string name="this_removes_your_accounts_transaction">This removes your accounts, transactions, budgets, goals, friends and your login, and the photos you sent. Messages you already sent in shared chats stay for the other people in them. It cannot be undone.</string>
+    <string name="turn_off_biometric_lock">Turn off biometric lock</string>
+    <string name="turn_on_biometric_lock">Turn on biometric lock</string>
+    <string name="unlock">Unlock</string>
+    <string name="unlock_spendly">Unlock Spendly</string>
+    <string name="use_your_fingerprint_face_or_screen">Use your fingerprint, face or screen lock to open.</string>
+    <string name="version">Version</string>
+    <string name="your_data_stays_safe_in_your">Your data stays safe in your account.</string>
+    <string name="your_space">Your space</string>
+</resources>

@@ -40,7 +40,13 @@ object Exporter {
             Row(
                 t.dateMillis,
                 t.kind.replaceFirstChar { it.uppercase() },
-                if (transfer) str(R.string.transfer) else if (t.categoryId.isBlank()) str(R.string.uncategorised) else look.categoryName(t.categoryId),
+                if (transfer) {
+                    str(R.string.transfer)
+                } else if (t.categoryId.isBlank()) {
+                    str(R.string.uncategorised)
+                } else {
+                    look.categoryName(t.categoryId)
+                },
                 if (t.subcategoryId.isBlank()) "" else look.categoryName(t.subcategoryId),
                 look.accountName(t.accountId),
                 if (transfer) look.accountName(t.toAccountId) else "",
@@ -90,7 +96,9 @@ object Exporter {
             append("""<?xml version="1.0" encoding="UTF-8" standalone="yes"?>""")
             append("""<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">""")
             if (freezeHeader) {
-                append("""<sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>""")
+                append(
+                    """<sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>""",
+                )
             }
             append("<cols>")
             widths.forEachIndexed { i, w -> append("""<col min="${i + 1}" max="${i + 1}" width="$w" customWidth="1"/>""") }
@@ -106,7 +114,17 @@ object Exporter {
         periodLabel: String,
     ): ByteArray {
         val data = rows(list, look)
-        val headers = listOf(str(R.string.col_date), str(R.string.col_type), str(R.string.col_category), str(R.string.col_sub_category), str(R.string.col_account), str(R.string.col_to_account), str(R.string.col_amount_inr), str(R.string.col_note))
+        val headers =
+            listOf(
+                str(R.string.col_date),
+                str(R.string.col_type),
+                str(R.string.col_category),
+                str(R.string.col_sub_category),
+                str(R.string.col_account),
+                str(R.string.col_to_account),
+                str(R.string.col_amount_inr),
+                str(R.string.col_note),
+            )
 
         val tx = StringBuilder()
         tx.append("""<row r="1">""")
@@ -129,13 +147,15 @@ object Exporter {
         val income = list.filter { it.kind == "income" }.sumOf { it.amountPaise }
         val expense = list.filter { it.kind == "expense" }.sumOf { it.amountPaise }
         val byCat =
-            list.filter { it.kind == "expense" }
+            list
+                .filter { it.kind == "expense" }
                 .groupBy { if (it.categoryId.isBlank()) str(R.string.uncategorised) else look.categoryName(it.categoryId) }
                 .map { (k, v) -> k to v.sumOf { it.amountPaise } }
                 .sortedByDescending { it.second }
 
         val sm = StringBuilder()
         var r = 1
+
         fun line(
             a: String,
             b: Double? = null,
@@ -143,7 +163,19 @@ object Exporter {
             c: Double? = null,
         ) {
             sm.append("""<row r="$r">""")
-            sm.append(text("A$r", a, if (style == 1) 1 else if (style == 4) 4 else 0))
+            sm.append(
+                text(
+                    "A$r",
+                    a,
+                    if (style == 1) {
+                        1
+                    } else if (style == 4) {
+                        4
+                    } else {
+                        0
+                    },
+                ),
+            )
             if (b != null) sm.append(num("B$r", b, if (style == 4) 5 else 2))
             if (c != null) sm.append(num("C$r", c, 6))
             sm.append("</row>")
@@ -158,7 +190,13 @@ object Exporter {
         line(str(R.string.total_expenses), rupees(expense))
         line(str(R.string.net_income_expenses), rupees(income - expense), 4)
         r++
-        sm.append("""<row r="$r">${text("A$r", str(R.string.expenses_by_category), 1)}${text("B$r", str(R.string.col_amount_inr), 1)}${text("C$r", str(R.string.col_share), 1)}</row>""")
+        sm.append(
+            """<row r="$r">${text(
+                "A$r",
+                str(R.string.expenses_by_category),
+                1,
+            )}${text("B$r", str(R.string.col_amount_inr), 1)}${text("C$r", str(R.string.col_share), 1)}</row>""",
+        )
         r++
         byCat.forEach { (k, v) -> line(k, rupees(v), 0, if (expense > 0) v.toDouble() / expense else 0.0) }
 

@@ -37,7 +37,7 @@ Still remains after deletion: messages you already sent in other people's chats,
 - Lists such as welcome slides are built once, so a runtime language change needs an app restart.
 
 ### Build
-Keystore path and password were hard-coded in `app/build.gradle.kts`. They now come from `keystore.properties` (copy `keystore.properties.example`; it is git-ignored). Without that file Android's normal debug key is used, which has a different SHA-1: Google sign-in then needs that SHA-1 added in Firebase.
+Keystore path and password were hard-coded in `app/build.gradle.kts`. They now come from `keystore.properties` (copy `keystore.properties`; it is git-ignored). Without that file Android's normal debug key is used, which has a different SHA-1: Google sign-in then needs that SHA-1 added in Firebase.
 
 ## 2. Other flaws found (not fixed)
 

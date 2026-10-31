@@ -5,8 +5,8 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
@@ -45,7 +45,11 @@ import com.kdevs.spendly.ui.theme.Primary
 import com.kdevs.spendly.ui.theme.PrimaryContainer
 import com.kdevs.spendly.ui.theme.Surface
 
-private data class Tab(val label: String, val route: String, val icon: ImageVector)
+private data class Tab(
+    val label: String,
+    val route: String,
+    val icon: ImageVector,
+)
 
 private val tabs =
     listOf(
@@ -62,36 +66,59 @@ fun BottomTabBar(
     current: String,
     nav: NavController,
 ) {
-    val unread by com.kdevs.spendly.data.Inbox.unreadTotal.collectAsState()
+    val unread by com.kdevs.spendly.data.Inbox.unreadTotal
+        .collectAsState()
     Row(
-        Modifier.fillMaxWidth().shadow(12.dp, RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
+        Modifier
+            .fillMaxWidth()
+            .shadow(12.dp, RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
             .background(Surface, RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
-            .navigationBarsPadding().padding(horizontal = 8.dp, vertical = 8.dp),
+            .navigationBarsPadding()
+            .padding(horizontal = 8.dp, vertical = 8.dp),
     ) {
         tabs.forEach { t ->
             val on = t.route == current
             val bg by animateColorAsState(if (on) PrimaryContainer else Color.Transparent, tween(200), label = "tab")
             Column(
-                Modifier.weight(1f).pressable(RoundedCornerShape(16.dp), scaleTo = 0.92f, veil = false) {
-                    if (!on) {
-                        nav.navigate(t.route) {
-                            popUpTo(Routes.HOME) { saveState = true }
-                            launchSingleTop = true
-                            restoreState = true
+                Modifier
+                    .weight(1f)
+                    .pressable(RoundedCornerShape(16.dp), scaleTo = 0.92f, veil = false) {
+                        if (!on) {
+                            nav.navigate(t.route) {
+                                popUpTo(Routes.HOME) { saveState = true }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
                         }
-                    }
-                }.padding(vertical = 6.dp),
+                    }.padding(vertical = 6.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Box(Modifier.clip(RoundedCornerShape(999.dp)).background(bg).padding(horizontal = 18.dp, vertical = 4.dp)) {
                     Icon(t.icon, t.label, tint = if (on) Primary else Muted, modifier = Modifier.size(22.dp))
                     if (t.route == Routes.CHATS && unread > 0) {
                         Box(
-                            Modifier.align(Alignment.TopEnd).offset(x = 10.dp, y = (-4).dp).defaultMinSize(minWidth = 16.dp, minHeight = 16.dp)
-                                .clip(CircleShape).background(Danger).padding(horizontal = 4.dp),
+                            Modifier
+                                .align(
+                                    Alignment.TopEnd,
+                                ).offset(x = 10.dp, y = (-4).dp)
+                                .defaultMinSize(minWidth = 16.dp, minHeight = 16.dp)
+                                .clip(CircleShape)
+                                .background(Danger)
+                                .padding(horizontal = 4.dp),
                             contentAlignment = Alignment.Center,
                         ) {
-                            Text(if (unread > 99) "99+" else "$unread", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.ExtraBold)
+                            Text(
+                                if (unread >
+                                    99
+                                ) {
+                                    "99+"
+                                } else {
+                                    "$unread"
+                                },
+                                color = Color.White,
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.ExtraBold,
+                            )
                         }
                     }
                 }

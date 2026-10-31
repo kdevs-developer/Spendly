@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Home, activity, reports -->
+<resources>
+    <string name="add_a_bank_wallet_cash_or">Add a bank, wallet, cash or card to start tracking.</string>
+    <string name="add_a_transaction_to_see_it">Add a transaction to see it here.</string>
+    <string name="amount_left">%1$s left</string>
+    <string name="calendar">Calendar</string>
+    <string name="earned">Earned</string>
+    <string name="earned_this_month">Earned this month</string>
+    <string name="good_afternoon">Good afternoon</string>
+    <string name="good_evening">Good evening</string>
+    <string name="good_morning">Good morning</string>
+    <string name="hello">Hello</string>
+    <string name="last_14_days">Last 14 days</string>
+    <string name="last_5_years">Last 5 years</string>
+    <string name="last_6_months">Last 6 months</string>
+    <string name="last_8_weeks">Last 8 weeks</string>
+    <string name="list">List</string>
+    <string name="monthly_budget">Monthly budget</string>
+    <string name="net_worth">Net worth</string>
+    <string name="no_data">No data</string>
+    <string name="no_sub_category">No sub-category</string>
+    <string name="no_transactions_match_your_filter">No transactions match your filter.</string>
+    <string name="no_transactions_yet">No transactions yet</string>
+    <string name="nothing_here">Nothing here</string>
+    <string name="nothing_in_this_period">Nothing in this period.</string>
+    <string name="nothing_on_this_day">Nothing on this day.</string>
+    <string name="nothing_recorded_for_this_period_and">Nothing recorded for this period and filter.</string>
+    <string name="of_total">%1$s%% of total</string>
+    <string name="plan_ahead">Plan ahead</string>
+    <string name="recent">Recent</string>
+    <string name="see_all">See all</string>
+    <string name="select">Select</string>
+    <string name="spent">Spent</string>
+    <string name="spent_this_month">Spent this month</string>
+    <string name="tap_the_plus_button_to_add">Tap the plus button to add your first one.</string>
+    <string name="total">Total</string>
+    <string name="total_balance">Total balance</string>
+    <string name="trend_day">Day</string>
+    <string name="trend_month">Month</string>
+    <string name="trend_week">Week</string>
+    <string name="trend_year">Year</string>
+    <string name="trends">Trends</string>
+</resources>

@@ -103,10 +103,10 @@ fun ChatInfoScreen(
                     trailing =
                         if (uid != me && !direct) {
                             (
-                                    {
-                                        Text(str(R.string.report), color = Danger, fontWeight = FontWeight.Bold, fontSize = 13.sp)
-                                    }
-                                    )
+                                {
+                                    Text(str(R.string.report), color = Danger, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                }
+                            )
                         } else {
                             null
                         },

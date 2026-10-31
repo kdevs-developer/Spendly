@@ -143,7 +143,12 @@ private fun CategoryReport(
 }
 
 /** One bar group in the trend chart: a day, a week, a month or a year. */
-private class TrendBucket(val short: String, val long: String, val from: Long, val to: Long)
+private class TrendBucket(
+    val short: String,
+    val long: String,
+    val from: Long,
+    val to: Long,
+)
 
 private fun trendBuckets(gran: Int): List<TrendBucket> {
     val today = LocalDate.now()
@@ -201,7 +206,13 @@ private fun TrendReport(allTxns: List<Txn>) {
             Triple(b, spent(l), earned(l))
         }
     val max = (data.maxOfOrNull { maxOf(it.second, it.third) } ?: 0L).coerceAtLeast(1L)
-    val barWidth = when (gran) { 0 -> 7.dp; 1 -> 12.dp; 3 -> 18.dp; else -> 14.dp }
+    val barWidth =
+        when (gran) {
+            0 -> 7.dp
+            1 -> 12.dp
+            3 -> 18.dp
+            else -> 14.dp
+        }
     val title =
         when (gran) {
             0 -> str(R.string.last_14_days)
@@ -226,12 +237,18 @@ private fun TrendReport(allTxns: List<Txn>) {
                         horizontalArrangement = Arrangement.spacedBy(2.dp, Alignment.CenterHorizontally),
                     ) {
                         Box(
-                            Modifier.width(barWidth).fillMaxHeight((s.toFloat() / max).coerceIn(0.02f, 1f))
-                                .clip(RoundedCornerShape(4.dp)).background(Danger),
+                            Modifier
+                                .width(barWidth)
+                                .fillMaxHeight((s.toFloat() / max).coerceIn(0.02f, 1f))
+                                .clip(RoundedCornerShape(4.dp))
+                                .background(Danger),
                         )
                         Box(
-                            Modifier.width(barWidth).fillMaxHeight((e.toFloat() / max).coerceIn(0.02f, 1f))
-                                .clip(RoundedCornerShape(4.dp)).background(Success),
+                            Modifier
+                                .width(barWidth)
+                                .fillMaxHeight((e.toFloat() / max).coerceIn(0.02f, 1f))
+                                .clip(RoundedCornerShape(4.dp))
+                                .background(Success),
                         )
                     }
                     Text(
@@ -306,8 +323,7 @@ fun ReportCategoryScreen(
         if (subs.size > 1 || subs.firstOrNull()?.first?.isNotBlank() == true) {
             SectionTitle(str(R.string.sub_categories))
             Card {
-                subs.forEach {
-                        (s, v) ->
+                subs.forEach { (s, v) ->
                     LabeledBar(
                         if (s.isBlank()) str(R.string.no_sub_category) else look.categoryName(s),
                         v,

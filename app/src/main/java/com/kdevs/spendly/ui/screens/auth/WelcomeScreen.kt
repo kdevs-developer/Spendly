@@ -42,15 +42,25 @@ import com.kdevs.spendly.data.str
 import com.kdevs.spendly.nav.Routes
 import com.kdevs.spendly.ui.components.*
 import com.kdevs.spendly.ui.theme.*
-import kotlin.math.absoluteValue
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlin.math.absoluteValue
 
-private data class Slide(val icon: ImageVector, val title: String, val body: String, val tint: Color)
+private data class Slide(
+    val icon: ImageVector,
+    val title: String,
+    val body: String,
+    val tint: Color,
+)
 
 private val slides =
     listOf(
-        Slide(Icons.Filled.AccountBalanceWallet, str(R.string.slide_all_money_title), str(R.string.slide_all_money_body), clr(R.color.swatch_blue)),
+        Slide(
+            Icons.Filled.AccountBalanceWallet,
+            str(R.string.slide_all_money_title),
+            str(R.string.slide_all_money_body),
+            clr(R.color.swatch_blue),
+        ),
         Slide(Icons.Filled.Bolt, str(R.string.slide_quick_add_title), str(R.string.slide_quick_add_body), clr(R.color.swatch_purple)),
         Slide(Icons.Filled.PieChart, str(R.string.slide_reports_title), str(R.string.slide_reports_body), clr(R.color.swatch_teal)),
         Slide(Icons.Filled.Savings, str(R.string.slide_budgets_title), str(R.string.slide_budgets_body), clr(R.color.swatch_green)),
@@ -82,7 +92,14 @@ fun WelcomeScreen(nav: NavController) {
         scope.launch { pager.animateScrollToPage(i) }
     }
 
-    Column(Modifier.fillMaxSize().background(Bg).statusBarsPadding().navigationBarsPadding().padding(24.dp)) {
+    Column(
+        Modifier
+            .fillMaxSize()
+            .background(Bg)
+            .statusBarsPadding()
+            .navigationBarsPadding()
+            .padding(24.dp),
+    ) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
             if (pager.currentPage < last) {
                 Text(
@@ -102,12 +119,14 @@ fun WelcomeScreen(nav: NavController) {
             val away = shift.absoluteValue.coerceIn(0f, 1f)
             val alive = rememberInfiniteTransition(label = "alive")
             val float by alive.animateFloat(
-                -1f, 1f,
+                -1f,
+                1f,
                 infiniteRepeatable(tween(2200, easing = FastOutSlowInEasing), RepeatMode.Reverse),
                 label = "float",
             )
             val pulse by alive.animateFloat(
-                1f, 1.14f,
+                1f,
+                1.14f,
                 infiniteRepeatable(tween(1800, easing = FastOutSlowInEasing), RepeatMode.Reverse),
                 label = "pulse",
             )
@@ -122,22 +141,24 @@ fun WelcomeScreen(nav: NavController) {
                 verticalArrangement = Arrangement.Center,
             ) {
                 Box(
-                    Modifier.size(150.dp)
+                    Modifier
+                        .size(150.dp)
                         .graphicsLayer {
                             scaleX = pulse
                             scaleY = pulse
                             translationX = shift * size.width * 0.5f // parallax: drifts against the swipe
-                        }
-                        .clip(CircleShape).background(s.tint.copy(alpha = 0.12f)),
+                        }.clip(CircleShape)
+                        .background(s.tint.copy(alpha = 0.12f)),
                     contentAlignment = Alignment.Center,
                 ) {
                     Box(
-                        Modifier.size(104.dp)
+                        Modifier
+                            .size(104.dp)
                             .graphicsLayer {
                                 translationY = float * 8.dp.toPx()
                                 rotationZ = shift * -25f
-                            }
-                            .clip(CircleShape).background(s.tint),
+                            }.clip(CircleShape)
+                            .background(s.tint),
                         contentAlignment = Alignment.Center,
                     ) {
                         Icon(s.icon, null, tint = Color.White, modifier = Modifier.size(52.dp))
@@ -170,10 +191,16 @@ fun WelcomeScreen(nav: NavController) {
         ) {
             slides.indices.forEach { i ->
                 val on = i == pager.currentPage
-                val w by androidx.compose.animation.core.animateDpAsState(if (on) 24.dp else 8.dp, label = "dot")
+                val w by androidx.compose.animation.core
+                    .animateDpAsState(if (on) 24.dp else 8.dp, label = "dot")
                 Box(
-                    Modifier.padding(horizontal = 3.dp).height(8.dp).width(w).clip(CircleShape)
-                        .background(if (on) Primary else Faint.copy(alpha = 0.45f)).clickable { goTo(i) },
+                    Modifier
+                        .padding(horizontal = 3.dp)
+                        .height(8.dp)
+                        .width(w)
+                        .clip(CircleShape)
+                        .background(if (on) Primary else Faint.copy(alpha = 0.45f))
+                        .clickable { goTo(i) },
                 )
             }
         }
@@ -203,7 +230,9 @@ private fun LegalLine(nav: NavController) {
     ClickableText(
         text,
         modifier = Modifier.fillMaxWidth(),
-        style = androidx.compose.ui.text.TextStyle(color = Muted, fontSize = 12.sp, textAlign = TextAlign.Center, lineHeight = 17.sp),
+        style =
+            androidx.compose.ui.text
+                .TextStyle(color = Muted, fontSize = 12.sp, textAlign = TextAlign.Center, lineHeight = 17.sp),
         onClick = { off ->
             text.getStringAnnotations("go", off, off).firstOrNull()?.let {
                 nav.navigate(if (it.item == "terms") Routes.TERMS else Routes.PRIVACY)
