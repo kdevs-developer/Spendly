@@ -72,10 +72,12 @@ data class Recurring(
     val amountPaise: Long = 0,
     val accountId: String = "",
     val categoryId: String = "",
+    val subcategoryId: String = "",
     val every: String = "monthly", // daily | weekly | monthly | yearly
+    val interval: Int = 1, // repeat every N units of [every]; 1 = plain daily/weekly/monthly/yearly
     val nextMillis: Long = 0,
     val active: Boolean = true,
-    val anchorDay: Int = 0, // day of the month it started on (0 = not set yet); keeps the 31st from drifting
+    val anchorDay: Int = 0,
 )
 
 data class Friend(

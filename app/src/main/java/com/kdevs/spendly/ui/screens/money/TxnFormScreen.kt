@@ -6,6 +6,7 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -33,6 +34,7 @@ fun TxnFormScreen(
     val txns by Repo.txns.collectAsState()
     val accounts by Repo.accounts.collectAsState()
     val look = rememberLookup()
+    val ctx = LocalContext.current
     val existing = remember(id, txns.isEmpty()) { txns.firstOrNull { it.id == id } }
     val editing = id.isNotBlank()
 
@@ -47,7 +49,15 @@ fun TxnFormScreen(
     val saver = rememberSaver()
     val scope = rememberCoroutineScope()
 
-    LaunchedEffect(accounts) { if (accountId.isBlank()) accountId = accounts.firstOrNull { !it.archived }?.id ?: "" }
+    // Last account used for this type, if it still exists and is not archived; otherwise the first active one.
+    fun defaultAccount(forType: String): String {
+        val last = RecentPicks.lastAccount(ctx, forType)
+        return accounts.firstOrNull { !it.archived && it.id == last }?.id
+            ?: accounts.firstOrNull { !it.archived }?.id
+            ?: ""
+    }
+
+    LaunchedEffect(accounts) { if (accountId.isBlank()) accountId = defaultAccount(type) }
     entry.Picked<String>("pickedAccount") { accountId = it }
     entry.Picked<String>("pickedCategory") { v ->
         splitPick(v).let {
@@ -68,6 +78,18 @@ fun TxnFormScreen(
             .tween(220),
         label = "txnTint",
     )
+
+    // Recent category + sub-category pairs for the current type (new transactions only).
+    val recents =
+        remember(type, look.categories) {
+            RecentPicks
+                .categories(ctx, type)
+                .mapNotNull { (c, s) ->
+                    val p = look.category(c) ?: return@mapNotNull null
+                    val sc = if (s.isBlank()) null else (look.category(s) ?: return@mapNotNull null)
+                    QuickItem(c, s, sc?.name ?: p.name, sc?.icon ?: p.icon, p.colorKey)
+                }.take(6)
+        }
 
     ScreenScaffold(
         if (editing) str(R.string.edit_transaction) else str(R.string.add_transaction),
@@ -99,6 +121,7 @@ fun TxnFormScreen(
                                 dateMillis = date,
                             ),
                         )
+                        if (!editing) RecentPicks.remember(ctx, type, accountId, catId, subId)
                     }
                 },
             )
@@ -108,10 +131,24 @@ fun TxnFormScreen(
                 type = if (it == 1) "income" else "expense"
                 catId = ""
                 subId = ""
+                if (!editing) accountId = defaultAccount(type)
             })
             AmountField(amount, { amount = it }, color = tint)
         },
     ) {
+        if (!editing && recents.isNotEmpty()) {
+            Text(str(R.string.recent_categories), color = Muted, fontSize = 12.sp)
+            QuickCategories(
+                items = recents,
+                selectedCat = catId,
+                selectedSub = subId,
+                onPick = {
+                    catId = it.catId
+                    subId = it.subId
+                },
+                onMore = { nav.navigate(Routes.categoryPicker(type)) },
+            )
+        }
         Card(padding = 12.dp) {
             PickRowLeading(
                 str(R.string.category),
@@ -119,10 +156,10 @@ fun TxnFormScreen(
                     ""
                 } else {
                     (
-                        parent?.name?.let { p ->
-                            if (subId.isNotBlank()) "$p · ${cat.name}" else p
-                        } ?: cat.name
-                    )
+                            parent?.name?.let { p ->
+                                if (subId.isNotBlank()) "$p · ${cat.name}" else p
+                            } ?: cat.name
+                            )
                 },
                 leading = { IconCircle(cat?.icon ?: "other", parent?.colorKey ?: cat?.colorKey ?: "slate", 38.dp) },
                 onClick = { nav.navigate(Routes.categoryPicker(type)) },

@@ -32,6 +32,7 @@ import com.kdevs.spendly.ui.screens.common.earned
 import com.kdevs.spendly.ui.screens.common.inRange
 import com.kdevs.spendly.ui.screens.common.rememberLookup
 import com.kdevs.spendly.ui.screens.common.spent
+import com.kdevs.spendly.ui.screens.money.RecurringRow
 import com.kdevs.spendly.ui.theme.*
 
 @Composable
@@ -40,6 +41,7 @@ fun HomeScreen(nav: NavController) {
     val txns by Repo.txns.collectAsState()
     val budgets by Repo.budgets.collectAsState()
     val profile by Repo.profile.collectAsState()
+    val recurring by Repo.recurring.collectAsState()
     val look = rememberLookup()
 
     val live = accounts.filter { !it.archived }
@@ -135,6 +137,26 @@ fun HomeScreen(nav: NavController) {
                 recent.forEachIndexed { i, t ->
                     TxnRow(t, look, { nav.navigate(Routes.txnDetail(t.id)) }, showDate = true)
                     if (i < recent.lastIndex) HorizontalDivider(color = Line)
+                }
+            }
+        }
+
+        val upcoming = recurring.filter { it.active }.sortedBy { it.nextMillis }.take(3)
+        if (upcoming.isNotEmpty()) {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                SectionTitle(str(R.string.upcoming_recurring), Modifier.weight(1f))
+                Text(
+                    str(R.string.see_all),
+                    color = Primary,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 13.sp,
+                    modifier = Modifier.clip(RoundedCornerShape(8.dp)).clickable { nav.navigate(Routes.RECURRING) }.padding(6.dp),
+                )
+            }
+            Card(padding = 12.dp) {
+                upcoming.forEachIndexed { i, r ->
+                    RecurringRow(r, look, Modifier.fillMaxWidth().clickable { nav.navigate(Routes.recurringEdit(r.id)) }.padding(vertical = 8.dp))
+                    if (i < upcoming.lastIndex) HorizontalDivider(color = Line)
                 }
             }
         }

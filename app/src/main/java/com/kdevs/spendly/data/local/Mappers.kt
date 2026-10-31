@@ -48,9 +48,21 @@ fun Template.toEntity(
     state: Int = SyncState.PENDING,
 ) = TemplateEntity(id, uid, name, kind, amountPaise, accountId, categoryId, note, state)
 
-fun RecurringEntity.toModel() = Recurring(id, name, kind, amountPaise, accountId, categoryId, every, nextMillis, active)
+// Recurring has grown (subcategoryId, interval, anchorDay), so these use named arguments:
+// positional ones break whenever a field is added in the middle of the class.
+fun RecurringEntity.toModel() =
+    Recurring(
+        id = id,
+        name = name,
+        kind = kind,
+        amountPaise = amountPaise,
+        accountId = accountId,
+        categoryId = categoryId,
+        subcategoryId = subcategoryId,
+        every = every,
+        interval = interval,
+        nextMillis = nextMillis,
+        active = active,
+        anchorDay = anchorDay,
+    )
 
-fun Recurring.toEntity(
-    uid: String,
-    state: Int = SyncState.PENDING,
-) = RecurringEntity(id, uid, name, kind, amountPaise, accountId, categoryId, every, nextMillis, active, state)

@@ -66,4 +66,36 @@
     <string name="updating_transactions">Updating transactions…</string>
     <string name="use_2">Use %1$s</string>
     <string name="use_this_icon">Use this icon</string>
+
+    <!-- Repeats section (recurring) -->
+    <string name="every">Every</string>
+    <string name="decrease">Decrease</string>
+    <string name="increase">Increase</string>
+    <string name="every_day">Every day</string>
+    <string name="every_week">Every week</string>
+    <string name="every_month">Every month</string>
+    <string name="every_year">Every year</string>
+    <string name="pick_your_own_interval">Pick your own interval</string>
+    <string name="days">Days</string>
+    <string name="weeks">Weeks</string>
+    <string name="months">Months</string>
+    <string name="years">Years</string>
+    <string name="repeat_summary">%2$s, next on %1$s</string>
+
+    <plurals name="every_n_days">
+        <item quantity="one">Every day</item>
+        <item quantity="other">Every %d days</item>
+    </plurals>
+    <plurals name="every_n_weeks">
+        <item quantity="one">Every week</item>
+        <item quantity="other">Every %d weeks</item>
+    </plurals>
+    <plurals name="every_n_months">
+        <item quantity="one">Every month</item>
+        <item quantity="other">Every %d months</item>
+    </plurals>
+    <plurals name="every_n_years">
+        <item quantity="one">Every year</item>
+        <item quantity="other">Every %d years</item>
+    </plurals>
 </resources>

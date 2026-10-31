@@ -17,6 +17,7 @@
     <string name="last_8_weeks">Last 8 weeks</string>
     <string name="list">List</string>
     <string name="monthly_budget">Monthly budget</string>
+    <string name="more">More</string>
     <string name="net_worth">Net worth</string>
     <string name="no_data">No data</string>
     <string name="no_sub_category">No sub-category</string>
@@ -29,6 +30,7 @@
     <string name="of_total">%1$s%% of total</string>
     <string name="plan_ahead">Plan ahead</string>
     <string name="recent">Recent</string>
+    <string name="recent_categories">Recent categories</string>
     <string name="see_all">See all</string>
     <string name="select">Select</string>
     <string name="spent">Spent</string>
