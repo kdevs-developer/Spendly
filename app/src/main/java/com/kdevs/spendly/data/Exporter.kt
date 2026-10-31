@@ -1,6 +1,5 @@
 package com.kdevs.spendly.data
 
-import com.kdevs.spendly.R
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
@@ -8,8 +7,9 @@ import android.graphics.Typeface
 import android.graphics.pdf.PdfDocument
 import android.text.TextPaint
 import android.text.TextUtils
+import com.kdevs.spendly.R
 import com.kdevs.spendly.data.model.Txn
-import com.kdevs.spendly.ui.screens.Lookup
+import com.kdevs.spendly.ui.screens.common.Lookup
 import java.io.ByteArrayOutputStream
 import java.time.LocalDate
 import java.util.zip.ZipEntry

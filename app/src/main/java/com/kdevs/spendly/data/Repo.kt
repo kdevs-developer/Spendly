@@ -47,8 +47,8 @@ import kotlin.random.Random
 
 /**
  * One place for every read and write. Screens only collect the StateFlows below
- * and call the suspend functions. Firestore keeps a local cache, so reads work
- * offline and writes sync when the network is back.
+ * and call the suspend functions. There is no offline mode: every read and write
+ * needs an internet connection and writes finish only once the server confirms.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 object Repo {
@@ -91,11 +91,6 @@ object Repo {
         onSignedIn(name.trim())
     }
 
-    suspend fun signInGuest() {
-        auth.signInAnonymously().await()
-        onSignedIn(str(R.string.guest))
-    }
-
     /**
      * Opens the system Google account sheet and returns a Firebase credential for the chosen account.
      * Returns null when the person closed the sheet (nothing to show), and throws a short message for real problems.
@@ -133,9 +128,8 @@ object Repo {
         return true
     }
 
-    /** Which login methods this account uses: "password", "google.com", or empty for a guest. */
+    /** Which login methods this account uses: "password", "google.com", */
     val signInMethods: List<String> get() = auth.currentUser?.providerData.orEmpty().map { it.providerId }.filter { it != "firebase" }
-    val isGuest: Boolean get() = auth.currentUser?.isAnonymous == true
     val usesPassword: Boolean get() = "password" in signInMethods
 
     /**
@@ -166,14 +160,13 @@ object Repo {
     /**
      * Firebase only lets an account be deleted shortly after a fresh sign-in. Call this first and the
      * delete below cannot stop half way. Password accounts pass their password; Google accounts pass null
-     * and get the Google sheet; guests need nothing.
+     * and get the Google sheet.
      */
     suspend fun reauthenticate(
         password: String?,
         context: Context,
     ) {
         val user = auth.currentUser ?: error(str(R.string.you_are_signed_out))
-        if (user.isAnonymous) return
         val credential: AuthCredential =
             when {
                 "password" in signInMethods -> {
@@ -278,7 +271,7 @@ object Repo {
         val fallback =
             user?.displayName?.takeIf { it.isNotBlank() }
                 ?: user?.email?.substringBefore('@')?.takeIf { it.isNotBlank() }
-                ?: if (user?.isAnonymous == true) str(R.string.guest) else str(R.string.me)
+                ?: str(R.string.me)
         val name =
             when {
                 typed.isNotEmpty() -> typed
@@ -307,7 +300,7 @@ object Repo {
         // so a first run that was cut short tries again instead of leaving an empty list.
         if (!p.seeded) {
             seedCategories()
-            ref.set(mapOf("seeded" to true), com.google.firebase.firestore.SetOptions.merge()).await()
+            ref.set(mapOf("seeded" to true), SetOptions.merge()).await()
         }
     }
 
@@ -393,6 +386,15 @@ object Repo {
     }
 
     // ---------- Generic helpers ----------
+    /** Throws a clear message instead of letting a save wait forever when the phone has no internet. */
+    private fun requireOnline() {
+        val cm = appContext.getSystemService(Context.CONNECTIVITY_SERVICE) as android.net.ConnectivityManager
+        val caps = cm.getNetworkCapabilities(cm.activeNetwork)
+        if (caps?.hasCapability(android.net.NetworkCapabilities.NET_CAPABILITY_INTERNET) != true) {
+            error(str(R.string.no_internet_connection_try_again_when))
+        }
+    }
+
     private fun userCol(name: String): CollectionReference = db.collection("users").document(uid).collection(name)
 
     private inline fun <reified T : Any> live(
@@ -429,6 +431,7 @@ object Repo {
         data: Any,
     ): String {
         val ref = if (id.isBlank()) userCol(collection).document() else userCol(collection).document(id)
+        requireOnline()
         ref.set(data).await()
         return ref.id
     }
@@ -437,6 +440,7 @@ object Repo {
         collection: String,
         id: String,
     ) {
+        requireOnline()
         userCol(collection).document(id).delete().await()
     }
 
@@ -444,6 +448,7 @@ object Repo {
         collection: String,
         ids: Collection<String>,
     ) {
+        requireOnline()
         val batch = db.batch()
         ids.forEach { batch.delete(userCol(collection).document(it)) }
         batch.commit().await()

@@ -4,24 +4,26 @@ import android.app.Activity
 import android.app.Application
 import android.os.Bundle
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.PersistentCacheSettings
+import com.google.firebase.firestore.MemoryCacheSettings
 import com.google.firebase.firestore.firestoreSettings
 import com.kdevs.spendly.data.Inbox
 import com.kdevs.spendly.data.Prefs
 import com.kdevs.spendly.data.Repo
 import com.kdevs.spendly.data.Res
+import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 
+@HiltAndroidApp
 class SpendlyApp : Application() {
     override fun onCreate() {
         super.onCreate()
         Res.init(this) // first: strings and colours are read from XML by everything below
-        // Offline-first: keep a local copy of Firestore data (default 100 MB cache).
+        // No offline mode: the cache lives in memory only and nothing is kept on the phone between launches.
         FirebaseFirestore.getInstance().firestoreSettings =
             firestoreSettings {
-                setLocalCacheSettings(PersistentCacheSettings.newBuilder().build())
+                setLocalCacheSettings(MemoryCacheSettings.newBuilder().build())
             }
         Prefs.init(this)
         Repo.init(this)

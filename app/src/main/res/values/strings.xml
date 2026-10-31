@@ -8,13 +8,22 @@
     <string name="dark">Dark</string>
 
     <!-- data/Repo.kt -->
-    <string name="guest">Guest</string>
     <string name="google_sign_in_is_not_set">Google sign-in is not set up yet. Turn on Google in Firebase Authentication, add your SHA-1, and download google-services.json again.</string>
     <string name="no_google_account_found_on_this">No Google account found on this phone. Add one in your phone settings and try again.</string>
     <string name="google_sign_in_did_not_return">Google sign-in did not return an account. Please try again.</string>
     <string name="that_email_address_does_not_look">That email address does not look right.</string>
     <string name="no_account_uses_that_email">No account uses that email.</string>
     <string name="too_many_attempts_wait_a_few">Too many attempts. Wait a few minutes and try again.</string>
+    <string name="slide_all_money_title">All your money, one place</string>
+    <string name="slide_all_money_body">Bring banks, wallets, cash and cards together and see what you really have.</string>
+    <string name="slide_quick_add_title">Log a spend in seconds</string>
+    <string name="slide_quick_add_body">Amount, category, done. Templates and repeats handle the usual ones.</string>
+    <string name="slide_reports_title">See where it goes</string>
+    <string name="slide_reports_body">Clear reports by category and trend show what to cut and what to keep.</string>
+    <string name="slide_budgets_title">Budgets and goals</string>
+    <string name="slide_budgets_body">Set limits for each category and save towards what matters, with progress at a glance.</string>
+    <string name="slide_split_title">Split with friends</string>
+    <string name="slide_split_body">Chat one to one or in groups and settle shared bills without the awkward maths.</string>
     <string name="no_internet_connection">No internet connection.</string>
     <string name="you_are_signed_out">You are signed out.</string>
     <string name="this_account_has_no_email">This account has no email.</string>
@@ -82,16 +91,6 @@
     <string name="something_went_wrong_2">Something went wrong</string>
 
     <!-- ui/screens/Auth.kt -->
-    <string name="every_rupee_in_one_place">Every rupee, in one place</string>
-    <string name="track_banks_wallets_cash_and_cards">Track banks, wallets, cash and cards together and see what you really have.</string>
-    <string name="add_a_spend_in_seconds">Add a spend in seconds</string>
-    <string name="big_amount_quick_category_done_templat">Big amount, quick category, done. Templates and repeats handle the usual ones.</string>
-    <string name="see_where_it_goes">See where it goes</string>
-    <string name="reports_by_category_and_trend_show">Reports by category and trend show what to cut and what to keep.</string>
-    <string name="split_with_friends">Split with friends</string>
-    <string name="chat_one_to_one_or_in">Chat one to one or in groups and split bills without the awkward maths.</string>
-    <string name="works_without_internet">Works without internet</string>
-    <string name="add_things_anywhere_spendly_syncs_when">Add things anywhere. Spendly syncs when you are back online.</string>
     <string name="skip">Skip</string>
     <string name="next">Next</string>
     <string name="get_started">Get started</string>
@@ -113,11 +112,10 @@
     <string name="enter_your_email_above_first">Enter your email above first.</string>
     <string name="if_has_an_account_a_reset">If %1$s has an account, a reset link is on its way. Check Spam and Promotions too.</string>
     <string name="continue_with_google">Continue with Google</string>
-    <string name="continue_as_guest">Continue as guest</string>
     <string name="what_we_collect">What we collect</string>
-    <string name="your_name_and_email_when_you">Your name and email when you sign up, and the accounts, transactions, budgets, goals and chats you add. If you use a guest account, only what you add.</string>
+    <string name="your_name_and_email_when_you">Your name and email when you sign up, and the accounts, transactions, budgets, goals and chats you add.</string>
     <string name="where_it_is_stored">Where it is stored</string>
-    <string name="in_your_private_area_of_google">In your private area of Google Firebase (Firestore, Storage and Authentication). Only you can read your money data. Spendly keeps a copy on your phone so it works offline.</string>
+    <string name="in_your_private_area_of_google">In your private area of Google Firebase (Firestore, Storage and Authentication). Only you can read your money data.</string>
     <string name="messages_and_photos_are_visible_only">Messages and photos are visible only to the people in that chat. Chat is protected by access rules on the server, not by end-to-end encryption, so do not share secrets such as card numbers or passwords.</string>
     <string name="friend_code">Friend code</string>
     <string name="your_friend_code_lets_people_send">Your friend code lets people send you a request. They see your display name, nothing else. You can block anyone from Chat settings.</string>
@@ -501,7 +499,6 @@
     <string name="turn_on_biometric_lock">Turn on biometric lock</string>
     <string name="turn_off_biometric_lock">Turn off biometric lock</string>
     <string name="spendly_user">Spendly user</string>
-    <string name="guest_account">Guest account</string>
     <string name="friend_code_2">Friend code %1$s</string>
     <string name="appearance">Appearance</string>
     <string name="system_follows_your_phone_light_and">System follows your phone. Light and Dark stay as you choose.</string>
@@ -607,7 +604,6 @@
     <string name="members_count_kind">%1$s members · %2$s</string>
     <string name="expense_split_group">Expense split group</string>
     <string name="friend_code_length_hint">A friend code has 8 letters and numbers.</string>
-    <string name="guest_account_hint">A guest account stays on this phone\'s login only. Create an account later to keep your data safe.</string>
     <string name="group_chat_hint">A group chat for everyone you add.</string>
     <string name="share_code_message">Add me on Spendly. My friend code is %1$s</string>
     <string name="budget_already_exists">A budget for this already exists.</string>

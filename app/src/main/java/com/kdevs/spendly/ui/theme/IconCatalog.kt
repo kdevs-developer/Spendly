@@ -1,0 +1,80 @@
+package com.kdevs.spendly.ui.theme
+
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.*
+import com.kdevs.spendly.R
+import com.kdevs.spendly.data.str
+
+/** Account types each have their own default colour and icon. */
+data class AccountTypeInfo(val key: String, val label: String, val blurb: String, val colorKey: String, val icon: String)
+
+val AccountTypes =
+    listOf(
+        AccountTypeInfo("bank", str(R.string.bank_account), str(R.string.savings_or_current_account), "blue", "bank"),
+        AccountTypeInfo("wallet", str(R.string.wallet), str(R.string.upi_and_digital_wallets), "purple", "wallet"),
+        AccountTypeInfo("cash", str(R.string.cash), str(R.string.money_in_hand), "green", "cash"),
+        AccountTypeInfo("card", str(R.string.credit_card), str(R.string.cards_you_pay_off_later), "orange", "card"),
+    )
+
+class IconGroup(val title: String, val keys: List<String>)
+
+val AccountIconGroups =
+    listOf(
+        IconGroup(str(R.string.banking), listOf("bank", "savings", "salary", "business", "office", "credit", "verified", "insurance")),
+        IconGroup(str(R.string.wallets_and_payments), listOf("wallet", "upi", "phone", "paytm", "nfc", "atm", "exchange", "quote")),
+        IconGroup(str(R.string.cash), listOf("cash", "coins", "safe", "money", "cashplus", "paid")),
+        IconGroup(str(R.string.cards), listOf("card", "debit", "gift", "bonus", "offer")),
+        IconGroup("Investments", listOf("invest", "chart", "pie", "bar", "interest", "jewel", "star", "trophy")),
+        IconGroup(str(R.string.other), listOf("home", "travel", "car", "goal", "heart", "other")),
+    )
+
+val CategoryIconGroups =
+    listOf(
+        IconGroup(
+            "Food & drink",
+            listOf(
+                "food", "coffee", "grocery", "drink", "fastfood", "pizza", "cake", "icecream", "bakery", "ramen",
+                "lunch", "dinner", "breakfast", "tea", "liquor", "wine", "juice", "seafood", "kitchen",
+            ),
+        ),
+        IconGroup(
+            str(R.string.travel),
+            listOf(
+                "transport", "fuel", "flight", "hotel", "car", "bike", "scooter", "train", "metro", "taxi",
+                "boat", "ev", "parking", "beach", "trip", "delivery", "repair",
+            ),
+        ),
+        IconGroup(
+            "Home & bills",
+            listOf(
+                "home", "bills", "rent", "wifi", "power", "water", "bulb", "sofa", "bed", "plumbing", "repairs",
+                "cleaning", "laundry", "tv", "router", "build", "garden", "cottage", "security", "key", "fire",
+            ),
+        ),
+        IconGroup(
+            str(R.string.shopping),
+            listOf(
+                "shopping", "gift", "clothes", "beauty", "cart", "mall", "store", "jewel", "watch", "haircut",
+                "face", "sale", "offer", "laptop", "headphones", "camera", "toys", "style",
+            ),
+        ),
+        IconGroup(
+            "Health & sport",
+            listOf(
+                "health", "fitness", "hospital", "medicine", "vaccine", "heart", "mind", "yoga", "soccer",
+                "cricket", "basketball", "tennis", "swim", "run",
+            ),
+        ),
+        IconGroup("Family & learning", listOf("education", "kids", "pets", "book", "library", "science", "code", "baby")),
+        IconGroup(
+            "Fun & lifestyle",
+            listOf("movie", "music", "theater", "party", "casino", "park", "ticket", "mic", "livetv", "subs", "podcast", "games", "palette"),
+        ),
+        IconGroup(
+            "Money & work",
+            listOf(
+                "salary", "work", "office", "invest", "tax", "goal", "bonus", "trophy", "interest", "chart", "pie",
+                "receipt", "insurance", "charity", "exchange", "atm", "money", "cashplus", "factory", "farm", "engineer", "other",
+            ),
+        ),
+    )
