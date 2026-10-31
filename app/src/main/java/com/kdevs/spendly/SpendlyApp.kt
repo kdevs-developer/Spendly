@@ -19,7 +19,7 @@ import kotlinx.coroutines.SupervisorJob
 class SpendlyApp : Application() {
     override fun onCreate() {
         super.onCreate()
-        Res.init(this) // first: strings and colours are read from XML by everything below
+        Res.init(this) // first: strings and colors are read from XML by everything below
         // Offline-first: Firestore keeps a copy on the phone, so screens load without internet and saves
         // are queued and sent later. Must be set before Firestore is first used.
         FirebaseFirestore.getInstance().firestoreSettings =
