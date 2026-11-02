@@ -702,40 +702,60 @@ object Repo {
             .await()
     }
 
-    /** Creates the next expense for every recurring item that is due. Call when the app opens. */
+    /** One run at a time: the app opening, coming back to the screen and the background worker can overlap. */
+    private val recurringLock = Mutex()
+
+    /** Creates the next expense for every recurring item that is due. Call when the app opens or comes back to the screen. */
     suspend fun runRecurring(justSaved: Recurring? = null) {
-        // The list starts empty and fills when the first snapshot arrives. Without this wait, the launch-time call
-        // saw an empty list and created nothing.
-        if (justSaved == null) kotlinx.coroutines.withTimeoutOrNull(10_000) { loaded.first { "recurring" in it } }
-        val now = System.currentTimeMillis()
-        // [justSaved] lets the edit screen run the item it just saved without waiting for the list to refresh.
-        val items = if (justSaved != null) listOf(justSaved) else recurring.value
-        for (r in items.filter { it.active && it.nextMillis in 1..now }) {
-            // Items saved before times existed sit at midnight; give them a steady 9:00 AM.
-            var next = atNineIfNoTime(r.nextMillis)
-            // The day the item started on, so the 31st does not slide to the 28th after February.
-            val anchor = r.anchorDay.takeIf { it > 0 } ?: toLocalDate(r.nextMillis).dayOfMonth
-            val minutes = minutesOfDay(next) // each new transaction keeps the item's time of day
-            var guard = 0
-            while (next <= now && guard++ < 60) {
-                put(
-                    "txns",
-                    "",
-                    Txn(
-                        kind = r.kind,
-                        amountPaise = r.amountPaise,
-                        accountId = r.accountId,
-                        categoryId = r.categoryId,
-                        subcategoryId = r.subcategoryId,
-                        note = r.name,
-                        dateMillis = next,
-                        recurringId = r.id,
-                    ),
-                )
-                next = withMinutes(nextOccurrence(toLocalDate(next), r.every, r.interval, anchor).startMillis(), minutes)
+        processRecurring(justSaved)
+    }
+
+    /**
+     * Does the work of [runRecurring] and returns what it created, so the background worker can tell the person.
+     * Each transaction gets an id built from the recurring item and its due moment, so running twice (or from two
+     * places at once) rewrites the same transaction instead of adding a second one.
+     */
+    suspend fun processRecurring(justSaved: Recurring? = null): List<Txn> =
+        recurringLock.withLock {
+            if (uid.isBlank()) return@withLock emptyList()
+            // The list starts empty and fills when the first snapshot arrives. Without this wait, the launch-time call
+            // saw an empty list and created nothing.
+            if (justSaved == null) kotlinx.coroutines.withTimeoutOrNull(10_000) { loaded.first { "recurring" in it } }
+            val created = mutableListOf<Txn>()
+            val now = System.currentTimeMillis()
+            // [justSaved] lets the edit screen run the item it just saved without waiting for the list to refresh.
+            val items = if (justSaved != null) listOf(justSaved) else recurring.value
+            for (r in items.filter { it.active && it.nextMillis in 1..now }) {
+                // Items saved before times existed sit at midnight; give them a steady 9:00 AM.
+                var next = atNineIfNoTime(r.nextMillis)
+                // The day the item started on, so the 31st does not slide to the 28th after February.
+                val anchor = r.anchorDay.takeIf { it > 0 } ?: toLocalDate(r.nextMillis).dayOfMonth
+                val minutes = minutesOfDay(next) // each new transaction keeps the item's time of day
+                var guard = 0
+                while (next <= now && guard++ < 60) {
+                    val txn =
+                        Txn(
+                            kind = r.kind,
+                            amountPaise = r.amountPaise,
+                            accountId = r.accountId,
+                            categoryId = r.categoryId,
+                            subcategoryId = r.subcategoryId,
+                            note = r.name,
+                            dateMillis = next,
+                            recurringId = r.id,
+                        )
+                    put("txns", "rec_${r.id}_$next", txn)
+                    created += txn
+                    next = withMinutes(nextOccurrence(toLocalDate(next), r.every, r.interval, anchor).startMillis(), minutes)
+                }
+                put("recurring", r.id, r.copy(nextMillis = next, anchorDay = anchor))
             }
-            put("recurring", r.id, r.copy(nextMillis = next, anchorDay = anchor))
+            created
         }
+
+    /** Waits (up to [timeoutMs]) until saves made on the phone have reached the server. Used by the background worker. */
+    suspend fun flushWrites(timeoutMs: Long = 15_000) {
+        kotlinx.coroutines.withTimeoutOrNull(timeoutMs) { db.waitForPendingWrites().await() }
     }
 
     // ---------- Friends ----------

@@ -93,4 +93,8 @@
     <string name="weekly">Weekly</string>
     <string name="yearly">Yearly</string>
     <string name="your_transactions_are_not_affected">Your transactions are not affected.</string>
+    <string name="recurring_channel">Recurring transactions</string>
+    <string name="recurring_added">Recurring transaction added</string>
+    <string name="recurring_added_body">%1$s · %2$s</string>
+    <string name="recurring_added_many">%1$d recurring transactions added</string>
 </resources>

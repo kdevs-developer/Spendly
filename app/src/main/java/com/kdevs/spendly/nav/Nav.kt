@@ -6,6 +6,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -70,6 +72,7 @@ import com.kdevs.spendly.ui.screens.splits.AddSplitScreen
 import com.kdevs.spendly.ui.screens.splits.SettleUpScreen
 import com.kdevs.spendly.ui.screens.splits.SplitEntryScreen
 import com.kdevs.spendly.ui.screens.splits.SplitsScreen
+import kotlinx.coroutines.launch
 
 /** Every screen in the app. Empty ids are sent as "-" because a path segment cannot be blank. */
 object Routes {
@@ -283,6 +286,13 @@ fun SpendlyNav() {
             runCatching { Repo.ensureProfile() }
             runCatching { Repo.runRecurring() }
             runCatching { Repo.refreshToken() } // so pushes reach this phone even after a reinstall or sign in
+        }
+    }
+    val resumeScope = rememberCoroutineScope()
+    // Coming back to the app after the due time also adds anything that is due (the launch call above only runs once).
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        if (uid != null) {
+            resumeScope.launch { runCatching { Repo.runRecurring() } }
         }
     }
     // A tapped notification asks for a chat to open.

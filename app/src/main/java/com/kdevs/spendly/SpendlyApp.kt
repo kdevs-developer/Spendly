@@ -8,6 +8,7 @@ import com.google.firebase.firestore.PersistentCacheSettings
 import com.google.firebase.firestore.firestoreSettings
 import com.kdevs.spendly.data.Inbox
 import com.kdevs.spendly.data.Prefs
+import com.kdevs.spendly.data.RecurringScheduler
 import com.kdevs.spendly.data.Repo
 import com.kdevs.spendly.data.Res
 import dagger.hilt.android.HiltAndroidApp
@@ -32,6 +33,9 @@ class SpendlyApp : Application() {
         // The notification channel must exist before any push arrives, even when the app is closed.
         Inbox.createChannel(this)
         Inbox.start(this, CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate))
+
+        // Adds recurring transactions when their day and time comes, even with the app closed.
+        RecurringScheduler.start(this, CoroutineScope(SupervisorJob() + Dispatchers.Default))
 
         // Knows whether any screen is visible, to choose between the in-app banner and the notification bar.
         registerActivityLifecycleCallbacks(

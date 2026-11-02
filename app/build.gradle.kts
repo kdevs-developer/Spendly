@@ -111,6 +111,9 @@ dependencies {
     // Coroutines (android adds Dispatchers.Main)
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
 
+    // Background job that adds recurring transactions when their time comes
+    implementation("androidx.work:work-runtime-ktx:2.9.1")
+
     // Dependency injection (Hilt)
     implementation("com.google.dagger:hilt-android:2.52")
     ksp("com.google.dagger:hilt-android-compiler:2.52")
