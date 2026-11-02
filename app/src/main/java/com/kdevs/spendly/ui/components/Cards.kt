@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.border
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChevronRight
@@ -35,6 +36,8 @@ import androidx.compose.ui.unit.sp
 import com.kdevs.spendly.ui.theme.Brand
 import com.kdevs.spendly.ui.theme.Faint
 import com.kdevs.spendly.ui.theme.HeroBrush
+import com.kdevs.spendly.ui.theme.HeroHairline
+import com.kdevs.spendly.ui.theme.HeroShadow
 import com.kdevs.spendly.ui.theme.Ink
 import com.kdevs.spendly.ui.theme.Line
 import com.kdevs.spendly.ui.theme.Muted
@@ -56,9 +59,9 @@ fun Card(
     Column(
         modifier
             .fillMaxWidth()
-            .shadow(1.dp, shape)
             .clip(shape)
             .background(Surface)
+            .border(1.dp, Line, shape)
             .let { if (onClick != null) it.clickable(onClick = onClick) else it }
             .padding(padding),
         content = content,
@@ -74,9 +77,10 @@ fun HeroCard(
     Column(
         modifier
             .fillMaxWidth()
-            .shadow(10.dp, RoundedCornerShape(28.dp), ambientColor = Brand, spotColor = Brand)
+            .shadow(14.dp, RoundedCornerShape(28.dp), ambientColor = HeroShadow, spotColor = HeroShadow)
             .clip(RoundedCornerShape(28.dp))
             .background(brush)
+            .border(1.dp, HeroHairline, RoundedCornerShape(28.dp))
             .padding(22.dp),
         content = content,
     )

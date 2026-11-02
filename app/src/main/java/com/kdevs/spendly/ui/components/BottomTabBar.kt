@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.border
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Chat
@@ -44,6 +45,8 @@ import com.kdevs.spendly.ui.theme.Muted
 import com.kdevs.spendly.ui.theme.Primary
 import com.kdevs.spendly.ui.theme.PrimaryContainer
 import com.kdevs.spendly.ui.theme.Surface
+import com.kdevs.spendly.ui.theme.Line
+import com.kdevs.spendly.ui.theme.HeroShadow
 
 private data class Tab(
     val label: String,
@@ -71,8 +74,9 @@ fun BottomTabBar(
     Row(
         Modifier
             .fillMaxWidth()
-            .shadow(12.dp, RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
-            .background(Surface, RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
+            .shadow(6.dp, RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp), ambientColor = HeroShadow, spotColor = HeroShadow)
+            .background(Surface, RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
+            .border(1.dp, Line, RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
             .navigationBarsPadding()
             .padding(horizontal = 8.dp, vertical = 8.dp),
     ) {

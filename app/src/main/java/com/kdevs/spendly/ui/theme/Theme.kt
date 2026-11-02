@@ -13,6 +13,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -48,7 +49,10 @@ val DangerBg: Color get() = pick(R.color.danger_bg_light, R.color.danger_bg_dark
 val Success: Color get() = pick(R.color.success_light, R.color.success_dark)
 val Warn: Color get() = pick(R.color.warn_light, R.color.warn_dark)
 
-val HeroBrush = Brush.linearGradient(listOf(clr(R.color.brand_light), clr(R.color.brand_primary), clr(R.color.brand_dark)))
+/** Balance card and lock screen: a deep ink gradient. The emerald accent is kept for buttons and highlights. */
+val HeroBrush = Brush.linearGradient(listOf(clr(R.color.hero_top), clr(R.color.hero_bottom)))
+val HeroShadow = clr(R.color.hero_shadow)
+val HeroHairline = clr(R.color.hairline_on_hero)
 val ButtonBrush = Brush.linearGradient(listOf(clr(R.color.brand_light), clr(R.color.brand_primary)))
 
 private val lightScheme =
@@ -83,22 +87,28 @@ private val darkScheme =
         outline = clr(R.color.faint_dark),
     )
 
+/**
+ * One place for the typeface. To use Manrope (or any font): put the .ttf files in res/font and replace Default with
+ * FontFamily(Font(R.font.manrope_regular, FontWeight.Normal), Font(R.font.manrope_bold, FontWeight.Bold), ...).
+ */
+private val AppFont: FontFamily = FontFamily.Default
+
 private val type =
     Typography(
-        headlineLarge = TextStyle(fontSize = 32.sp, fontWeight = FontWeight.ExtraBold),
-        titleLarge = TextStyle(fontSize = 20.sp, fontWeight = FontWeight.ExtraBold),
-        titleMedium = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Bold),
-        bodyLarge = TextStyle(fontSize = 15.sp, fontWeight = FontWeight.SemiBold),
-        bodyMedium = TextStyle(fontSize = 14.sp, fontWeight = FontWeight.Medium),
-        labelMedium = TextStyle(fontSize = 12.sp, fontWeight = FontWeight.SemiBold),
+        headlineLarge = TextStyle(fontFamily = AppFont, fontSize = 32.sp, lineHeight = 38.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = (-0.8).sp),
+        titleLarge = TextStyle(fontFamily = AppFont, fontSize = 20.sp, lineHeight = 26.sp, fontWeight = FontWeight.Bold, letterSpacing = (-0.3).sp),
+        titleMedium = TextStyle(fontFamily = AppFont, fontSize = 16.sp, lineHeight = 22.sp, fontWeight = FontWeight.Bold, letterSpacing = (-0.1).sp),
+        bodyLarge = TextStyle(fontFamily = AppFont, fontSize = 15.sp, lineHeight = 21.sp, fontWeight = FontWeight.SemiBold),
+        bodyMedium = TextStyle(fontFamily = AppFont, fontSize = 14.sp, lineHeight = 20.sp, fontWeight = FontWeight.Medium),
+        labelMedium = TextStyle(fontFamily = AppFont, fontSize = 12.sp, lineHeight = 16.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 0.2.sp),
     )
 
 private val shapes =
     Shapes(
-        small = RoundedCornerShape(12.dp),
+        small = RoundedCornerShape(14.dp),
         medium = RoundedCornerShape(18.dp),
-        large = RoundedCornerShape(22.dp),
-        extraLarge = RoundedCornerShape(28.dp),
+        large = RoundedCornerShape(24.dp),
+        extraLarge = RoundedCornerShape(30.dp),
     )
 
 @Composable

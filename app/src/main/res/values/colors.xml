@@ -1,40 +1,40 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Brand (never changes with the theme) -->
-    <color name="ic_launcher_background">#1D4ED8</color>
-    <color name="brand_primary">#1D4ED8</color>
-    <color name="brand_dark">#1E3A8A</color>
-    <color name="brand_light">#2563EB</color>
-    <color name="app_bg">#F5F7FB</color>
-    <color name="notification_accent">#1D4ED8</color>
+    <color name="ic_launcher_background">#0B6B57</color>
+    <color name="brand_primary">#0B6B57</color>
+    <color name="brand_dark">#064E3F</color>
+    <color name="brand_light">#12846C</color>
+    <color name="app_bg">#F3F4F2</color>
+    <color name="notification_accent">#0B6B57</color>
 
     <!-- App theme: each colour has a light and a dark value (Settings > Appearance picks which one draws) -->
-    <color name="primary_light">#1D4ED8</color>
-    <color name="primary_dark">#5B8CFF</color>
-    <color name="primary_container_light">#DBE6FD</color>
-    <color name="primary_container_dark">#1E2B52</color>
-    <color name="bg_light">#F5F7FB</color>
-    <color name="bg_dark">#0B1220</color>
+    <color name="primary_light">#0B6B57</color>
+    <color name="primary_dark">#3CCFA5</color>
+    <color name="primary_container_light">#DDEEE8</color>
+    <color name="primary_container_dark">#12362D</color>
+    <color name="bg_light">#F3F4F2</color>
+    <color name="bg_dark">#0A0E13</color>
     <color name="surface_light">#FFFFFF</color>
-    <color name="surface_dark">#151D30</color>
+    <color name="surface_dark">#131920</color>
     <color name="ink_light">#0F172A</color>
-    <color name="ink_dark">#F1F5F9</color>
-    <color name="muted_light">#475569</color>
-    <color name="muted_dark">#A3B1C6</color>
-    <color name="faint_light">#94A3B8</color>
-    <color name="faint_dark">#6B7A93</color>
-    <color name="line_light">#EDF1F7</color>
-    <color name="line_dark">#252F47</color>
-    <color name="track_light">#E5EAF3</color>
-    <color name="track_dark">#222C45</color>
-    <color name="field_border_light">#D8DFEC</color>
-    <color name="field_border_dark">#36435F</color>
+    <color name="ink_dark">#F2F5F4</color>
+    <color name="muted_light">#566170</color>
+    <color name="muted_dark">#A4AFB0</color>
+    <color name="faint_light">#8A93A0</color>
+    <color name="faint_dark">#6C7778</color>
+    <color name="line_light">#E9ECEA</color>
+    <color name="line_dark">#222B30</color>
+    <color name="track_light">#E3E7E4</color>
+    <color name="track_dark">#1F282D</color>
+    <color name="field_border_light">#D5DAD7</color>
+    <color name="field_border_dark">#34414A</color>
     <color name="danger_light">#C62828</color>
     <color name="danger_dark">#E5534B</color>
     <color name="danger_bg_light">#FDE7E7</color>
     <color name="danger_bg_dark">#3A1D22</color>
-    <color name="success_light">#15803D</color>
-    <color name="success_dark">#22A559</color>
+    <color name="success_light">#0B7A4B</color>
+    <color name="success_dark">#34C98A</color>
     <color name="warn_light">#B45309</color>
     <color name="warn_dark">#D97706</color>
 
@@ -52,9 +52,15 @@
     <color name="swatch_sky">#0369A1</color>
     <color name="swatch_teal_dark">#115E59</color>
 
+    <!-- Hero card (balance, lock screen): deep ink instead of a bright gradient -->
+    <color name="hero_top">#1D2B38</color>
+    <color name="hero_bottom">#0B1219</color>
+    <color name="hero_shadow">#0B1219</color>
+    <color name="hairline_on_hero">#14FFFFFF</color>
+
     <!-- Photo viewer, read receipts and QR code -->
-    <color name="read_receipt">#93C5FD</color>
-    <color name="viewer_bg">#0B0F14</color>
+    <color name="read_receipt">#A7F3D0</color>
+    <color name="viewer_bg">#0A0E13</color>
     <color name="viewer_text">#CBD5E1</color>
     <color name="viewer_surface">#111827</color>
     <color name="viewer_danger">#FCA5A5</color>
@@ -116,7 +122,7 @@
     <color name="pdf_muted">#6B7280</color>
     <color name="pdf_green">#15803D</color>
     <color name="pdf_red">#B91C1C</color>
-    <color name="pdf_header">#1D4ED8</color>
-    <color name="pdf_zebra">#F3F4F6</color>
+    <color name="pdf_header">#0B6B57</color>
+    <color name="pdf_zebra">#F3F4F2</color>
     <color name="pdf_subtext">#374151</color>
 </resources>

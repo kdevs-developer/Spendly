@@ -86,12 +86,12 @@ fun PrimaryButton(
         } else if (pressed) {
             1.dp
         } else {
-            5.dp
+            4.dp
         },
         tween(120),
         label = "lift",
     )
-    val glow = Brand.copy(alpha = 0.30f)
+    val glow = Brand.copy(alpha = 0.22f)
     Box(
         modifier
             .fillMaxWidth()

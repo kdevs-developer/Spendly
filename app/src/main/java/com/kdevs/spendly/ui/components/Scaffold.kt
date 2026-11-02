@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.border
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -37,6 +38,8 @@ import com.kdevs.spendly.data.str
 import com.kdevs.spendly.ui.theme.Bg
 import com.kdevs.spendly.ui.theme.Ink
 import com.kdevs.spendly.ui.theme.Surface
+import com.kdevs.spendly.ui.theme.Line
+import com.kdevs.spendly.ui.theme.HeroShadow
 
 /** Top bar with a round back button, used by every full screen. */
 @Composable
@@ -99,8 +102,9 @@ fun BottomActionBar(content: @Composable ColumnScope.() -> Unit) {
     Column(
         Modifier
             .fillMaxWidth()
-            .shadow(12.dp, RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
-            .background(Surface, RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
+            .shadow(6.dp, RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp), ambientColor = HeroShadow, spotColor = HeroShadow)
+            .background(Surface, RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
+            .border(1.dp, Line, RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
             .navigationBarsPadding()
             .imePadding()
             .padding(horizontal = 20.dp, vertical = 14.dp),
