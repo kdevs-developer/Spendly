@@ -1,6 +1,7 @@
 package com.kdevs.spendly.ui.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,7 +18,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.border
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -36,10 +36,10 @@ import androidx.navigation.NavController
 import com.kdevs.spendly.R
 import com.kdevs.spendly.data.str
 import com.kdevs.spendly.ui.theme.Bg
-import com.kdevs.spendly.ui.theme.Ink
-import com.kdevs.spendly.ui.theme.Surface
-import com.kdevs.spendly.ui.theme.Line
 import com.kdevs.spendly.ui.theme.HeroShadow
+import com.kdevs.spendly.ui.theme.Ink
+import com.kdevs.spendly.ui.theme.Line
+import com.kdevs.spendly.ui.theme.Surface
 
 /** Top bar with a round back button, used by every full screen. */
 @Composable

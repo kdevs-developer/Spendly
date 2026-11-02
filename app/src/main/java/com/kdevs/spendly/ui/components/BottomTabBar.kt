@@ -3,6 +3,7 @@ package com.kdevs.spendly.ui.components
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -13,7 +14,6 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.border
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Chat
@@ -41,12 +41,12 @@ import com.kdevs.spendly.R
 import com.kdevs.spendly.data.str
 import com.kdevs.spendly.nav.Routes
 import com.kdevs.spendly.ui.theme.Danger
+import com.kdevs.spendly.ui.theme.HeroShadow
+import com.kdevs.spendly.ui.theme.Line
 import com.kdevs.spendly.ui.theme.Muted
 import com.kdevs.spendly.ui.theme.Primary
 import com.kdevs.spendly.ui.theme.PrimaryContainer
 import com.kdevs.spendly.ui.theme.Surface
-import com.kdevs.spendly.ui.theme.Line
-import com.kdevs.spendly.ui.theme.HeroShadow
 
 private data class Tab(
     val label: String,

@@ -95,12 +95,40 @@ private val AppFont: FontFamily = FontFamily.Default
 
 private val type =
     Typography(
-        headlineLarge = TextStyle(fontFamily = AppFont, fontSize = 32.sp, lineHeight = 38.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = (-0.8).sp),
-        titleLarge = TextStyle(fontFamily = AppFont, fontSize = 20.sp, lineHeight = 26.sp, fontWeight = FontWeight.Bold, letterSpacing = (-0.3).sp),
-        titleMedium = TextStyle(fontFamily = AppFont, fontSize = 16.sp, lineHeight = 22.sp, fontWeight = FontWeight.Bold, letterSpacing = (-0.1).sp),
+        headlineLarge =
+            TextStyle(
+                fontFamily = AppFont,
+                fontSize = 32.sp,
+                lineHeight = 38.sp,
+                fontWeight = FontWeight.ExtraBold,
+                letterSpacing = (-0.8).sp,
+            ),
+        titleLarge =
+            TextStyle(
+                fontFamily = AppFont,
+                fontSize = 20.sp,
+                lineHeight = 26.sp,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = (-0.3).sp,
+            ),
+        titleMedium =
+            TextStyle(
+                fontFamily = AppFont,
+                fontSize = 16.sp,
+                lineHeight = 22.sp,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = (-0.1).sp,
+            ),
         bodyLarge = TextStyle(fontFamily = AppFont, fontSize = 15.sp, lineHeight = 21.sp, fontWeight = FontWeight.SemiBold),
         bodyMedium = TextStyle(fontFamily = AppFont, fontSize = 14.sp, lineHeight = 20.sp, fontWeight = FontWeight.Medium),
-        labelMedium = TextStyle(fontFamily = AppFont, fontSize = 12.sp, lineHeight = 16.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 0.2.sp),
+        labelMedium =
+            TextStyle(
+                fontFamily = AppFont,
+                fontSize = 12.sp,
+                lineHeight = 16.sp,
+                fontWeight = FontWeight.SemiBold,
+                letterSpacing = 0.2.sp,
+            ),
     )
 
 private val shapes =
