@@ -20,7 +20,7 @@ object DatabaseModule {
     ): SpendlyDatabase =
         Room
             .databaseBuilder(ctx, SpendlyDatabase::class.java, SpendlyDatabase.NAME)
-            .addMigrations(SpendlyDatabase.MIGRATION_1_2)
+            .addMigrations(SpendlyDatabase.MIGRATION_1_2, SpendlyDatabase.MIGRATION_2_3)
             .build()
 
     @Provides fun accounts(db: SpendlyDatabase) = db.accounts()
@@ -32,8 +32,6 @@ object DatabaseModule {
     @Provides fun budgets(db: SpendlyDatabase) = db.budgets()
 
     @Provides fun goals(db: SpendlyDatabase) = db.goals()
-
-    @Provides fun templates(db: SpendlyDatabase) = db.templates()
 
     @Provides fun recurring(db: SpendlyDatabase) = db.recurring()
 }

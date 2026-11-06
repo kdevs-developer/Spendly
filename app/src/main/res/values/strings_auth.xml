@@ -36,7 +36,7 @@
     <string name="slide_all_money_title">All your money, one place</string>
     <string name="slide_budgets_body">Set limits for each category and save towards what matters, with progress at a glance.</string>
     <string name="slide_budgets_title">Budgets and goals</string>
-    <string name="slide_quick_add_body">Amount, category, done. Templates and repeats handle the usual ones.</string>
+    <string name="slide_quick_add_body">Amount, category, done. Repeats handle the usual ones.</string>
     <string name="slide_quick_add_title">Log a spend in seconds</string>
     <string name="slide_reports_body">Clear reports by category and trend show what to cut and what to keep.</string>
     <string name="slide_reports_title">See where it goes</string>

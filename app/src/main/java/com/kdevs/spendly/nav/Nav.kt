@@ -48,8 +48,6 @@ import com.kdevs.spendly.ui.screens.money.GoalEditScreen
 import com.kdevs.spendly.ui.screens.money.GoalsScreen
 import com.kdevs.spendly.ui.screens.money.RecurringEditScreen
 import com.kdevs.spendly.ui.screens.money.RecurringScreen
-import com.kdevs.spendly.ui.screens.money.TemplateEditScreen
-import com.kdevs.spendly.ui.screens.money.TemplatesScreen
 import com.kdevs.spendly.ui.screens.money.TransferScreen
 import com.kdevs.spendly.ui.screens.money.TxnDetailScreen
 import com.kdevs.spendly.ui.screens.money.TxnFormScreen
@@ -156,9 +154,7 @@ object Routes {
 
     fun goalAdd(id: String) = "goal/add/$id"
 
-    const val TEMPLATES = "templates"
 
-    fun templateEdit(id: String) = "template/${id.ifBlank { "-" }}"
 
     const val RECURRING = "recurring"
 
@@ -362,14 +358,12 @@ fun SpendlyNav() {
             screen("pick/date/{millis}", listOf("millis")) { e -> DatePickerScreen(nav, e.s("millis").toLongOrNull() ?: 0L) }
             screen("pick/time/{minutes}", listOf("minutes")) { e -> TimePickerScreen(nav, e.s("minutes").toIntOrNull() ?: 0) }
 
-            // ----- Budgets, goals, templates, recurring -----
+            // ----- Budgets, goals, recurring -----
             screen(Routes.BUDGETS) { BudgetsScreen(nav) }
             screen("budget/{id}", listOf("id")) { e -> BudgetEditScreen(nav, e, e.s("id")) }
             screen(Routes.GOALS) { GoalsScreen(nav) }
             screen("goal/add/{id}", listOf("id")) { e -> GoalAddScreen(nav, e.s("id")) }
             screen("goal/{id}", listOf("id")) { e -> GoalEditScreen(nav, e, e.s("id")) }
-            screen(Routes.TEMPLATES) { TemplatesScreen(nav) }
-            screen("template/{id}", listOf("id")) { e -> TemplateEditScreen(nav, e, e.s("id")) }
             screen(Routes.RECURRING) { RecurringScreen(nav) }
             screen("recurring/{id}", listOf("id")) { e -> RecurringEditScreen(nav, e, e.s("id")) }
 

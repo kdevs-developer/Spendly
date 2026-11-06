@@ -21,10 +21,9 @@ import com.kdevs.spendly.data.local.entity.*
         TxnEntity::class,
         BudgetEntity::class,
         GoalEntity::class,
-        TemplateEntity::class,
         RecurringEntity::class,
     ],
-    version = 2,
+    version = 3,
     exportSchema = true,
 )
 abstract class SpendlyDatabase : RoomDatabase() {
@@ -38,8 +37,6 @@ abstract class SpendlyDatabase : RoomDatabase() {
 
     abstract fun goals(): GoalDao
 
-    abstract fun templates(): TemplateDao
-
     abstract fun recurring(): RecurringDao
 
     companion object {
@@ -50,6 +47,14 @@ abstract class SpendlyDatabase : RoomDatabase() {
             object : Migration(1, 2) {
                 override fun migrate(db: SupportSQLiteDatabase) {
                     db.execSQL("ALTER TABLE txns ADD COLUMN recurringId TEXT NOT NULL DEFAULT ''")
+                }
+            }
+
+        /** v3: the templates feature was removed from the app, so their table goes too. */
+        val MIGRATION_2_3 =
+            object : Migration(2, 3) {
+                override fun migrate(db: SupportSQLiteDatabase) {
+                    db.execSQL("DROP TABLE IF EXISTS templates")
                 }
             }
     }

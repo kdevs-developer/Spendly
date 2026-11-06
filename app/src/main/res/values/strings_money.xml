@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Transactions, accounts, budgets, goals, recurring, templates -->
+<!-- Transactions, accounts, budgets, goals, recurring -->
 <resources>
     <string name="account_name">Account name</string>
     <string name="active">Active</string>
@@ -24,7 +24,6 @@
     <string name="delete_budget">Delete budget?</string>
     <string name="delete_goal">Delete goal?</string>
     <string name="delete_recurring_item">Delete recurring item?</string>
-    <string name="delete_template">Delete template?</string>
     <string name="delete_transaction">Delete transaction?</string>
     <string name="delete_transaction_2">Delete transaction</string>
     <string name="duplicate">Duplicate</string>
@@ -33,7 +32,6 @@
     <string name="edit_budget">Edit budget</string>
     <string name="edit_goal">Edit goal</string>
     <string name="edit_recurring_item">Edit recurring item</string>
-    <string name="edit_template">Edit template</string>
     <string name="edit_transaction">Edit transaction</string>
     <string name="goal_name">Goal name</string>
     <string name="goal_reached">Goal reached</string>
@@ -44,13 +42,11 @@
     <string name="new_budget">New budget</string>
     <string name="new_goal">New goal</string>
     <string name="new_recurring_item">New recurring item</string>
-    <string name="new_template">New template</string>
     <string name="next_2">%1$s · %2$s · next %3$s</string>
     <string name="next_date">Next date</string>
     <string name="no_budgets_yet">No budgets yet</string>
     <string name="no_deadline">No deadline</string>
     <string name="no_goals_yet">No goals yet</string>
-    <string name="no_templates_yet">No templates yet</string>
     <string name="no_transactions_on_this_account_yet">No transactions on this account yet.</string>
     <string name="none">None</string>
     <string name="note">Note</string>
@@ -66,7 +62,6 @@
     <string name="rupee_symbol">₹</string>
     <string name="save_changes">Save changes</string>
     <string name="save_goal">Save goal</string>
-    <string name="save_template">Save template</string>
     <string name="save_the_things_you_buy_often">Save the things you buy often, like tea or an auto ride.</string>
     <string name="save_towards_a_trip_a_phone">Save towards a trip, a phone or an emergency fund.</string>
     <string name="saved_of">%1$s saved of %2$s</string>
@@ -75,7 +70,6 @@
     <string name="spendly_new">New %1$s</string>
     <string name="tap_use_to_add_the_transaction">Tap Use to add the transaction for today in one tap.</string>
     <string name="target_amount">Target amount</string>
-    <string name="template_name">Template name</string>
     <string name="text__5">%1$s%%</string>
     <string name="text__6">%1$s · %2$s</string>
     <string name="the_saved_amount_is_only_a">The saved amount is only a number in Spendly, so no money moves.</string>
@@ -84,7 +78,6 @@
     <string name="this_transaction_was_deleted">This transaction was deleted.</string>
     <string name="time">Time</string>
     <string name="transaction">Transaction</string>
-    <string name="transactions_already_made_from_it_stay">Transactions already made from it stay.</string>
     <string name="use">Use</string>
     <string name="use_overall_instead">Use overall instead</string>
     <string name="created_by_recurring">Created by recurring</string>

@@ -41,13 +41,6 @@ fun Goal.toEntity(
     state: Int = SyncState.PENDING,
 ) = GoalEntity(id, uid, name, icon, colorKey, targetPaise, savedPaise, deadlineMillis, state)
 
-fun TemplateEntity.toModel() = Template(id, name, kind, amountPaise, accountId, categoryId, note)
-
-fun Template.toEntity(
-    uid: String,
-    state: Int = SyncState.PENDING,
-) = TemplateEntity(id, uid, name, kind, amountPaise, accountId, categoryId, note, state)
-
 // Recurring has grown (subcategoryId, interval, anchorDay), so these use named arguments:
 // positional ones break whenever a field is added in the middle of the class.
 fun RecurringEntity.toModel() =

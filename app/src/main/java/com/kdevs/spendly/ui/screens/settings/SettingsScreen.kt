@@ -150,12 +150,6 @@ fun SettingsScreen(nav: NavController) {
                 onClick = { nav.navigate(Routes.GOALS) },
             )
             SettingRow(
-                str(R.string.templates),
-                icon = Icons.Filled.ContentCopy,
-                iconColor = clr(R.color.swatch_teal),
-                onClick = { nav.navigate(Routes.TEMPLATES) },
-            )
-            SettingRow(
                 str(R.string.recurring),
                 icon = Icons.Filled.Repeat,
                 iconColor = clr(R.color.swatch_pink),

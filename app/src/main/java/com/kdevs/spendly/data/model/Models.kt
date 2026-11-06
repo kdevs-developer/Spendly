@@ -56,16 +56,6 @@ data class Goal(
     val deadlineMillis: Long = 0,
 )
 
-data class Template(
-    @DocumentId val id: String = "",
-    val name: String = "",
-    val kind: String = "expense",
-    val amountPaise: Long = 0,
-    val accountId: String = "",
-    val categoryId: String = "",
-    val note: String = "",
-)
-
 data class Recurring(
     @DocumentId val id: String = "",
     val name: String = "",

@@ -77,19 +77,6 @@ data class GoalEntity(
     val syncState: Int = SyncState.PENDING,
 )
 
-@Entity(tableName = "templates", indices = [Index("uid")])
-data class TemplateEntity(
-    @PrimaryKey val id: String,
-    val uid: String,
-    val name: String,
-    val kind: String,
-    val amountPaise: Long,
-    val accountId: String,
-    val categoryId: String,
-    val note: String,
-    val syncState: Int = SyncState.PENDING,
-)
-
 @Entity(tableName = "recurring", indices = [Index("uid")])
 data class RecurringEntity(
     @PrimaryKey val id: String,

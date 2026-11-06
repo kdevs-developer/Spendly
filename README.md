@@ -13,7 +13,7 @@ Android expense tracker. Kotlin, Jetpack Compose, Firebase. Money is whole paise
 
 ## Layout
 - `nav/Nav.kt` – every route and the screen transitions.
-- `ui/screens/` – Auth (welcome carousel, sign in, Privacy and Terms), Main (home, activity, reports, accounts), Money (transactions, accounts, budgets, goals, templates, recurring), Pickers (filter, select, bulk, category and sub-category, colour, icon, account, date), Chat (chats, friends, conversation, message actions, image viewer, group info), Splits (ledger, add expense, settle up), Settings.
+- `ui/screens/` – Auth (welcome carousel, sign in, Privacy and Terms), Main (home, activity, reports, accounts), Money (transactions, accounts, budgets, goals, recurring), Pickers (filter, select, bulk, category and sub-category, colour, icon, account, date), Chat (chats, friends, conversation, message actions, image viewer, group info), Splits (ledger, add expense, settle up), Settings.
 - `res/` – adaptive launcher icon (`mipmap-anydpi-v26`, with themed monochrome layer), legacy PNG icons, notification icon, colours and theme. `ic_launcher-playstore.png` (in `app/`) is the 512px Play Store icon.
 - `ui/splash/SplashOverlay.kt` – animated splash (ring and rupee draw in, coin fills, wordmark rises, fade into the app). `Theme.Spendly.Starting` in `themes.xml` is the plain blue system splash that hands over to it.
 - `data/Repo.kt` – all Firestore, Auth and Storage access. `data/Util.kt` – money formatting and split maths.

@@ -276,7 +276,7 @@ object Repo {
             "txns",
             "budgets",
             "goals",
-            "templates",
+            "templates", // legacy: the feature is gone, but older accounts may still hold these documents
             "recurring",
             "friends",
             "hidden",
@@ -600,7 +600,6 @@ object Repo {
     val txns: StateFlow<List<Txn>> = live<Txn>("txns") { it.orderBy("dateMillis", Query.Direction.DESCENDING) }.hot(emptyList())
     val budgets: StateFlow<List<Budget>> = live<Budget>("budgets").hot(emptyList())
     val goals: StateFlow<List<Goal>> = live<Goal>("goals").hot(emptyList())
-    val templates: StateFlow<List<Template>> = live<Template>("templates").hot(emptyList())
     val recurring: StateFlow<List<Recurring>> = live<Recurring>("recurring").hot(emptyList())
     val friends: StateFlow<List<Friend>> = live<Friend>("friends").hot(emptyList())
     private val hiddenIds: StateFlow<List<String>> =
@@ -644,8 +643,8 @@ object Repo {
 
     /**
      * Deletes a category and its sub-categories without leaving anything pointing at them:
-     * transactions lose the deleted category (a deleted sub-category keeps its parent), recurring items and
-     * templates move to the parent (or to none), and budgets for the category are removed.
+     * transactions lose the deleted category (a deleted sub-category keeps its parent), recurring items
+     * move to the parent (or to none), and budgets for the category are removed.
      * Everything goes in batches, so it works offline and never ends half done.
      */
     suspend fun deleteCategory(id: String) {
@@ -664,10 +663,6 @@ object Repo {
         }
         for (r in recurring.value.filter { it.categoryId in gone }) {
             val ref = userCol("recurring").document(r.id)
-            ops += { b -> b.update(ref, "categoryId", parentId) }
-        }
-        for (t in templates.value.filter { it.categoryId in gone }) {
-            val ref = userCol("templates").document(t.id)
             ops += { b -> b.update(ref, "categoryId", parentId) }
         }
         // A blank categoryId on a budget means "overall budget", so these are deleted, never blanked.

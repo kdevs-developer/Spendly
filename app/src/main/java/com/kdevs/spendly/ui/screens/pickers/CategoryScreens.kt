@@ -42,7 +42,7 @@ fun CategoryPickerScreen(
     slot: String,
 ) {
     val look = rememberLookup()
-    // Transactions and recurring items can carry a sub-category; budgets, templates, filters and bulk edits pick the main category only.
+    // Transactions and recurring items can carry a sub-category; budgets, filters and bulk edits pick the main category only.
     val withSubs = slot == "category" || slot == "recurring"
     val manage = slot == "manage"
     // In Settings one screen holds both lists; everywhere else the kind is fixed by the caller.

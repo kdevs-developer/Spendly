@@ -173,9 +173,6 @@ fun HomeScreen(nav: NavController) {
             SettingRow(str(R.string.savings_goals), icon = Icons.Filled.Flag, iconColor = clr(R.color.swatch_green), onClick = {
                 nav.navigate(Routes.GOALS)
             })
-            SettingRow(str(R.string.templates), icon = Icons.Filled.ContentCopy, iconColor = clr(R.color.swatch_teal), onClick = {
-                nav.navigate(Routes.TEMPLATES)
-            })
             SettingRow(str(R.string.recurring), icon = Icons.Filled.Repeat, iconColor = clr(R.color.swatch_orange), onClick = {
                 nav.navigate(Routes.RECURRING)
             }, divider = false)
