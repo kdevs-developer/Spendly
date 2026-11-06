@@ -154,8 +154,6 @@ object Routes {
 
     fun goalAdd(id: String) = "goal/add/$id"
 
-
-
     const val RECURRING = "recurring"
 
     fun recurringEdit(id: String) = "recurring/${id.ifBlank { "-" }}"
