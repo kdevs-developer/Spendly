@@ -37,6 +37,7 @@ class RecurringWorker(
         return withContext(NonCancellable) {
             val created = runCatching { Repo.processRecurring() }.getOrElse { return@withContext Result.retry() }
             if (created.isNotEmpty()) RecurringScheduler.notifyCreated(applicationContext, created)
+            runCatching { BillReminders.check(applicationContext) }
             runCatching { Repo.flushWrites() }
             Result.success()
         }

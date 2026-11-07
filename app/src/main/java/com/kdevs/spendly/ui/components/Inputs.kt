@@ -6,6 +6,7 @@ import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -18,6 +19,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.OutlinedTextField
@@ -209,20 +211,30 @@ fun SegmentedControl(
     }
 }
 
+/** One choice in a list of choices: a ring that fills when picked, then the label. Used instead of chips. */
 @Composable
-fun SelectChip(
+fun RadioRow(
     label: String,
     selected: Boolean,
     onClick: () -> Unit,
 ) {
-    val pill = RoundedCornerShape(999.dp)
-    val bg by animateColorAsState(if (selected) PrimaryContainer else Surface, tween(160), label = "chip")
-    val fg by animateColorAsState(if (selected) Primary else Muted, tween(160), label = "chipText")
-    Box(
+    val ring by animateColorAsState(if (selected) Primary else Muted, tween(160), label = "radioRing")
+    val shape = RoundedCornerShape(14.dp)
+    Row(
         Modifier
-            .pressable(pill, scaleTo = 0.95f, veil = false, onClick = onClick)
-            .clip(pill)
-            .background(bg)
-            .padding(horizontal = 16.dp, vertical = 9.dp),
-    ) { Text(label, fontWeight = FontWeight.Bold, fontSize = 13.sp, color = fg) }
+            .fillMaxWidth()
+            .clip(shape)
+            .clickable(onClick = onClick)
+            .padding(horizontal = 6.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(14.dp),
+    ) {
+        Box(
+            Modifier.size(22.dp).border(2.dp, ring, CircleShape),
+            contentAlignment = Alignment.Center,
+        ) {
+            if (selected) Box(Modifier.size(11.dp).background(Primary, CircleShape))
+        }
+        Text(label, fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium, fontSize = 15.sp, color = Ink)
+    }
 }

@@ -83,7 +83,7 @@ private val PERIODS =
  *  - Format toggle
  *  - "Use Activity filter" switch (when on, Period / Types / Accounts are ignored and dimmed)
  *  - Period row (collapsible list, inline From/To when Custom)
- *  - Transaction type chips (multi-select, check icon when selected)
+ *  - Transaction type tiles (multi-select, check icon when selected)
  *  - Accounts row (collapsible multi-select list)
  *  - Summary card, then the pinned export button
  */

@@ -26,7 +26,9 @@ fun AccountsScreen(nav: NavController) {
     val accounts by Repo.accounts.collectAsState()
     val txns by Repo.txns.collectAsState()
     val live = accounts.filter { !it.archived }
-    val total = live.sumOf { Repo.balanceOf(it.id, accounts, txns) }
+    // One pass over the transactions for every account, redone only when the data changes (not on each redraw).
+    val balances = remember(accounts, txns) { Repo.balances(accounts, txns) }
+    val total = live.sumOf { balances[it.id] ?: 0L }
 
     TabScreen(
         str(R.string.accounts),
@@ -46,7 +48,7 @@ fun AccountsScreen(nav: NavController) {
                 SectionTitle(type.label)
                 Card(padding = 12.dp) {
                     group.forEachIndexed { i, a ->
-                        val bal = Repo.balanceOf(a.id, accounts, txns)
+                        val bal = balances[a.id] ?: 0L
                         SettingRow(
                             a.name,
                             leading = { IconCircle(a.icon, a.colorKey, 44.dp) },

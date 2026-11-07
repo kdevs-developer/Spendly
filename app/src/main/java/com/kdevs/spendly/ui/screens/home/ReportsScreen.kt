@@ -70,7 +70,7 @@ fun ReportsScreen(nav: NavController) {
         nav,
         actions = { RoundIconButton(Icons.Filled.Tune, str(R.string.report_filter), { nav.navigate(Routes.REPORT_FILTER) }) },
     ) {
-        SegmentedControl(listOf(str(R.string.category), str(R.string.trends)), view, { view = it })
+        SegmentedControl(listOf(str(R.string.category), str(R.string.trends), str(R.string.compare)), view, { view = it })
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             Text(periodLabel(), color = Muted, fontWeight = FontWeight.Bold)
             Text(
@@ -79,8 +79,89 @@ fun ReportsScreen(nav: NavController) {
                 fontWeight = FontWeight.Bold,
             )
         }
-        if (view == 0) CategoryReport(scoped, look, nav) else TrendReport(txns)
+        when (view) {
+            0 -> CategoryReport(scoped, look, nav)
+            1 -> TrendReport(txns)
+            else -> CompareReport(txns, look, from, to)
+        }
         Spacer(Modifier.height(16.dp))
+    }
+}
+
+/** This month so far against the same days of last month, by category, plus the notes you spent the most on. */
+@Composable
+private fun CompareReport(
+    txns: List<Txn>,
+    look: Lookup,
+    from: Long,
+    to: Long,
+) {
+    val changes = remember(txns) { Insights.categoryChanges(txns) }
+    val thisTotal = changes.sumOf { it.thisMonth }
+    val lastTotal = changes.sumOf { it.lastMonth }
+    val notes = remember(txns, from, to) { Insights.topNotes(txns, from, to) }
+    if (thisTotal == 0L && lastTotal == 0L && notes.isEmpty()) {
+        EmptyState(Icons.Filled.CompareArrows, str(R.string.no_data), str(R.string.nothing_to_compare_yet))
+        return
+    }
+    Card {
+        Text(str(R.string.this_month_so_far), color = Muted, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+        Text(formatPaise(thisTotal), color = Ink, fontWeight = FontWeight.ExtraBold, fontSize = 28.sp)
+        Spacer(Modifier.height(4.dp))
+        val diff = thisTotal - lastTotal
+        Text(
+            str(R.string.same_days_last_month, formatPaise(lastTotal)),
+            color = Muted,
+            fontSize = 13.sp,
+        )
+        if (lastTotal > 0) {
+            Text(
+                (if (diff > 0) "+" else if (diff < 0) "-" else "") + formatPaise(kotlin.math.abs(diff)) +
+                    " (" + (diff * 100 / lastTotal) + "%)",
+                color = if (diff > 0) Danger else Success,
+                fontWeight = FontWeight.ExtraBold,
+                fontSize = 14.sp,
+            )
+        }
+    }
+    if (changes.isNotEmpty()) {
+        SectionTitle(str(R.string.by_category))
+        Card(padding = 12.dp) {
+            val shown = changes.take(8)
+            shown.forEachIndexed { i, ch ->
+                val c = look.category(ch.categoryId)
+                SettingRow(
+                    if (ch.categoryId.isBlank()) str(R.string.uncategorised) else look.categoryName(ch.categoryId),
+                    formatPaise(ch.lastMonth) + " → " + formatPaise(ch.thisMonth),
+                    leading = { IconCircle(c?.icon ?: "other", c?.colorKey ?: "slate", 38.dp) },
+                    trailing = {
+                        Text(
+                            ch.percent?.let { (if (it > 0) "+" else "") + it + "%" } ?: str(R.string.new_label),
+                            color = if (ch.delta > 0) Danger else Success,
+                            fontWeight = FontWeight.ExtraBold,
+                            fontSize = 13.sp,
+                        )
+                    },
+                    divider = i < shown.lastIndex,
+                )
+            }
+        }
+    }
+    if (notes.isNotEmpty()) {
+        SectionTitle(str(R.string.top_notes))
+        Hint(str(R.string.top_notes_hint))
+        Card(padding = 12.dp) {
+            notes.forEachIndexed { i, n ->
+                SettingRow(
+                    n.note,
+                    str(R.string.times_count, n.count),
+                    icon = Icons.Filled.Notes,
+                    iconColor = Muted,
+                    trailing = { Text(formatPaise(n.paise), fontWeight = FontWeight.ExtraBold, color = Ink) },
+                    divider = i < notes.lastIndex,
+                )
+            }
+        }
     }
 }
 

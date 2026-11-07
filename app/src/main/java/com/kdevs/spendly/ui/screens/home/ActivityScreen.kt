@@ -41,11 +41,15 @@ import java.util.Locale
 
 // ------------------------------------------------------------------ Activity
 
+private const val PAGE = 100
+
 @Composable
 fun ActivityScreen(nav: NavController) {
     val txns by Repo.txns.collectAsState()
     val look = rememberLookup()
     var view by remember { mutableIntStateOf(0) } // 0 list, 1 calendar
+    // The list shows 100 transactions at a time so a long history opens fast; "Show more" adds the next 100.
+    var limit by remember(TxnFilter.query, TxnFilter.activeCount) { mutableIntStateOf(PAGE) }
     val filtered =
         remember(
             txns,
@@ -111,7 +115,11 @@ fun ActivityScreen(nav: NavController) {
                     },
                 )
             } else {
-                DayGroups(filtered, look, { nav.navigate(Routes.txnDetail(it.id)) })
+                val page = remember(filtered, limit) { filtered.take(limit) }
+                DayGroups(page, look, { nav.navigate(Routes.txnDetail(it.id)) })
+                if (filtered.size > limit) {
+                    SecondaryButton(str(R.string.show_more_count, minOf(PAGE, filtered.size - limit)), { limit += PAGE })
+                }
             }
         } else {
             CalendarView(filtered, look, nav)

@@ -50,7 +50,7 @@ abstract class SpendlyDatabase : RoomDatabase() {
                 }
             }
 
-        /** v3: the templates feature was removed from the app, so their table goes too. */
+        /** v3: the Templates feature was removed, so its table goes too. */
         val MIGRATION_2_3 =
             object : Migration(2, 3) {
                 override fun migrate(db: SupportSQLiteDatabase) {

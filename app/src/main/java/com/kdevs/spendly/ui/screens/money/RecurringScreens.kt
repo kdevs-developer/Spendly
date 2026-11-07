@@ -84,7 +84,11 @@ fun RecurringScreen(nav: NavController) {
     ScreenScaffold(
         str(R.string.recurring),
         { nav.popBackStack() },
-        actions = { RoundIconButton(Icons.Filled.Add, str(R.string.new_recurring_item), { nav.navigate(Routes.recurringEdit("")) }) },
+        actions = {
+            RoundIconButton(Icons.Filled.Autorenew, str(R.string.subscriptions), { nav.navigate(Routes.SUBSCRIPTIONS) })
+            Spacer(Modifier.width(8.dp))
+            RoundIconButton(Icons.Filled.Add, str(R.string.new_recurring_item), { nav.navigate(Routes.recurringEdit("")) })
+        },
     ) {
         Hint(str(R.string.spendly_adds_these_for_you_on))
         if (items.isEmpty()) {

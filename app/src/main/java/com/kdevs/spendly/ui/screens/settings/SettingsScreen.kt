@@ -156,6 +156,30 @@ fun SettingsScreen(nav: NavController) {
                 onClick = { nav.navigate(Routes.RECURRING) },
             )
             SettingRow(
+                str(R.string.bills),
+                icon = Icons.Filled.Receipt,
+                iconColor = clr(R.color.swatch_orange),
+                onClick = { nav.navigate(Routes.BILLS) },
+            )
+            SettingRow(
+                str(R.string.subscriptions),
+                icon = Icons.Filled.Autorenew,
+                iconColor = clr(R.color.swatch_purple),
+                onClick = { nav.navigate(Routes.SUBSCRIPTIONS) },
+            )
+            SettingRow(
+                str(R.string.insights),
+                icon = Icons.Filled.Lightbulb,
+                iconColor = clr(R.color.swatch_teal),
+                onClick = { nav.navigate(Routes.INSIGHTS) },
+            )
+            SettingRow(
+                str(R.string.backup_and_restore),
+                icon = Icons.Filled.CloudSync,
+                iconColor = clr(R.color.swatch_blue),
+                onClick = { nav.navigate(Routes.BACKUP) },
+            )
+            SettingRow(
                 str(R.string.export_data),
                 str(R.string.excel_or_pdf),
                 icon = Icons.Filled.FileDownload,
@@ -223,11 +247,12 @@ fun SettingsScreen(nav: NavController) {
     }
     if (confirmOut) {
         ConfirmDialog(
-            str(R.string.sign_out_2),
-            str(R.string.your_data_stays_safe_in_your),
+            if (Repo.isGuest) str(R.string.sign_out_guest_title) else str(R.string.sign_out_2),
+            if (Repo.isGuest) str(R.string.sign_out_guest_body) else str(R.string.your_data_stays_safe_in_your),
             str(R.string.sign_out),
             { Repo.signOut() },
             { confirmOut = false },
+            danger = Repo.isGuest,
         )
     }
     if (confirmDelete) {

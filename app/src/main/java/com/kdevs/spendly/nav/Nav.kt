@@ -14,9 +14,11 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.kdevs.spendly.data.DeepLink
 import com.kdevs.spendly.data.Inbox
 import com.kdevs.spendly.data.Repo
 import com.kdevs.spendly.ui.components.MessageBanner
+import com.kdevs.spendly.ui.components.UndoBar
 import com.kdevs.spendly.ui.screens.auth.AuthScreen
 import com.kdevs.spendly.ui.screens.auth.LegalScreen
 import com.kdevs.spendly.ui.screens.auth.WelcomeScreen
@@ -36,11 +38,14 @@ import com.kdevs.spendly.ui.screens.export.ExportScreen
 import com.kdevs.spendly.ui.screens.home.AccountsScreen
 import com.kdevs.spendly.ui.screens.home.ActivityScreen
 import com.kdevs.spendly.ui.screens.home.HomeScreen
+import com.kdevs.spendly.ui.screens.home.InsightsScreen
 import com.kdevs.spendly.ui.screens.home.ReportCategoryScreen
 import com.kdevs.spendly.ui.screens.home.ReportsScreen
 import com.kdevs.spendly.ui.screens.money.AccountDetailScreen
 import com.kdevs.spendly.ui.screens.money.AccountEditScreen
 import com.kdevs.spendly.ui.screens.money.AccountTypeScreen
+import com.kdevs.spendly.ui.screens.money.BillEditScreen
+import com.kdevs.spendly.ui.screens.money.BillsScreen
 import com.kdevs.spendly.ui.screens.money.BudgetEditScreen
 import com.kdevs.spendly.ui.screens.money.BudgetsScreen
 import com.kdevs.spendly.ui.screens.money.GoalAddScreen
@@ -48,6 +53,7 @@ import com.kdevs.spendly.ui.screens.money.GoalEditScreen
 import com.kdevs.spendly.ui.screens.money.GoalsScreen
 import com.kdevs.spendly.ui.screens.money.RecurringEditScreen
 import com.kdevs.spendly.ui.screens.money.RecurringScreen
+import com.kdevs.spendly.ui.screens.money.SubscriptionsScreen
 import com.kdevs.spendly.ui.screens.money.TransferScreen
 import com.kdevs.spendly.ui.screens.money.TxnDetailScreen
 import com.kdevs.spendly.ui.screens.money.TxnFormScreen
@@ -63,6 +69,7 @@ import com.kdevs.spendly.ui.screens.pickers.ReportFilterScreen
 import com.kdevs.spendly.ui.screens.pickers.SelectScreen
 import com.kdevs.spendly.ui.screens.pickers.SubcategoryEditScreen
 import com.kdevs.spendly.ui.screens.pickers.TimePickerScreen
+import com.kdevs.spendly.ui.screens.settings.BackupScreen
 import com.kdevs.spendly.ui.screens.settings.DeleteAccountScreen
 import com.kdevs.spendly.ui.screens.settings.EditNameScreen
 import com.kdevs.spendly.ui.screens.settings.SettingsScreen
@@ -153,6 +160,14 @@ object Routes {
     fun goalEdit(id: String) = "goal/${id.ifBlank { "-" }}"
 
     fun goalAdd(id: String) = "goal/add/$id"
+
+    const val BILLS = "bills"
+
+    fun billEdit(id: String) = "bill/${id.ifBlank { "-" }}"
+
+    const val SUBSCRIPTIONS = "subscriptions"
+    const val INSIGHTS = "insights"
+    const val BACKUP = "settings/backup"
 
     const val RECURRING = "recurring"
 
@@ -279,6 +294,7 @@ fun SpendlyNav() {
         if (uid != null) {
             runCatching { Repo.ensureProfile() }
             runCatching { Repo.runRecurring() }
+            runCatching { Repo.purgeLegacyTemplates() }
             runCatching { Repo.refreshToken() } // so pushes reach this phone even after a reinstall or sign in
         }
     }
@@ -296,6 +312,15 @@ fun SpendlyNav() {
         if (target != null && uid != null) {
             Inbox.openRequest.value = null
             nav.navigate(Routes.chat(target)) { launchSingleTop = true }
+        }
+    }
+    // The widget's "add expense" button and bill reminders ask for a screen to open.
+    val deepLink by DeepLink.route.collectAsState()
+    LaunchedEffect(deepLink, uid) {
+        val target = deepLink
+        if (target != null && uid != null) {
+            DeepLink.route.value = null
+            nav.navigate(target) { launchSingleTop = true }
         }
     }
     // When a friend accepts, our pending request disappears from this list. That is the moment to add them.
@@ -362,6 +387,11 @@ fun SpendlyNav() {
             screen(Routes.GOALS) { GoalsScreen(nav) }
             screen("goal/add/{id}", listOf("id")) { e -> GoalAddScreen(nav, e.s("id")) }
             screen("goal/{id}", listOf("id")) { e -> GoalEditScreen(nav, e, e.s("id")) }
+            screen(Routes.BILLS) { BillsScreen(nav) }
+            screen("bill/{id}", listOf("id")) { e -> BillEditScreen(nav, e, e.s("id")) }
+            screen(Routes.SUBSCRIPTIONS) { SubscriptionsScreen(nav) }
+            screen(Routes.INSIGHTS) { InsightsScreen(nav) }
+            screen(Routes.BACKUP) { BackupScreen(nav) }
             screen(Routes.RECURRING) { RecurringScreen(nav) }
             screen("recurring/{id}", listOf("id")) { e -> RecurringEditScreen(nav, e, e.s("id")) }
 
@@ -386,5 +416,6 @@ fun SpendlyNav() {
             screen(Routes.EXPORT) { ExportScreen(nav, it) }
         }
         if (uid != null) MessageBanner(nav)
+        if (uid != null) UndoBar()
     }
 }

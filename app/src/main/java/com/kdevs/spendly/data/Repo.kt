@@ -74,6 +74,9 @@ object Repo {
 
     val uid: String get() = auth.currentUser?.uid.orEmpty()
     val isSignedIn: Boolean get() = auth.currentUser != null
+
+    /** A guest (anonymous) account: its data cannot be reached again after signing out. */
+    val isGuest: Boolean get() = auth.currentUser?.isAnonymous == true
     val email: String get() = auth.currentUser?.email.orEmpty()
 
     /**
@@ -276,7 +279,7 @@ object Repo {
             "txns",
             "budgets",
             "goals",
-            "templates", // legacy: the feature is gone, but older accounts may still hold these documents
+            "templates", // no longer used by the app; deleted here so older accounts leave nothing behind
             "recurring",
             "friends",
             "hidden",
@@ -560,6 +563,36 @@ object Repo {
         userCol(collection).document(id).delete().watch()
     }
 
+    /** Saves many documents at once in batches (used by restore and import). Each pair is (id, data); a blank id makes a new one. */
+    suspend fun putMany(
+        collection: String,
+        items: List<Pair<String, Any>>,
+    ) {
+        items.chunked(400).forEach { chunk ->
+            val batch = db.batch()
+            chunk.forEach { (id, data) ->
+                val ref = if (id.isBlank()) userCol(collection).document() else userCol(collection).document(id)
+                batch.set(ref, data)
+            }
+            batch.commit().watch()
+        }
+    }
+
+    /** Templates were removed from the app. Older accounts may still hold their documents, so clear them once. */
+    suspend fun purgeLegacyTemplates() {
+        if (uid.isBlank()) return
+        val sp = appContext.getSharedPreferences("spendly_cleanup", Context.MODE_PRIVATE)
+        val key = "templates_purged_$uid"
+        if (sp.getBoolean(key, false)) return
+        val snap = kotlinx.coroutines.withTimeoutOrNull(8_000) { userCol("templates").get().await() } ?: return
+        snap.documents.chunked(400).forEach { part ->
+            val batch = db.batch()
+            part.forEach { batch.delete(it.reference) }
+            batch.commit().watch()
+        }
+        sp.edit().putBoolean(key, true).apply()
+    }
+
     suspend fun removeMany(
         collection: String,
         ids: Collection<String>,
@@ -601,6 +634,7 @@ object Repo {
     val budgets: StateFlow<List<Budget>> = live<Budget>("budgets").hot(emptyList())
     val goals: StateFlow<List<Goal>> = live<Goal>("goals").hot(emptyList())
     val recurring: StateFlow<List<Recurring>> = live<Recurring>("recurring").hot(emptyList())
+    val bills: StateFlow<List<Bill>> = live<Bill>("bills") { it.orderBy("dueMillis") }.hot(emptyList())
     val friends: StateFlow<List<Friend>> = live<Friend>("friends").hot(emptyList())
     private val hiddenIds: StateFlow<List<String>> =
         live<HiddenMsg>("hidden").map { l -> l.map { it.id } }.hot(emptyList())
@@ -608,6 +642,29 @@ object Repo {
     /** Chats this person deleted from their own list: chat id to the time it was deleted. */
     val hiddenChats: StateFlow<Map<String, Long>> =
         live<HiddenChat>("hiddenChats").map { l -> l.associate { it.id to it.at } }.hot(emptyMap())
+
+    /**
+     * Balance of every account in one pass over the transactions. Screens that show several accounts use this
+     * (inside remember) instead of calling [balanceOf] once per account, which walks the whole list each time.
+     */
+    fun balances(
+        accounts: List<Account>,
+        txns: List<Txn>,
+    ): Map<String, Long> {
+        val out = HashMap<String, Long>(accounts.size * 2)
+        for (a in accounts) out[a.id] = a.openingPaise
+        for (t in txns) {
+            when (t.kind) {
+                "income" -> out[t.accountId] = (out[t.accountId] ?: 0L) + t.amountPaise
+                "expense" -> out[t.accountId] = (out[t.accountId] ?: 0L) - t.amountPaise
+                "transfer" -> {
+                    out[t.accountId] = (out[t.accountId] ?: 0L) - t.amountPaise
+                    out[t.toAccountId] = (out[t.toAccountId] ?: 0L) + t.amountPaise
+                }
+            }
+        }
+        return out
+    }
 
     /** Money in an account right now: opening balance plus all its transactions. */
     fun balanceOf(
@@ -747,6 +804,45 @@ object Repo {
             }
             created
         }
+
+    /**
+     * Pays a bill: adds the expense, then either marks a one-off bill paid or moves a repeating bill to its next due date
+     * (never into the past). The expense gets a steady id, so paying twice cannot add it twice.
+     */
+    suspend fun markBillPaid(b: Bill) {
+        val account = b.accountId.ifBlank { accounts.value.firstOrNull { !it.archived }?.id.orEmpty() }
+        val now = System.currentTimeMillis()
+        put(
+            "txns",
+            "bill_${b.id}_${b.dueMillis}",
+            Txn(
+                kind = "expense",
+                amountPaise = b.amountPaise,
+                accountId = account,
+                categoryId = b.categoryId,
+                subcategoryId = b.subcategoryId,
+                note = b.name,
+                dateMillis = now,
+            ),
+        )
+        if (b.every == "none") {
+            put("bills", b.id, b.copy(paid = true, paidMillis = now))
+        } else {
+            val anchor = b.anchorDay.takeIf { it > 0 } ?: toLocalDate(b.dueMillis).dayOfMonth
+            var next = b.dueMillis
+            var guard = 0
+            do {
+                next = nextOccurrence(toLocalDate(next), b.every, 1, anchor).startMillis()
+            } while (next < todayMillis() && guard++ < 120)
+            put("bills", b.id, b.copy(dueMillis = next, anchorDay = anchor))
+        }
+    }
+
+    /** Takes back [markBillPaid]: removes the expense it added and puts the bill back as it was. */
+    suspend fun undoBillPaid(before: Bill) {
+        remove("txns", "bill_${before.id}_${before.dueMillis}")
+        put("bills", before.id, before)
+    }
 
     /** Waits (up to [timeoutMs]) until saves made on the phone have reached the server. Used by the background worker. */
     suspend fun flushWrites(timeoutMs: Long = 15_000) {

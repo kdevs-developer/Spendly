@@ -35,6 +35,16 @@
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_channel_id"
             android:value="chat" />
+        <receiver
+            android:name=".data.SpendlyWidget"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/spendly_widget_info" />
+        </receiver>
         <service
             android:name=".data.SpendlyMessagingService"
             android:exported="false">

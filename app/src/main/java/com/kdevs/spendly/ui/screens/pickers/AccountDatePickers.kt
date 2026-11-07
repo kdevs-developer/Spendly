@@ -42,6 +42,7 @@ fun AccountPickerScreen(
 ) {
     val accounts by Repo.accounts.collectAsState()
     val txns by Repo.txns.collectAsState()
+    val balances = remember(accounts, txns) { Repo.balances(accounts, txns) }
     val list = accounts.filter { !it.archived && it.id != exclude }
     ScreenScaffold(
         str(R.string.select_account),
@@ -54,7 +55,7 @@ fun AccountPickerScreen(
         } else {
             Card(padding = 12.dp) {
                 list.forEachIndexed { i, a ->
-                    val bal = Repo.balanceOf(a.id, accounts, txns)
+                    val bal = balances[a.id] ?: 0L
                     SettingRow(
                         a.name,
                         leading = { IconCircle(a.icon, a.colorKey, 44.dp) },

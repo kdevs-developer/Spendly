@@ -18,6 +18,7 @@ import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.kdevs.spendly.data.Biometric
+import com.kdevs.spendly.data.DeepLink
 import com.kdevs.spendly.data.Inbox
 import com.kdevs.spendly.data.Prefs
 import com.kdevs.spendly.nav.SpendlyNav
@@ -36,6 +37,10 @@ class MainActivity : FragmentActivity() {
     private lateinit var askForNotifications: () -> Unit
 
     private fun readChatExtra(intent: Intent?) {
+        intent?.getStringExtra(DeepLink.EXTRA)?.takeIf { it.isNotBlank() }?.let {
+            DeepLink.route.value = it
+            intent.removeExtra(DeepLink.EXTRA)
+        }
         intent?.getStringExtra(Inbox.EXTRA_CHAT)?.takeIf { it.isNotBlank() }?.let {
             Inbox.openRequest.value = it
             intent.removeExtra(Inbox.EXTRA_CHAT)

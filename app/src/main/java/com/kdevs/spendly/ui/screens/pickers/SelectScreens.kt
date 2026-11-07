@@ -177,8 +177,12 @@ fun BulkScreen(
         }
     }
     if (confirm) {
-        ConfirmDialog(str(R.string.delete_transactions, picked.size), str(R.string.this_cannot_be_undone), str(R.string.delete), {
-            saver.run(scope, onDone = { finish("") }) { Repo.removeMany("txns", picked.map { it.id }) }
+        ConfirmDialog(str(R.string.delete_transactions, picked.size), str(R.string.delete_transaction_hint), str(R.string.delete), {
+            val gone = picked.toList()
+            saver.run(scope, onDone = { finish("") }) {
+                Repo.removeMany("txns", gone.map { it.id })
+                Undo.offer(str(R.string.transactions_deleted, gone.size)) { Repo.putMany("txns", gone.map { it.id to it }) }
+            }
         }, { confirm = false }, danger = true)
     }
 }

@@ -6,7 +6,7 @@ service cloud.firestore {
     function isMember(chat) { return signedIn() && request.auth.uid in chat.members; }
 
     // Everything under users/{uid}: accounts, categories, transactions, budgets,
-    // goals, recurring, friends, blocked. Owner only.
+    // goals, recurring, bills, friends, blocked. Owner only.
     match /users/{uid} {
       allow read, write: if signedIn() && request.auth.uid == uid;
       match /{document=**} {

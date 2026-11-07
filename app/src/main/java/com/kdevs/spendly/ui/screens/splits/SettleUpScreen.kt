@@ -108,12 +108,9 @@ fun SettleUpScreen(
             return@ScreenScaffold
         }
         if (plan.size > 1) {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                plan.forEachIndexed {
-                    i,
-                    p,
-                    ->
-                    SelectChip(chat?.nameOf(if (p.from == me) p.to else p.from, me) ?: "?", i == sel) { sel = i }
+            Card(padding = 8.dp) {
+                plan.forEachIndexed { i, p ->
+                    RadioRow(chat?.nameOf(if (p.from == me) p.to else p.from, me) ?: "?", i == sel) { sel = i }
                 }
             }
         }

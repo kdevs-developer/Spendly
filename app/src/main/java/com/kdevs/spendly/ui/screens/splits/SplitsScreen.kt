@@ -1,7 +1,9 @@
 package com.kdevs.spendly.ui.screens.splits
 
 import android.content.Intent
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.*
@@ -11,6 +13,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -36,6 +39,7 @@ fun SplitsScreen(
     val entries = rememberSplits(id)
     val saver = rememberSaver()
     val ctx = LocalContext.current
+    var reminded by remember { mutableStateOf(setOf<String>()) }
     val balances = SplitMath.balances(entries)
     val mine = balances[me] ?: 0L
     val plan = SplitMath.simplify(balances)
@@ -96,6 +100,25 @@ fun SplitsScreen(
                                 fontWeight = FontWeight.SemiBold,
                             )
                             Text(formatPaise(t.paise), fontWeight = FontWeight.ExtraBold, color = Ink)
+                            // Someone owes me: a button that sends them a polite note in this chat.
+                            if (t.to == me) {
+                                val key = "${t.from}|${t.paise}"
+                                val sent = key in reminded
+                                Text(
+                                    if (sent) str(R.string.reminder_sent_label) else str(R.string.remind),
+                                    color = if (sent) Muted else Primary,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 13.sp,
+                                    modifier =
+                                        Modifier
+                                            .clip(RoundedCornerShape(10.dp))
+                                            .clickable(enabled = !sent) {
+                                                reminded = reminded + key
+                                                Repo.sendText(id, str(R.string.reminder_message, chat?.nameOf(t.from, me), formatPaise(t.paise)))
+                                                Undo.say(str(R.string.reminder_sent, chat?.nameOf(t.from, me)))
+                                            }.padding(horizontal = 8.dp, vertical = 6.dp),
+                                )
+                            }
                         }
                         if (i < plan.lastIndex) HorizontalDivider(color = Line)
                     }

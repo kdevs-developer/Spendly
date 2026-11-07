@@ -71,6 +71,22 @@ data class Recurring(
     val anchorDay: Int = 0,
 )
 
+/** A bill with a due date. Marking it paid adds the expense; a repeating bill then moves to its next due date. */
+data class Bill(
+    @DocumentId val id: String = "",
+    val name: String = "",
+    val amountPaise: Long = 0,
+    val accountId: String = "",
+    val categoryId: String = "",
+    val subcategoryId: String = "",
+    val dueMillis: Long = 0,
+    val every: String = "none", // none | weekly | monthly | yearly
+    val anchorDay: Int = 0,
+    val remindDays: Int = 1, // days before the due date to remind; 0 = on the day
+    val paid: Boolean = false, // only ever true for a bill that does not repeat
+    val paidMillis: Long = 0,
+)
+
 data class Friend(
     @DocumentId val id: String = "", // friend's uid
     val name: String = "",

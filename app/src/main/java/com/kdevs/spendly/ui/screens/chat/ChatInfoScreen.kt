@@ -179,7 +179,7 @@ fun ReportUserScreen(
             return@ScreenScaffold
         }
         Hint(str(R.string.tell_us_what_is_wrong_the))
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Card(padding = 8.dp) {
             listOf(
                 str(R.string.spam),
                 str(R.string.harassment),
@@ -187,7 +187,7 @@ fun ReportUserScreen(
                 str(R.string.inappropriate),
                 str(R.string.other),
             ).forEach {
-                SelectChip(it, reason == it) { reason = it }
+                RadioRow(it, reason == it) { reason = it }
             }
         }
         AppTextField(details, { details = it }, str(R.string.more_detail_optional), singleLine = false, minLines = 3)

@@ -151,8 +151,11 @@ fun TxnDetailScreen(
         SecondaryButton(str(R.string.delete_transaction_2), { confirm = true }, danger = true)
     }
     if (confirm) {
-        ConfirmDialog(str(R.string.delete_transaction), str(R.string.this_cannot_be_undone), str(R.string.delete), {
-            saver.run(scope, onDone = { nav.popBackStack() }) { Repo.remove("txns", id) }
+        ConfirmDialog(str(R.string.delete_transaction), str(R.string.delete_transaction_hint), str(R.string.delete), {
+            saver.run(scope, onDone = { nav.popBackStack() }) {
+                Repo.remove("txns", id)
+                t?.let { gone -> Undo.offer(str(R.string.transaction_deleted)) { Repo.put("txns", gone.id, gone) } }
+            }
         }, { confirm = false }, danger = true)
     }
 }

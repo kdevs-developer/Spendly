@@ -7,6 +7,12 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.PersistentCacheSettings
 import com.google.firebase.firestore.firestoreSettings
 import com.kdevs.spendly.data.Inbox
+import com.kdevs.spendly.data.Insights
+import com.kdevs.spendly.data.SpendlyWidget
+import com.kdevs.spendly.data.monthStart
+import com.kdevs.spendly.data.nextMonthStart
+import com.kdevs.spendly.data.startMillis
+import com.kdevs.spendly.data.todayMillis
 import com.kdevs.spendly.data.Prefs
 import com.kdevs.spendly.data.RecurringScheduler
 import com.kdevs.spendly.data.Repo
@@ -14,8 +20,16 @@ import com.kdevs.spendly.data.Res
 import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalCoroutinesApi::class)
 @HiltAndroidApp
 class SpendlyApp : Application() {
     override fun onCreate() {
@@ -36,6 +50,26 @@ class SpendlyApp : Application() {
 
         // Adds recurring transactions when their day and time comes, even with the app closed.
         RecurringScheduler.start(this, CoroutineScope(SupervisorJob() + Dispatchers.Default))
+
+        // Keeps the home screen widget's totals current.
+        val widgetScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+        widgetScope.launch {
+            Repo.uidFlow.flatMapLatest { uid ->
+                if (uid == null) {
+                    flowOf(Triple(false, 0L, 0L))
+                } else {
+                    Repo.loaded.first { "txns" in it }
+                    Repo.txns.map { list ->
+                        val today = todayMillis()
+                        Triple(
+                            true,
+                            Insights.totalSpent(list, today, java.time.LocalDate.now().plusDays(1).startMillis()),
+                            Insights.totalSpent(list, monthStart(), nextMonthStart()),
+                        )
+                    }
+                }
+            }.distinctUntilChanged().collect { (signedIn, day, month) -> SpendlyWidget.save(this@SpendlyApp, signedIn, day, month) }
+        }
 
         // Knows whether any screen is visible, to choose between the in-app banner and the notification bar.
         registerActivityLifecycleCallbacks(

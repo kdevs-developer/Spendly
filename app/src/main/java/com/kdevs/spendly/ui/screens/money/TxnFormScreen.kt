@@ -108,9 +108,7 @@ fun TxnFormScreen(
                 enabled = paise > 0 && accountId.isNotBlank(),
                 onSave = {
                     saver.run(scope, onDone = { nav.popBackStack() }) {
-                        Repo.put(
-                            "txns",
-                            id,
+                        val saved =
                             Txn(
                                 kind = type,
                                 amountPaise = paise,
@@ -120,9 +118,16 @@ fun TxnFormScreen(
                                 note = note.trim(),
                                 dateMillis = date,
                                 recurringId = existing?.recurringId ?: "", // editing keeps the link to the recurring item
-                            ),
-                        )
+                            )
+                        // Checked against the history before the new one is added, so it is not compared with itself.
+                        val odd = if (!editing) Insights.unusual(txns, saved) else null
+                        Repo.put("txns", id, saved)
                         if (!editing) RecentPicks.remember(ctx, type, accountId, catId, subId)
+                        if (odd != null) {
+                            Undo.say(
+                                str(R.string.unusual_spend_notice, look.categoryName(odd.categoryId), formatPaise(odd.usualPaise)),
+                            )
+                        }
                     }
                 },
             )
@@ -184,10 +189,38 @@ fun TxnFormScreen(
             )
         }
         AppTextField(note, { note = it }, str(R.string.note_optional), singleLine = false, minLines = 2)
+        // Notes you used before: tapping one fills the usual amount, account and category.
+        val suggestions = remember(note, txns, type) { if (editing) emptyList() else Insights.noteSuggestions(txns, note, type) }
+        if (suggestions.isNotEmpty()) {
+            Text(str(R.string.usual_for_this_note), color = Muted, fontSize = 12.sp)
+            Card(padding = 12.dp) {
+                suggestions.forEachIndexed { i, s ->
+                    SettingRow(
+                        s.note,
+                        formatPaise(s.amountPaise) +
+                            (look.account(s.accountId)?.name?.let { " · $it" } ?: "") +
+                            (s.subcategoryId.ifBlank { s.categoryId }.takeIf { it.isNotBlank() }?.let { " · " + look.categoryName(it) } ?: ""),
+                        icon = Icons.Filled.AutoAwesome,
+                        iconColor = Primary,
+                        onClick = {
+                            note = s.note
+                            amount = paiseToField(s.amountPaise)
+                            if (look.account(s.accountId) != null) accountId = s.accountId
+                            catId = s.categoryId
+                            subId = s.subcategoryId
+                        },
+                        divider = i < suggestions.lastIndex,
+                    )
+                }
+            }
+        }
     }
     if (confirmDelete) {
-        ConfirmDialog(str(R.string.delete_transaction), str(R.string.this_cannot_be_undone), str(R.string.delete), {
-            saver.run(scope, onDone = { nav.popBackStack() }) { Repo.remove("txns", id) }
+        ConfirmDialog(str(R.string.delete_transaction), str(R.string.delete_transaction_hint), str(R.string.delete), {
+            saver.run(scope, onDone = { nav.popBackStack() }) {
+                Repo.remove("txns", id)
+                existing?.let { gone -> Undo.offer(str(R.string.transaction_deleted)) { Repo.put("txns", gone.id, gone) } }
+            }
         }, { confirmDelete = false }, danger = true)
     }
 }

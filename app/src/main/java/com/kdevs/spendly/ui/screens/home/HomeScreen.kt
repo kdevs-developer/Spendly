@@ -45,7 +45,8 @@ fun HomeScreen(nav: NavController) {
     val look = rememberLookup()
 
     val live = accounts.filter { !it.archived }
-    val total = live.sumOf { Repo.balanceOf(it.id, accounts, txns) }
+    val balances = remember(accounts, txns) { Repo.balances(accounts, txns) }
+    val total = live.sumOf { balances[it.id] ?: 0L }
     val month = inRange(txns, monthStart(), nextMonthStart())
     val spentNow = spent(month)
     val overall = budgets.firstOrNull { it.categoryId.isBlank() }
@@ -175,6 +176,15 @@ fun HomeScreen(nav: NavController) {
             })
             SettingRow(str(R.string.recurring), icon = Icons.Filled.Repeat, iconColor = clr(R.color.swatch_orange), onClick = {
                 nav.navigate(Routes.RECURRING)
+            })
+            SettingRow(str(R.string.bills), icon = Icons.Filled.Receipt, iconColor = clr(R.color.swatch_pink), onClick = {
+                nav.navigate(Routes.BILLS)
+            })
+            SettingRow(str(R.string.subscriptions), icon = Icons.Filled.Autorenew, iconColor = clr(R.color.swatch_purple), onClick = {
+                nav.navigate(Routes.SUBSCRIPTIONS)
+            })
+            SettingRow(str(R.string.insights), icon = Icons.Filled.Lightbulb, iconColor = clr(R.color.swatch_teal), onClick = {
+                nav.navigate(Routes.INSIGHTS)
             }, divider = false)
         }
         Spacer(Modifier.height(70.dp))
