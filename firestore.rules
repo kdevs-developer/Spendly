@@ -19,7 +19,8 @@ service cloud.firestore {
     match /userCodes/{code} {
       allow get: if signedIn();
       allow list: if false;
-      allow create: if signedIn() && request.resource.data.uid == request.auth.uid;
+      allow create: if signedIn() && request.resource.data.uid == request.auth.uid
+        && code.matches('[A-Z0-9]{8}');
       allow update, delete: if signedIn() && resource.data.uid == request.auth.uid;
     }
 
@@ -38,6 +39,7 @@ service cloud.firestore {
           && request.resource.data.status in ['accepted', 'declined'])
         || (resource.data.from == request.auth.uid
           && request.resource.data.from == request.auth.uid
+          && request.resource.data.to == resource.data.to
           && request.resource.data.status == 'pending')
       );
       allow delete: if signedIn()
@@ -63,7 +65,7 @@ service cloud.firestore {
         // for everyone within 5 minutes of sending.
         allow update: if isMember(get(/databases/$(database)/documents/chats/$(chatId)).data)
           && (
-            request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reactions', 'readBy'])
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reactions', 'readBy', 'deliveredTo'])
             || (
               resource.data.senderId == request.auth.uid
               && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['deleted', 'text', 'imageUrl'])
@@ -74,7 +76,9 @@ service cloud.firestore {
       }
 
       match /splits/{splitId} {
-        allow read, create: if isMember(get(/databases/$(database)/documents/chats/$(chatId)).data);
+        allow read: if isMember(get(/databases/$(database)/documents/chats/$(chatId)).data);
+        allow create: if isMember(get(/databases/$(database)/documents/chats/$(chatId)).data)
+          && request.resource.data.createdBy == request.auth.uid;
         allow update: if isMember(get(/databases/$(database)/documents/chats/$(chatId)).data)
           && resource.data.createdBy == request.auth.uid;
         allow delete: if isMember(get(/databases/$(database)/documents/chats/$(chatId)).data)

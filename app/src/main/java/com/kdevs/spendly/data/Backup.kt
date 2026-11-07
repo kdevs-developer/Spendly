@@ -136,17 +136,17 @@ object Backup {
     suspend fun restore(json: String): Int {
         val root = runCatching { JSONObject(json) }.getOrNull()
         require(root != null && root.optString("app") == "spendly") { "This is not a Spendly backup file." }
-        var n = 0
+        require(root.optInt("version", 1) <= VERSION) { "This backup was made by a newer version of Spendly." }
+        // Everything is read and checked first, and only then written, so a damaged file cannot restore half of itself.
+        val staged = mutableListOf<Pair<String, List<Pair<String, Any>>>>()
 
-        suspend fun <T : Any> load(
+        fun <T : Any> load(
             key: String,
             collection: String,
             build: (JSONObject) -> Pair<String, T>,
         ) {
             val a = root.optJSONArray(key) ?: return
-            val items = (0 until a.length()).map { build(a.getJSONObject(it)) }
-            Repo.putMany(collection, items)
-            n += items.size
+            staged += collection to (0 until a.length()).map { build(a.getJSONObject(it)) }
         }
         // Accounts and categories first, so everything that points at them lands in a finished picture.
         load("accounts", "accounts") {
@@ -230,6 +230,11 @@ object Backup {
                     paid = it.optBoolean("paid"),
                     paidMillis = it.optLong("paidMillis"),
                 )
+        }
+        var n = 0
+        for ((collection, items) in staged) {
+            Repo.putMany(collection, items)
+            n += items.size
         }
         return n
     }
@@ -388,7 +393,7 @@ object Backup {
         var skipped = 0
         for (r in rows.drop(1)) {
             val millis = parseDate(cell(r, cDate))
-            val paise = parseRupees(cell(r, cAmount).replace("₹", "").replace("Rs.", "").replace("Rs", ""))?.let { kotlin.math.abs(it) }
+            val paise = parseRupees(cell(r, cAmount).replace("₹", "").replace("Rs.", "").replace("Rs", "").trim().trimStart('-', '+'))
             if (millis == null || paise == null || paise == 0L) {
                 skipped++
                 continue

@@ -66,3 +66,17 @@ Product / release
 - Privacy policy has a hard-coded date and no real contact; Play requires a working contact and a web-reachable policy URL.
 - README says it was never compiled; there are no tests (money split maths in `Util.kt` is the first thing to cover).
 - Project folder contained a stale nested copy `spendly-android/spendly-android/` (four files differ). It is left out of this zip; delete it in your repo.
+
+
+## 3. Review fixes (2026-11-07)
+- Rules: `deliveredTo` allowed on message updates (read receipts and unread reset were being refused); split `createdBy` must be the caller; a pending request cannot change `to`; friend codes must be 8 chars A-Z/0-9. Redeploy: `firebase deploy --only firestore:rules`.
+- Delete my data now also removes `bills`.
+- Room removed (it was never used): data/local, DatabaseModule, schemas, two Room dependencies. Firestore's offline cache is the local store.
+- `Repo.loaded` is cleared when the signed-in person changes.
+- Starter categories use fixed ids in one batch (a repeated run no longer duplicates them).
+- Profile rename, block and unblock no longer wait for the server; a blank friend code no longer crashes rename.
+- Chat, request, message and split listeners report errors and retry like the money listeners.
+- Backup restore reads and checks the whole file before writing anything, and refuses newer versions.
+- `parseRupees` rejects signs, exponents and amounts above 1,000 crore (CSV import still accepts negative amounts as expenses).
+- Zip no longer contains keystore.properties, debug.keystore, local.properties or .gradle/.idea caches. Change the old keystore password if you reuse it.
+- Not changed: Gradle/AGP versions, chat membership rules, multi-device FCM tokens.

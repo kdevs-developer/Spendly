@@ -41,13 +41,19 @@ fun formatPaise(
     return "$sign₹$grouped$frac"
 }
 
+/** Largest amount accepted in one field: 1,000 crore rupees (1e12 paise). */
+const val MAX_PAISE = 10_000_000_000_00L
+
 /** "1,250.50" -> 125050. Returns null for blank or invalid input. */
 fun parseRupees(text: String): Long? {
     val t = text.replace(",", "").trim()
-    if (t.isEmpty()) return null
-    return runCatching {
-        BigDecimal(t).movePointRight(2).setScale(0, RoundingMode.HALF_UP).toLong()
-    }.getOrNull()
+    // Plain digits with an optional decimal part only: no signs, no exponents like "1e20".
+    if (t.isEmpty() || t.length > 15 || !t.matches(Regex("""\d*\.?\d*""")) || t == ".") return null
+    val paise =
+        runCatching {
+            BigDecimal(t).movePointRight(2).setScale(0, RoundingMode.HALF_UP).toLong()
+        }.getOrNull() ?: return null
+    return paise.takeIf { it <= MAX_PAISE }
 }
 
 fun paiseToField(paise: Long): String = if (paise == 0L) "" else BigDecimal(paise).movePointLeft(2).stripTrailingZeros().toPlainString()

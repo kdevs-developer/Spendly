@@ -64,10 +64,24 @@ object Repo {
         appContext = ctx.applicationContext
     }
 
+    // Declared before uidFlow: its listener uses them as soon as it starts.
+    /** Names of collections that have delivered their first snapshot, so screens can show a loader instead of "empty". */
+    val loaded = kotlinx.coroutines.flow.MutableStateFlow(setOf<String>())
+
+    @Volatile private var lastUid: String? = FirebaseAuth.getInstance().currentUser?.uid
+
     // ---------- Auth ----------
     val uidFlow: StateFlow<String?> =
         callbackFlow<String?> {
-            val l = FirebaseAuth.AuthStateListener { trySend(it.currentUser?.uid) }
+            val l =
+                FirebaseAuth.AuthStateListener {
+                    // A different person (or nobody) is signed in: forget which collections had loaded for the last one.
+                    if (it.currentUser?.uid != lastUid) {
+                        lastUid = it.currentUser?.uid
+                        loaded.value = emptySet()
+                    }
+                    trySend(it.currentUser?.uid)
+                }
             FirebaseAuth.getInstance().addAuthStateListener(l)
             awaitClose { FirebaseAuth.getInstance().removeAuthStateListener(l) }
         }.stateIn(scope, SharingStarted.Eagerly, FirebaseAuth.getInstance().currentUser?.uid)
@@ -281,6 +295,7 @@ object Repo {
             "goals",
             "templates", // no longer used by the app; deleted here so older accounts leave nothing behind
             "recurring",
+            "bills",
             "friends",
             "hidden",
             "hiddenChats",
@@ -444,6 +459,10 @@ object Repo {
         return s.take(4) + " " + s.drop(4)
     }
 
+    /**
+     * Adds the starter categories in one batch with fixed ids, so a run that is cut short and repeated
+     * rewrites the same documents instead of adding a second set.
+     */
     private suspend fun seedCategories() {
         val parents =
             listOf(
@@ -460,11 +479,15 @@ object Repo {
                 Triple(str(R.string.entertainment), "movie", "teal") to listOf(str(R.string.movies) to "movie"),
             )
         val col = db.collection("users").document(uid).collection("categories")
-        parents.forEach { (p, subs) ->
-            val ref = col.document()
-            ref.set(Category(name = p.first, icon = p.second, colorKey = p.third, kind = "expense")).await()
-            subs.forEach { (n, i) ->
-                col.add(Category(name = n, icon = i, colorKey = p.third, parentId = ref.id, kind = "expense")).await()
+        val batch = db.batch()
+        parents.forEachIndexed { pi, (p, subs) ->
+            val parentId = "seed_p$pi"
+            batch.set(col.document(parentId), Category(name = p.first, icon = p.second, colorKey = p.third, kind = "expense"))
+            subs.forEachIndexed { si, (n, i) ->
+                batch.set(
+                    col.document("seed_p${pi}_s$si"),
+                    Category(name = n, icon = i, colorKey = p.third, parentId = parentId, kind = "expense"),
+                )
             }
         }
         listOf(
@@ -472,9 +495,10 @@ object Repo {
             str(R.string.interest) to "savings",
             str(R.string.gifts_received) to "gift",
             str(R.string.other_income) to "other",
-        ).forEach { (n, i) ->
-            col.add(Category(name = n, icon = i, colorKey = "green", kind = "income")).await()
+        ).forEachIndexed { i, (n, ic) ->
+            batch.set(col.document("seed_i$i"), Category(name = n, icon = ic, colorKey = "green", kind = "income"))
         }
+        batch.commit().await()
     }
 
     // ---------- Generic helpers ----------
@@ -521,9 +545,6 @@ object Repo {
         delay(3000)
         return true
     }
-
-    /** Names of collections that have delivered their first snapshot, so screens can show a loader instead of "empty". */
-    val loaded = kotlinx.coroutines.flow.MutableStateFlow(setOf<String>())
 
     private fun <T> Flow<T>.hot(initial: T): StateFlow<T> = stateIn(scope, SharingStarted.Eagerly, initial)
 
@@ -739,19 +760,12 @@ object Repo {
     }
 
     suspend fun updateProfileName(name: String) {
-        db
-            .collection("users")
-            .document(uid)
-            .set(
-                mapOf("name" to name),
-                com.google.firebase.firestore.SetOptions
-                    .merge(),
-            ).await()
-        db
-            .collection("userCodes")
-            .document(profile.value.code.replace(" ", ""))
-            .set(mapOf("uid" to uid, "name" to name))
-            .await()
+        // Not awaited: the name is saved on the phone at once and sent when there is internet.
+        db.collection("users").document(uid).set(mapOf("name" to name), SetOptions.merge()).watch()
+        val code = profile.value.code.replace(" ", "")
+        if (code.isNotBlank()) {
+            db.collection("userCodes").document(code).set(mapOf("uid" to uid, "name" to name)).watch()
+        }
     }
 
     /** One run at a time: the app opening, coming back to the screen and the background worker can overlap. */
@@ -868,15 +882,16 @@ object Repo {
                 if (u == null) {
                     flowOf(emptyList())
                 } else {
-                    callbackFlow {
+                    callbackFlow<List<FriendRequest>> {
                         val reg =
                             db
                                 .collection("requests")
                                 .whereEqualTo("to", u)
                                 .whereEqualTo("status", "pending")
-                                .addSnapshotListener { s, _ -> if (s != null) trySend(s.toObjects(FriendRequest::class.java)) }
+                                .addSnapshotListener { s, e -> if (e != null) close(e) else if (s != null) trySend(s.toObjects(FriendRequest::class.java)) }
                         awaitClose { reg.remove() }
-                    }
+                    }.retryWhen { cause, attempt -> retryListener(cause, attempt) }
+                        .catch { }
                 }
             }.hot(emptyList())
 
@@ -886,15 +901,16 @@ object Repo {
                 if (u == null) {
                     flowOf(emptyList())
                 } else {
-                    callbackFlow {
+                    callbackFlow<List<FriendRequest>> {
                         val reg =
                             db
                                 .collection("requests")
                                 .whereEqualTo("from", u)
                                 .whereEqualTo("status", "pending")
-                                .addSnapshotListener { s, _ -> if (s != null) trySend(s.toObjects(FriendRequest::class.java)) }
+                                .addSnapshotListener { s, e -> if (e != null) close(e) else if (s != null) trySend(s.toObjects(FriendRequest::class.java)) }
                         awaitClose { reg.remove() }
-                    }
+                    }.retryWhen { cause, attempt -> retryListener(cause, attempt) }
+                        .catch { }
                 }
             }.hot(emptyList())
 
@@ -996,7 +1012,7 @@ object Repo {
             .collection("users")
             .document(uid)
             .update("blocked", FieldValue.arrayUnion(id))
-            .await()
+            .watch()
     }
 
     suspend fun unblock(id: String) {
@@ -1004,7 +1020,7 @@ object Repo {
             .collection("users")
             .document(uid)
             .update("blocked", FieldValue.arrayRemove(id))
-            .await()
+            .watch()
     }
 
     suspend fun report(
@@ -1026,16 +1042,18 @@ object Repo {
                 if (u == null) {
                     flowOf(emptyList())
                 } else {
-                    callbackFlow {
+                    callbackFlow<List<Chat>> {
                         val reg =
                             db
                                 .collection("chats")
                                 .whereArrayContains("members", u)
                                 .addSnapshotListener {
                                     s,
-                                    _,
+                                    e,
                                     ->
-                                    if (s != null) {
+                                    if (e != null) {
+                                        close(e)
+                                    } else if (s != null) {
                                         trySend(
                                             s
                                                 .toObjects(
@@ -1046,15 +1064,20 @@ object Repo {
                                     }
                                 }
                         awaitClose { reg.remove() }
-                    }
+                    }.retryWhen { cause, attempt -> retryListener(cause, attempt) }
+                        .catch { }
                 }
             }.hot(emptyList())
 
     fun chat(id: String): Flow<Chat?> =
-        callbackFlow {
-            val reg = db.collection("chats").document(id).addSnapshotListener { s, _ -> trySend(s?.toObject(Chat::class.java)) }
+        callbackFlow<Chat?> {
+            val reg =
+                db.collection("chats").document(id).addSnapshotListener { s, e ->
+                    if (e != null) close(e) else trySend(s?.toObject(Chat::class.java))
+                }
             awaitClose { reg.remove() }
-        }
+        }.retryWhen { cause, attempt -> retryListener(cause, attempt) }
+            .catch { emit(null) }
 
     suspend fun openDirectChat(friend: Friend): String {
         val id = listOf(uid, friend.id).sorted().joinToString("_")
@@ -1133,7 +1156,7 @@ object Repo {
 
     fun messages(chatId: String): Flow<List<Message>> =
         combine(
-            callbackFlow {
+            callbackFlow<List<Message>> {
                 val reg =
                     db
                         .collection("chats")
@@ -1141,8 +1164,10 @@ object Repo {
                         .collection("messages")
                         .orderBy("createdAt")
                         // Metadata changes tell us when a message moves from "on this phone" to "on the server".
-                        .addSnapshotListener(MetadataChanges.INCLUDE) { s, _ ->
-                            if (s != null) {
+                        .addSnapshotListener(MetadataChanges.INCLUDE) { s, e ->
+                            if (e != null) {
+                                close(e)
+                            } else if (s != null) {
                                 trySend(
                                     s.documents.mapNotNull { d ->
                                         d
@@ -1153,7 +1178,8 @@ object Repo {
                             }
                         }
                 awaitClose { reg.remove() }
-            },
+            }.retryWhen { cause, attempt -> retryListener(cause, attempt) }
+                .catch { emit(emptyList()) },
             hiddenIds,
             profile,
             hiddenChats,
@@ -1331,16 +1357,17 @@ object Repo {
 
     // ---------- Splits ----------
     fun splits(chatId: String): Flow<List<SplitEntry>> =
-        callbackFlow {
+        callbackFlow<List<SplitEntry>> {
             val reg =
                 db
                     .collection("chats")
                     .document(chatId)
                     .collection("splits")
                     .orderBy("dateMillis", Query.Direction.DESCENDING)
-                    .addSnapshotListener { s, _ -> if (s != null) trySend(s.toObjects(SplitEntry::class.java)) }
+                    .addSnapshotListener { s, e -> if (e != null) close(e) else if (s != null) trySend(s.toObjects(SplitEntry::class.java)) }
             awaitClose { reg.remove() }
-        }
+        }.retryWhen { cause, attempt -> retryListener(cause, attempt) }
+            .catch { emit(emptyList()) }
 
     suspend fun addSplit(
         chatId: String,
