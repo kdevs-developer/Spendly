@@ -34,6 +34,10 @@
     <string name="remind_me">Remind me</string>
     <string name="on_the_day">On the day</string>
     <string name="days_before">%1$d days before</string>
+    <!-- Remind me selector: two lines so every segment looks the same -->
+    <string name="remind_same_day">On the\nday</string>
+    <string name="remind_one_day_before">1 day\nbefore</string>
+    <string name="remind_days_before">%1$d days\nbefore</string>
     <string name="due_date">Due date</string>
     <string name="delete_bill">Delete bill?</string>
     <string name="delete_bill_hint">Expenses already added for this bill stay.</string>

@@ -115,8 +115,11 @@ object Insights {
         if (t.kind != "expense" || t.categoryId.isBlank()) return null
         val earlier =
             history.filter {
-                it.kind == "expense" && it.id != t.id && it.categoryId == t.categoryId &&
-                    it.dateMillis >= nowMillis - 90 * DAY && it.dateMillis <= nowMillis
+                it.kind == "expense" &&
+                    it.id != t.id &&
+                    it.categoryId == t.categoryId &&
+                    it.dateMillis >= nowMillis - 90 * DAY &&
+                    it.dateMillis <= nowMillis
             }
         if (earlier.size < 4) return null
         val avg = earlier.sumOf { it.amountPaise } / earlier.size

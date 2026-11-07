@@ -25,7 +25,6 @@ import com.kdevs.spendly.nav.SpendlyNav
 import com.kdevs.spendly.ui.main.MainViewModel
 import com.kdevs.spendly.ui.main.SystemBarsEffect
 import com.kdevs.spendly.ui.main.registerNotificationPermission
-import com.kdevs.spendly.ui.screens.settings.LockScreen
 import com.kdevs.spendly.ui.splash.SplashOverlay
 import com.kdevs.spendly.ui.theme.SpendlyTheme
 import dagger.hilt.android.AndroidEntryPoint
@@ -73,10 +72,19 @@ class MainActivity : FragmentActivity() {
             SystemBarsEffect(Prefs.isDark)
             SpendlyTheme {
                 var showSplash by rememberSaveable { mutableStateOf(true) }
+                var firstSplash by rememberSaveable { mutableStateOf(true) }
+                val needLock = locked && uid != null
+                // The splash is also the lock screen. When the app locks again after being away, bring it back
+                // (without the intro animation) and ask for the fingerprint / face / screen lock on it.
+                LaunchedEffect(needLock) { if (needLock) showSplash = true }
                 Box(Modifier.fillMaxSize()) {
                     SpendlyNav()
-                    if (locked && uid != null) LockScreen(active = !showSplash) { vm.unlock() }
-                    if (showSplash) SplashOverlay { showSplash = false }
+                    if (showSplash) {
+                        SplashOverlay(locked = needLock, quick = !firstSplash, onUnlocked = { vm.unlock() }) {
+                            showSplash = false
+                            firstSplash = false
+                        }
+                    }
                 }
             }
         }

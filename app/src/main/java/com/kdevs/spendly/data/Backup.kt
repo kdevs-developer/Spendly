@@ -31,27 +31,42 @@ object Backup {
             "accounts",
             arr(Repo.accounts.value) {
                 JSONObject()
-                    .put("id", it.id).put("name", it.name).put("type", it.type).put("icon", it.icon)
-                    .put("colorKey", it.colorKey).put("openingPaise", it.openingPaise)
-                    .put("archived", it.archived).put("createdAt", it.createdAt)
+                    .put("id", it.id)
+                    .put("name", it.name)
+                    .put("type", it.type)
+                    .put("icon", it.icon)
+                    .put("colorKey", it.colorKey)
+                    .put("openingPaise", it.openingPaise)
+                    .put("archived", it.archived)
+                    .put("createdAt", it.createdAt)
             },
         )
         root.put(
             "categories",
             arr(Repo.categories.value) {
                 JSONObject()
-                    .put("id", it.id).put("name", it.name).put("icon", it.icon).put("colorKey", it.colorKey)
-                    .put("parentId", it.parentId).put("kind", it.kind)
+                    .put("id", it.id)
+                    .put("name", it.name)
+                    .put("icon", it.icon)
+                    .put("colorKey", it.colorKey)
+                    .put("parentId", it.parentId)
+                    .put("kind", it.kind)
             },
         )
         root.put(
             "txns",
             arr(Repo.txns.value) {
                 JSONObject()
-                    .put("id", it.id).put("kind", it.kind).put("amountPaise", it.amountPaise)
-                    .put("accountId", it.accountId).put("toAccountId", it.toAccountId)
-                    .put("categoryId", it.categoryId).put("subcategoryId", it.subcategoryId)
-                    .put("note", it.note).put("dateMillis", it.dateMillis).put("recurringId", it.recurringId)
+                    .put("id", it.id)
+                    .put("kind", it.kind)
+                    .put("amountPaise", it.amountPaise)
+                    .put("accountId", it.accountId)
+                    .put("toAccountId", it.toAccountId)
+                    .put("categoryId", it.categoryId)
+                    .put("subcategoryId", it.subcategoryId)
+                    .put("note", it.note)
+                    .put("dateMillis", it.dateMillis)
+                    .put("recurringId", it.recurringId)
             },
         )
         root.put(
@@ -64,28 +79,49 @@ object Backup {
             "goals",
             arr(Repo.goals.value) {
                 JSONObject()
-                    .put("id", it.id).put("name", it.name).put("icon", it.icon).put("colorKey", it.colorKey)
-                    .put("targetPaise", it.targetPaise).put("savedPaise", it.savedPaise).put("deadlineMillis", it.deadlineMillis)
+                    .put("id", it.id)
+                    .put("name", it.name)
+                    .put("icon", it.icon)
+                    .put("colorKey", it.colorKey)
+                    .put("targetPaise", it.targetPaise)
+                    .put("savedPaise", it.savedPaise)
+                    .put("deadlineMillis", it.deadlineMillis)
             },
         )
         root.put(
             "recurring",
             arr(Repo.recurring.value) {
                 JSONObject()
-                    .put("id", it.id).put("name", it.name).put("kind", it.kind).put("amountPaise", it.amountPaise)
-                    .put("accountId", it.accountId).put("categoryId", it.categoryId).put("subcategoryId", it.subcategoryId)
-                    .put("every", it.every).put("interval", it.interval).put("nextMillis", it.nextMillis)
-                    .put("active", it.active).put("anchorDay", it.anchorDay)
+                    .put("id", it.id)
+                    .put("name", it.name)
+                    .put("kind", it.kind)
+                    .put("amountPaise", it.amountPaise)
+                    .put("accountId", it.accountId)
+                    .put("categoryId", it.categoryId)
+                    .put("subcategoryId", it.subcategoryId)
+                    .put("every", it.every)
+                    .put("interval", it.interval)
+                    .put("nextMillis", it.nextMillis)
+                    .put("active", it.active)
+                    .put("anchorDay", it.anchorDay)
             },
         )
         root.put(
             "bills",
             arr(Repo.bills.value) {
                 JSONObject()
-                    .put("id", it.id).put("name", it.name).put("amountPaise", it.amountPaise)
-                    .put("accountId", it.accountId).put("categoryId", it.categoryId).put("subcategoryId", it.subcategoryId)
-                    .put("dueMillis", it.dueMillis).put("every", it.every).put("anchorDay", it.anchorDay)
-                    .put("remindDays", it.remindDays).put("paid", it.paid).put("paidMillis", it.paidMillis)
+                    .put("id", it.id)
+                    .put("name", it.name)
+                    .put("amountPaise", it.amountPaise)
+                    .put("accountId", it.accountId)
+                    .put("categoryId", it.categoryId)
+                    .put("subcategoryId", it.subcategoryId)
+                    .put("dueMillis", it.dueMillis)
+                    .put("every", it.every)
+                    .put("anchorDay", it.anchorDay)
+                    .put("remindDays", it.remindDays)
+                    .put("paid", it.paid)
+                    .put("paidMillis", it.paidMillis)
             },
         )
         return root.toString(2)
@@ -116,25 +152,37 @@ object Backup {
         load("accounts", "accounts") {
             it.getString("id") to
                 Account(
-                    name = it.optString("name"), type = it.optString("type", "bank"), icon = it.optString("icon", "bank"),
-                    colorKey = it.optString("colorKey", "blue"), openingPaise = it.optLong("openingPaise"),
-                    archived = it.optBoolean("archived"), createdAt = it.optLong("createdAt"),
+                    name = it.optString("name"),
+                    type = it.optString("type", "bank"),
+                    icon = it.optString("icon", "bank"),
+                    colorKey = it.optString("colorKey", "blue"),
+                    openingPaise = it.optLong("openingPaise"),
+                    archived = it.optBoolean("archived"),
+                    createdAt = it.optLong("createdAt"),
                 )
         }
         load("categories", "categories") {
             it.getString("id") to
                 Category(
-                    name = it.optString("name"), icon = it.optString("icon", "other"), colorKey = it.optString("colorKey", "slate"),
-                    parentId = it.optString("parentId"), kind = it.optString("kind", "expense"),
+                    name = it.optString("name"),
+                    icon = it.optString("icon", "other"),
+                    colorKey = it.optString("colorKey", "slate"),
+                    parentId = it.optString("parentId"),
+                    kind = it.optString("kind", "expense"),
                 )
         }
         load("txns", "txns") {
             it.getString("id") to
                 Txn(
-                    kind = it.optString("kind", "expense"), amountPaise = it.optLong("amountPaise"),
-                    accountId = it.optString("accountId"), toAccountId = it.optString("toAccountId"),
-                    categoryId = it.optString("categoryId"), subcategoryId = it.optString("subcategoryId"),
-                    note = it.optString("note"), dateMillis = it.optLong("dateMillis"), recurringId = it.optString("recurringId"),
+                    kind = it.optString("kind", "expense"),
+                    amountPaise = it.optLong("amountPaise"),
+                    accountId = it.optString("accountId"),
+                    toAccountId = it.optString("toAccountId"),
+                    categoryId = it.optString("categoryId"),
+                    subcategoryId = it.optString("subcategoryId"),
+                    note = it.optString("note"),
+                    dateMillis = it.optLong("dateMillis"),
+                    recurringId = it.optString("recurringId"),
                 )
         }
         load("budgets", "budgets") {
@@ -143,28 +191,44 @@ object Backup {
         load("goals", "goals") {
             it.getString("id") to
                 Goal(
-                    name = it.optString("name"), icon = it.optString("icon", "goal"), colorKey = it.optString("colorKey", "green"),
-                    targetPaise = it.optLong("targetPaise"), savedPaise = it.optLong("savedPaise"),
+                    name = it.optString("name"),
+                    icon = it.optString("icon", "goal"),
+                    colorKey = it.optString("colorKey", "green"),
+                    targetPaise = it.optLong("targetPaise"),
+                    savedPaise = it.optLong("savedPaise"),
                     deadlineMillis = it.optLong("deadlineMillis"),
                 )
         }
         load("recurring", "recurring") {
             it.getString("id") to
                 Recurring(
-                    name = it.optString("name"), kind = it.optString("kind", "expense"), amountPaise = it.optLong("amountPaise"),
-                    accountId = it.optString("accountId"), categoryId = it.optString("categoryId"),
-                    subcategoryId = it.optString("subcategoryId"), every = it.optString("every", "monthly"),
-                    interval = it.optInt("interval", 1), nextMillis = it.optLong("nextMillis"),
-                    active = it.optBoolean("active", true), anchorDay = it.optInt("anchorDay"),
+                    name = it.optString("name"),
+                    kind = it.optString("kind", "expense"),
+                    amountPaise = it.optLong("amountPaise"),
+                    accountId = it.optString("accountId"),
+                    categoryId = it.optString("categoryId"),
+                    subcategoryId = it.optString("subcategoryId"),
+                    every = it.optString("every", "monthly"),
+                    interval = it.optInt("interval", 1),
+                    nextMillis = it.optLong("nextMillis"),
+                    active = it.optBoolean("active", true),
+                    anchorDay = it.optInt("anchorDay"),
                 )
         }
         load("bills", "bills") {
             it.getString("id") to
                 Bill(
-                    name = it.optString("name"), amountPaise = it.optLong("amountPaise"), accountId = it.optString("accountId"),
-                    categoryId = it.optString("categoryId"), subcategoryId = it.optString("subcategoryId"),
-                    dueMillis = it.optLong("dueMillis"), every = it.optString("every", "none"), anchorDay = it.optInt("anchorDay"),
-                    remindDays = it.optInt("remindDays", 1), paid = it.optBoolean("paid"), paidMillis = it.optLong("paidMillis"),
+                    name = it.optString("name"),
+                    amountPaise = it.optLong("amountPaise"),
+                    accountId = it.optString("accountId"),
+                    categoryId = it.optString("categoryId"),
+                    subcategoryId = it.optString("subcategoryId"),
+                    dueMillis = it.optLong("dueMillis"),
+                    every = it.optString("every", "none"),
+                    anchorDay = it.optInt("anchorDay"),
+                    remindDays = it.optInt("remindDays", 1),
+                    paid = it.optBoolean("paid"),
+                    paidMillis = it.optLong("paidMillis"),
                 )
         }
         return n
@@ -228,7 +292,13 @@ object Backup {
         if (t.isEmpty()) return null
         val zone = ZoneId.systemDefault()
         for (f in dateTime) {
-            runCatching { return LocalDateTime.parse(t, f).atZone(zone).toInstant().toEpochMilli() }
+            runCatching {
+                return LocalDateTime
+                    .parse(t, f)
+                    .atZone(zone)
+                    .toInstant()
+                    .toEpochMilli()
+            }
         }
         for (f in dateOnly) {
             runCatching { return LocalDate.parse(t, f).startMillis() }
@@ -237,7 +307,11 @@ object Backup {
     }
 
     private fun sha(s: String): String =
-        MessageDigest.getInstance("SHA-1").digest(s.toByteArray()).joinToString("") { "%02x".format(it) }.take(24)
+        MessageDigest
+            .getInstance("SHA-1")
+            .digest(s.toByteArray())
+            .joinToString("") { "%02x".format(it) }
+            .take(24)
 
     /**
      * Columns (by heading, any order, any capital letters): Date, Amount (required), Type, Category, Sub-category, Account,
@@ -247,7 +321,14 @@ object Backup {
     suspend fun importCsv(text: String): CsvResult {
         val rows = parseCsv(text)
         require(rows.size >= 2) { "The file has no rows." }
-        val head = rows[0].map { it.trim().lowercase().replace("_", " ").replace("-", " ") }
+        val head =
+            rows[0].map {
+                it
+                    .trim()
+                    .lowercase()
+                    .replace("_", " ")
+                    .replace("-", " ")
+            }
 
         fun col(vararg names: String): Int = head.indexOfFirst { it in names }
         val cDate = col("date")
@@ -274,7 +355,12 @@ object Backup {
         val now = System.currentTimeMillis()
 
         suspend fun accountId(name: String): String {
-            if (name.isBlank()) return Repo.accounts.value.firstOrNull { !it.archived }?.id.orEmpty()
+            if (name.isBlank()) {
+                return Repo.accounts.value
+                    .firstOrNull { !it.archived }
+                    ?.id
+                    .orEmpty()
+            }
             val key = name.lowercase()
             accountIds[key]?.let { return it }
             val id = Repo.put("accounts", "", Account(name = name, createdAt = now))
@@ -320,7 +406,14 @@ object Backup {
             }
             val toAcc = if (kind == "transfer") accountId(cell(r, cTo)) else ""
             val catKind = if (kind == "income") "income" else "expense"
-            val cat = if (kind == "transfer") "" else categoryId(catKind, "", cell(r, cCat).takeUnless { it.equals("Uncategorised", true) }.orEmpty())
+            val cat =
+                if (kind ==
+                    "transfer"
+                ) {
+                    ""
+                } else {
+                    categoryId(catKind, "", cell(r, cCat).takeUnless { it.equals("Uncategorised", true) }.orEmpty())
+                }
             val sub = if (cat.isBlank()) "" else categoryId(catKind, cat, cell(r, cSub))
             val note = cell(r, cNote)
             val sig = "$millis|$kind|$paise|$acc|$toAcc|$cat|$sub|$note"
@@ -328,8 +421,14 @@ object Backup {
             out.add(
                 "imp_${sha("$sig|$nth")}" to
                     Txn(
-                        kind = kind, amountPaise = paise, accountId = acc, toAccountId = toAcc,
-                        categoryId = cat, subcategoryId = sub, note = note, dateMillis = millis,
+                        kind = kind,
+                        amountPaise = paise,
+                        accountId = acc,
+                        toAccountId = toAcc,
+                        categoryId = cat,
+                        subcategoryId = sub,
+                        note = note,
+                        dateMillis = millis,
                     ),
             )
         }

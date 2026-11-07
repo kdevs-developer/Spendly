@@ -46,7 +46,6 @@ import com.kdevs.spendly.ui.theme.FieldBorder
 import com.kdevs.spendly.ui.theme.Ink
 import com.kdevs.spendly.ui.theme.Muted
 import com.kdevs.spendly.ui.theme.Primary
-import com.kdevs.spendly.ui.theme.PrimaryContainer
 import com.kdevs.spendly.ui.theme.Surface
 import com.kdevs.spendly.ui.theme.Track
 
@@ -205,7 +204,18 @@ fun SegmentedControl(
                         .clip(inner)
                         .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { onSelect(i) },
                     contentAlignment = Alignment.Center,
-                ) { Text(label, fontWeight = FontWeight.Bold, fontSize = 13.sp, color = c) }
+                ) {
+                    Text(
+                        label,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 13.sp,
+                        lineHeight = 15.sp,
+                        color = c,
+                        textAlign = TextAlign.Center,
+                        maxLines = 2,
+                        modifier = Modifier.padding(horizontal = 2.dp),
+                    )
+                }
             }
         }
     }

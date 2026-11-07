@@ -11,23 +11,42 @@ exports.onMessage = onDocumentCreated(
     const msg = event.data && event.data.data();
     if (!msg || msg.type === "system") return;
     const db = admin.firestore();
-    const chat = (await db.doc(`chats/${event.params.chatId}`).get()).data();
+    const chatId = event.params.chatId;
+    const chat = (await db.doc(`chats/${chatId}`).get()).data();
     if (!chat) return;
 
     const title = chat.type === "direct" ? msg.senderName : `${chat.name} · ${msg.senderName}`;
-    const body = msg.type === "image" ? "Photo" : (msg.text || "").slice(0, 100);
+    const body =
+      msg.type === "image" ? "Photo" : msg.type === "video" ? "Video" : (msg.text || "").slice(0, 100);
 
-    const targets = chat.members.filter((u) => u !== msg.senderId);
-    for (const uid of targets) {
-      const me = (await db.doc(`users/${uid}`).get()).data() || {};
-      if ((me.blocked || []).includes(msg.senderId) || !me.fcmToken) continue;
-      await admin.messaging().send({
-        token: me.fcmToken,
-        notification: { title, body },
-        data: { chatId: event.params.chatId },
-        android: { priority: "high" },
-      }).catch(() => {});
-    }
+    const targets = (chat.members || []).filter((u) => u !== msg.senderId);
+    await Promise.all(
+      targets.map(async (uid) => {
+        const ref = db.doc(`users/${uid}`);
+        const me = (await ref.get()).data() || {};
+        if ((me.blocked || []).includes(msg.senderId)) return;
+        if (!me.fcmToken) {
+          console.warn(`No fcmToken for ${uid}; open the app once while signed in so it can save one.`);
+          return;
+        }
+        try {
+          // Data-only + high priority: the app's SpendlyMessagingService always runs, even when the app is closed,
+          // so it can show the notification AND mark the message delivered. (A "notification" block would make
+          // Android show it by itself and skip that code.)
+          await admin.messaging().send({
+            token: me.fcmToken,
+            data: { chatId, title: String(title || ""), body: String(body || "") },
+            android: { priority: "high", ttl: 24 * 60 * 60 * 1000 },
+          });
+        } catch (e) {
+          console.error(`Push to ${uid} failed:`, e.code, e.message);
+          // A dead token (app reinstalled / signed out elsewhere) is removed so it is not retried forever.
+          if (e.code === "messaging/registration-token-not-registered" || e.code === "messaging/invalid-registration-token") {
+            await ref.update({ fcmToken: admin.firestore.FieldValue.delete() }).catch(() => {});
+          }
+        }
+      })
+    );
   }
 );
 

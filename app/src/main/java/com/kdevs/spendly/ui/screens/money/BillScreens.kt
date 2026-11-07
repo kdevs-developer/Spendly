@@ -3,14 +3,12 @@ package com.kdevs.spendly.ui.screens.money
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavController
 import com.kdevs.spendly.R
@@ -69,7 +67,13 @@ fun BillsScreen(nav: NavController) {
                     dueText(b.dueMillis) + " · " + fullDate(b.dueMillis) +
                         if (b.every != "none") " · " + str(R.string.repeats_every_x, everyLabel(b.every)) else "",
                     leading = { IconCircle(c?.icon ?: "other", look.category(b.categoryId)?.colorKey ?: "slate", 42.dp) },
-                    trailing = { Text(formatPaise(b.amountPaise), fontWeight = FontWeight.ExtraBold, color = if (overdue) Danger else Ink) },
+                    trailing = {
+                        Text(
+                            formatPaise(b.amountPaise),
+                            fontWeight = FontWeight.ExtraBold,
+                            color = if (overdue) Danger else Ink,
+                        )
+                    },
                     onClick = { nav.navigate(Routes.billEdit(b.id)) },
                     divider = false,
                 )
@@ -178,7 +182,13 @@ fun BillEditScreen(
         SegmentedControl(everyKeys.map { everyLabel(it) }, everyKeys.indexOf(every).coerceAtLeast(0), { every = everyKeys[it] })
         SectionTitle(str(R.string.remind_me))
         SegmentedControl(
-            remindKeys.map { if (it == 0) str(R.string.on_the_day) else str(R.string.days_before, it) },
+            remindKeys.map {
+                when (it) {
+                    0 -> str(R.string.remind_same_day)
+                    1 -> str(R.string.remind_one_day_before)
+                    else -> str(R.string.remind_days_before, it)
+                }
+            },
             remindKeys.indexOf(remind).let { if (it < 0) 1 else it },
             { remind = remindKeys[it] },
         )
@@ -189,7 +199,14 @@ fun BillEditScreen(
             PickRowLeading(str(R.string.account), a?.name ?: "", {
                 IconCircle(a?.icon ?: "bank", a?.colorKey ?: "blue", 38.dp)
             }, { nav.navigate(Routes.accountPicker("account")) })
-            PickRow(str(R.string.due_date), fullDate(due), Icons.Filled.CalendarMonth, Muted, { nav.navigate(Routes.datePicker(due)) }, divider = false)
+            PickRow(
+                str(R.string.due_date),
+                fullDate(due),
+                Icons.Filled.CalendarMonth,
+                Muted,
+                { nav.navigate(Routes.datePicker(due)) },
+                divider = false,
+            )
         }
     }
     if (confirm) {

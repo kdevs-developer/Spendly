@@ -7,7 +7,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -49,7 +48,8 @@ fun BackupScreen(nav: NavController) {
                 runCatching {
                     val json = Backup.toJson()
                     withContext(Dispatchers.IO) {
-                        ctx.contentResolver.openOutputStream(uri, "wt")?.use { it.write(json.toByteArray()) } ?: error("Could not open the file.")
+                        ctx.contentResolver.openOutputStream(uri, "wt")?.use { it.write(json.toByteArray()) }
+                            ?: error("Could not open the file.")
                     }
                 }.onSuccess { report(str(R.string.backup_saved)) }
                     .onFailure { report(it.message ?: str(R.string.something_went_wrong), true) }
@@ -111,7 +111,11 @@ fun BackupScreen(nav: NavController) {
                 str(R.string.csv_columns_hint),
                 icon = Icons.Filled.UploadFile,
                 iconColor = clr(R.color.swatch_orange),
-                onClick = { csvPicker.launch(arrayOf("text/csv", "text/comma-separated-values", "text/plain", "application/vnd.ms-excel", "*/*")) },
+                onClick = {
+                    csvPicker.launch(
+                        arrayOf("text/csv", "text/comma-separated-values", "text/plain", "application/vnd.ms-excel", "*/*"),
+                    )
+                },
                 divider = false,
             )
         }

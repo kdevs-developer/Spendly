@@ -55,7 +55,10 @@ object BillReminders {
                 putExtra(DeepLink.EXTRA, Routes.BILLS)
             }
         val pi = PendingIntent.getActivity(ctx, b.id.hashCode(), open, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
-        val days = java.time.temporal.ChronoUnit.DAYS.between(java.time.LocalDate.now(), toLocalDate(b.dueMillis)).toInt()
+        val days =
+            java.time.temporal.ChronoUnit.DAYS
+                .between(java.time.LocalDate.now(), toLocalDate(b.dueMillis))
+                .toInt()
         val whenText =
             when {
                 days < 0 -> str(R.string.overdue_by_days, -days)

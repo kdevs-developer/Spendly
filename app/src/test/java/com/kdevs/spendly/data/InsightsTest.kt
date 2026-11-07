@@ -50,7 +50,8 @@ class InsightsTest {
 
     @Test
     fun totalSpentCountsOnlyExpensesInTheRange() {
-        val txns = listOf(exp("1", 100, day(2026, 11, 1)), exp("2", 200, day(2026, 11, 2)), exp("3", 400, day(2026, 11, 2), kind = "income"))
+        val txns =
+            listOf(exp("1", 100, day(2026, 11, 1)), exp("2", 200, day(2026, 11, 2)), exp("3", 400, day(2026, 11, 2), kind = "income"))
         assertEquals(300L, Insights.totalSpent(txns, day(2026, 11, 1), day(2026, 11, 3)))
         assertEquals(100L, Insights.totalSpent(txns, day(2026, 11, 1), day(2026, 11, 2)))
     }

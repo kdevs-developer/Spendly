@@ -150,7 +150,10 @@ class MoneyMathTest {
 
     @Test
     fun csvHandlesQuotesCommasAndLineBreaks() {
-        val rows = Backup.parseCsv("\uFEFFDate,Amount,Note\r\n2026-01-05,100,\"Tea, biscuits\"\n2026-01-06,\"1,200\",\"He said \"\"hi\"\"\nsecond line\"\n")
+        val rows =
+            Backup.parseCsv(
+                "\uFEFFDate,Amount,Note\r\n2026-01-05,100,\"Tea, biscuits\"\n2026-01-06,\"1,200\",\"He said \"\"hi\"\"\nsecond line\"\n",
+            )
         assertEquals(3, rows.size)
         assertEquals(listOf("Date", "Amount", "Note"), rows[0])
         assertEquals("Tea, biscuits", rows[1][2])

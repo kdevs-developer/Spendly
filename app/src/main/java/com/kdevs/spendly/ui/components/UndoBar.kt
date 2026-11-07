@@ -57,7 +57,10 @@ fun UndoBar() {
         if (Undo.current.value?.key == it.key) Undo.current.value = null
     }
 
-    Box(Modifier.fillMaxSize().navigationBarsPadding().padding(horizontal = 16.dp, vertical = 84.dp), contentAlignment = Alignment.BottomCenter) {
+    Box(
+        Modifier.fillMaxSize().navigationBarsPadding().padding(horizontal = 16.dp, vertical = 84.dp),
+        contentAlignment = Alignment.BottomCenter,
+    ) {
         AnimatedVisibility(
             visible = visible,
             enter = slideInVertically { it } + fadeIn(),

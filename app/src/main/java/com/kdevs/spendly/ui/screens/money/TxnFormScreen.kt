@@ -199,7 +199,13 @@ fun TxnFormScreen(
                         s.note,
                         formatPaise(s.amountPaise) +
                             (look.account(s.accountId)?.name?.let { " · $it" } ?: "") +
-                            (s.subcategoryId.ifBlank { s.categoryId }.takeIf { it.isNotBlank() }?.let { " · " + look.categoryName(it) } ?: ""),
+                            (
+                                s.subcategoryId
+                                    .ifBlank { s.categoryId }
+                                    .takeIf { it.isNotBlank() }
+                                    ?.let { " · " + look.categoryName(it) }
+                                    ?: ""
+                            ),
                         icon = Icons.Filled.AutoAwesome,
                         iconColor = Primary,
                         onClick = {

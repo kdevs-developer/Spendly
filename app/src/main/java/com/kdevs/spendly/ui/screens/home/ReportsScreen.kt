@@ -116,7 +116,15 @@ private fun CompareReport(
         )
         if (lastTotal > 0) {
             Text(
-                (if (diff > 0) "+" else if (diff < 0) "-" else "") + formatPaise(kotlin.math.abs(diff)) +
+                (
+                    if (diff > 0) {
+                        "+"
+                    } else if (diff < 0) {
+                        "-"
+                    } else {
+                        ""
+                    }
+                ) + formatPaise(kotlin.math.abs(diff)) +
                     " (" + (diff * 100 / lastTotal) + "%)",
                 color = if (diff > 0) Danger else Success,
                 fontWeight = FontWeight.ExtraBold,

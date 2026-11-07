@@ -114,7 +114,10 @@ fun SplitsScreen(
                                             .clip(RoundedCornerShape(10.dp))
                                             .clickable(enabled = !sent) {
                                                 reminded = reminded + key
-                                                Repo.sendText(id, str(R.string.reminder_message, chat?.nameOf(t.from, me), formatPaise(t.paise)))
+                                                Repo.sendText(
+                                                    id,
+                                                    str(R.string.reminder_message, chat?.nameOf(t.from, me), formatPaise(t.paise)),
+                                                )
                                                 Undo.say(str(R.string.reminder_sent, chat?.nameOf(t.from, me)))
                                             }.padding(horizontal = 8.dp, vertical = 6.dp),
                                 )

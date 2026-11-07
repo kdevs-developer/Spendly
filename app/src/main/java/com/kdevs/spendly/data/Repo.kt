@@ -810,7 +810,13 @@ object Repo {
      * (never into the past). The expense gets a steady id, so paying twice cannot add it twice.
      */
     suspend fun markBillPaid(b: Bill) {
-        val account = b.accountId.ifBlank { accounts.value.firstOrNull { !it.archived }?.id.orEmpty() }
+        val account =
+            b.accountId.ifBlank {
+                accounts.value
+                    .firstOrNull { !it.archived }
+                    ?.id
+                    .orEmpty()
+            }
         val now = System.currentTimeMillis()
         put(
             "txns",
