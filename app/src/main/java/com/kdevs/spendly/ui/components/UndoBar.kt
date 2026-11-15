@@ -36,6 +36,7 @@ import com.kdevs.spendly.R
 import com.kdevs.spendly.data.Undo
 import com.kdevs.spendly.data.str
 import com.kdevs.spendly.ui.theme.Ink
+import com.kdevs.spendly.ui.theme.InkReverse
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -79,7 +80,7 @@ fun UndoBar() {
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    Text(s.message, Modifier.weight(1f), color = Color.Black, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                    Text(s.message, Modifier.weight(1f), color = InkReverse, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
                     val restore = s.restore
                     if (restore != null) {
                         Text(
