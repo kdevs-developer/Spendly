@@ -1,40 +1,164 @@
-# Spendly (com.kdevs.spendly)
+# Spendly
 
-Android expense tracker. Kotlin, Jetpack Compose, Firebase. Money is whole paise (INR). Offline-first through the Firestore local cache. Light, Dark or System theme (Settings > Appearance).
+An offline-first Android expense tracker with budgets, goals, bill reminders, split expenses, and friend chat. Built with Kotlin, Jetpack Compose, and Firebase.
 
-## Set up
-1. Open this folder in Android Studio (Ladybug or newer, JDK 17). Let it sync; it creates the Gradle wrapper.
-2. In the Firebase console create a project, add an Android app with package `com.kdevs.spendly`, and download `google-services.json` into `app/`.
-3. Turn on Authentication (Email/Password, Anonymous and **Google**), Firestore, Storage and Cloud Messaging.
-   For Google sign-in also add your debug and release **SHA-1 / SHA-256** to the Android app in Project settings, then download `google-services.json` again (it must list a web client, `client_type` 3).
-4. Deploy the rules: `firebase deploy --only firestore:rules,storage`.
-5. Optional push notifications: `cd functions && npm install && firebase deploy --only functions`.
-6. Run the `app` configuration.
+**Package:** `com.kdevs.spendly` · **Currency:** INR (money is stored as whole paise)
 
-## Layout
-- `nav/Nav.kt` – every route and the screen transitions.
-- `ui/screens/` – Auth (welcome carousel, sign in, Privacy and Terms), Main (home, activity, reports, accounts), Money (transactions, accounts, budgets, goals, recurring, bills, subscriptions, insights, backup), Pickers (filter, select, bulk, category and sub-category, colour, icon, account, date), Chat (chats, friends, conversation, message actions, image viewer, group info), Splits (ledger, add expense, settle up), Settings.
-- `res/` – adaptive launcher icon (`mipmap-anydpi-v26`, with themed monochrome layer), legacy PNG icons, notification icon, colours and theme. `ic_launcher-playstore.png` (in `app/`) is the 512px Play Store icon.
-- `ui/splash/SplashOverlay.kt` – animated splash (ring and rupee draw in, coin fills, wordmark rises, fade into the app). `Theme.Spendly.Starting` in `themes.xml` is the plain blue system splash that hands over to it.
-- `data/Repo.kt` – all Firestore, Auth and Storage access. `data/Util.kt` – money formatting and split maths.
-- `firestore.rules`, `storage.rules` – chat is protected by these rules only (no end-to-end encryption).
+<!-- Add screenshots here, for example:
+<p align="center">
+  <img src="docs/screenshots/home.png" width="22%" />
+  <img src="docs/screenshots/reports.png" width="22%" />
+  <img src="docs/screenshots/splits.png" width="22%" />
+  <img src="docs/screenshots/chat.png" width="22%" />
+</p>
+-->
 
-## New in this version
-- Buttons use a soft press (small shrink and a faint shade in the button's own shape) instead of a ripple. A disabled or busy button stays solid, so no box shows through.
-- Toggle (Expense / Income, Sign in / Create account, theme) has a sliding pill.
-- Settings > Appearance: System, Light or Dark. Settings > Security: biometric lock (fingerprint, face or screen lock). The app asks again when you return after 30 seconds away.
-- Continue with Google on the sign-in screen (`Repo.signInWithGoogle`).
-- Add friend shows your code, a QR code, Copy and Share, and a Scan button (`ui/components/Qr.kt`, Google code scanner).
-- `Repo.ensureProfile()` runs after every sign-in and every app start. It fills in a missing name, friend code and starter categories.
-- Home greets you by first name.
+## Features
 
-## Design rules followed
-- Every add, edit, filter, select and bulk action is its own full screen. Dialogs only ask yes or no.
-- Pickers return their result with `NavController.setPicked` and the receiving screen reads it with `Picked`.
-- Account types have their own default icon and colour. Colours include four gradients stored as keys (`g_sunset`, ...).
+**Track money**
+- Transactions with categories, sub-categories, colours, and icons
+- Multiple accounts, each with its own default icon and colour
+- Budgets, savings goals, recurring transactions, bills, and subscriptions
+- Reports and insights
+- Backup of your data
 
-## Editing text and colours
-All words are in `res/values/strings.xml`, colours in `colors.xml`, timings in `config.xml`. Kotlin reads them with `str(R.string.name)` and `clr(R.color.name)`. See FIXES_AND_AUDIT.md for this round of fixes.
+**Share and split**
+- Friends added by code, QR code, or scan
+- Split ledger, add expense, and settle up
+- Chat with friends and groups, with images and message actions
 
-## Not verified
-This project was written without an Android SDK, so it has not been compiled. Expect a few small compile fixes on the first sync.
+**Everyday use**
+- Offline-first: works without a connection through the Firestore local cache
+- Sign in with Email/Password, Google, or as a guest (Anonymous)
+- Light, Dark, or System theme (Settings > Appearance)
+- Biometric lock with fingerprint, face, or screen lock (Settings > Security). The app asks again after 30 seconds away
+- Animated splash screen and an adaptive launcher icon with a themed monochrome layer
+- Push notifications through Cloud Messaging (optional)
+
+## Tech stack
+
+| Area | Technology |
+|---|---|
+| Language | Kotlin |
+| UI | Jetpack Compose |
+| Backend | Firebase Authentication, Cloud Firestore, Cloud Storage, Cloud Messaging |
+| Server code | Cloud Functions (Node.js) for push notifications |
+| Build | Gradle (Kotlin DSL), Android Studio Ladybug or newer, JDK 17 |
+
+## Getting started
+
+### Prerequisites
+
+- Android Studio Ladybug or newer
+- JDK 17
+- A Firebase project (the free plan is enough to start)
+- Node.js and the Firebase CLI, only if you want push notifications or to deploy rules
+
+### Setup
+
+1. **Open the project.** Open this folder in Android Studio and let Gradle sync.
+2. **Create a Firebase project.** In the [Firebase console](https://console.firebase.google.com), add an Android app with the package name `com.kdevs.spendly`, then download `google-services.json` into `app/`.
+3. **Turn on the Firebase services.** Enable Authentication (Email/Password, Anonymous, and Google), Firestore, Storage, and Cloud Messaging.
+4. **Set up Google sign-in.** Add your debug and release **SHA-1 and SHA-256** fingerprints to the Android app in Project settings, then download `google-services.json` again. The file must list a web client (`client_type` 3).
+5. **Deploy the security rules.**
+   ```bash
+   firebase deploy --only firestore:rules,storage
+   ```
+6. **(Optional) Deploy push notifications.**
+   ```bash
+   cd functions
+   npm install
+   firebase deploy --only functions
+   ```
+7. **Run.** Select the `app` run configuration and press Run.
+
+To get your debug SHA fingerprints:
+
+```bash
+./gradlew signingReport
+```
+
+## Project structure
+
+```
+Spendly/
+├── app/                      Android application module
+│   └── src/main/
+│       ├── java/.../
+│       │   ├── nav/          Nav.kt: every route and screen transition
+│       │   ├── data/         Repo.kt (Firestore, Auth, Storage), Util.kt (money formatting, split maths)
+│       │   └── ui/
+│       │       ├── screens/  All screens, grouped as below
+│       │       ├── components/  Shared components (for example Qr.kt)
+│       │       └── splash/   SplashOverlay.kt: animated splash
+│       └── res/              Strings, colours, config, icons, themes
+├── functions/                Cloud Functions for push notifications
+├── firestore.rules           Firestore security rules
+├── storage.rules             Storage security rules
+├── firebase.json             Firebase configuration
+└── FIXES_AND_AUDIT.md        Notes on fixes from the latest audit
+```
+
+### Screens (`ui/screens/`)
+
+| Group | Contents |
+|---|---|
+| Auth | Welcome carousel, sign in, Privacy, Terms |
+| Main | Home, activity, reports, accounts |
+| Money | Transactions, accounts, budgets, goals, recurring, bills, subscriptions, insights, backup |
+| Pickers | Filter, select, bulk, category and sub-category, colour, icon, account, date |
+| Chat | Chats, friends, conversation, message actions, image viewer, group info |
+| Splits | Ledger, add expense, settle up |
+| Settings | Appearance, security, and preferences |
+
+## How it works
+
+- **Money:** all amounts are stored as whole paise (integers), never floating point. `data/Util.kt` handles formatting and split calculations.
+- **Data access:** every Firestore, Auth, and Storage call goes through `data/Repo.kt`. After every sign-in and app start, `Repo.ensureProfile()` fills in a missing name, friend code, and starter categories.
+- **Navigation:** `nav/Nav.kt` holds all routes. Pickers return their result with `NavController.setPicked`, and the receiving screen reads it with `Picked`.
+- **Offline:** the Firestore local cache lets the app read and write without a connection and sync later.
+
+## Design rules
+
+- Every add, edit, filter, select, and bulk action is its own full screen. Dialogs only ask yes or no.
+- Buttons use a soft press (a small shrink and a faint shade in the button's own shape) instead of a ripple. A disabled or busy button stays solid.
+- Toggles such as Expense / Income and Sign in / Create account use a sliding pill.
+- Account types each have a default icon and colour. Colours include four gradients stored as keys (`g_sunset`, and so on).
+
+## Customising
+
+| What | Where |
+|---|---|
+| All text | `res/values/strings.xml` (read in Kotlin with `str(R.string.name)`) |
+| Colours | `res/values/colors.xml` (read with `clr(R.color.name)`) |
+| Timings | `res/values/config.xml` |
+| Launcher icon | `res/mipmap-anydpi-v26` (adaptive), `ic_launcher-playstore.png` in `app/` (512 px Play Store icon) |
+| Splash | `ui/splash/SplashOverlay.kt` and `Theme.Spendly.Starting` in `themes.xml` |
+
+## Security and privacy
+
+- Chat messages are protected only by the Firestore and Storage rules in `firestore.rules` and `storage.rules`. There is **no end-to-end encryption**.
+- History, favourites, and settings are stored on your own Firebase project. Review the rules before using the app with real data.
+- Never commit `google-services.json` with real keys to a public repository if you want to keep your project private. Add it to `.gitignore` if needed.
+
+## Status
+
+> This project was written without an Android SDK, so it has not been compiled. Expect a few small compile fixes on the first sync.
+> <!-- Remove this note once the project builds cleanly. -->
+
+## Roadmap
+
+<!-- Fill this in with your own plans, for example:
+- [ ] Undo bar after deleting a transaction
+- [ ] Export to Excel and PDF
+- [ ] Home screen widget
+-->
+
+## Contributing
+
+Issues and pull requests are welcome. For larger changes, please open an issue first to discuss what you'd like to change.
+
+## License
+
+<!-- Choose a license and add a LICENSE file, for example MIT or Apache-2.0. -->
+No licence has been chosen yet.
