@@ -1,7 +1,6 @@
 package com.kdevs.spendly.ui.components
 
 import androidx.compose.animation.AnimatedVisibility
-import com.kdevs.spendly.data.runCatchingCo
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
@@ -35,6 +34,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kdevs.spendly.R
 import com.kdevs.spendly.data.Undo
+import com.kdevs.spendly.data.runCatchingCo
 import com.kdevs.spendly.data.str
 import com.kdevs.spendly.ui.theme.Ink
 import com.kdevs.spendly.ui.theme.InkReverse

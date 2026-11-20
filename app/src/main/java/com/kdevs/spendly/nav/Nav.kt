@@ -1,7 +1,6 @@
 package com.kdevs.spendly.nav
 
 import androidx.compose.animation.*
-import com.kdevs.spendly.data.runCatchingCo
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -18,6 +17,7 @@ import androidx.navigation.navArgument
 import com.kdevs.spendly.data.DeepLink
 import com.kdevs.spendly.data.Inbox
 import com.kdevs.spendly.data.Repo
+import com.kdevs.spendly.data.runCatchingCo
 import com.kdevs.spendly.ui.components.MessageBanner
 import com.kdevs.spendly.ui.components.UndoBar
 import com.kdevs.spendly.ui.screens.auth.AuthScreen

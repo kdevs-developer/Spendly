@@ -1,7 +1,6 @@
 package com.kdevs.spendly.ui.screens.settings
 
 import androidx.compose.foundation.layout.*
-import com.kdevs.spendly.data.runCatchingCo
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.Switch
@@ -22,6 +21,7 @@ import com.kdevs.spendly.data.Repo
 import com.kdevs.spendly.data.ThemeMode
 import com.kdevs.spendly.data.clr
 import com.kdevs.spendly.data.findFragmentActivity
+import com.kdevs.spendly.data.runCatchingCo
 import com.kdevs.spendly.data.str
 import com.kdevs.spendly.nav.Routes
 import com.kdevs.spendly.ui.components.*

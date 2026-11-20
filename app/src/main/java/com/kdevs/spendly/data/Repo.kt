@@ -65,6 +65,7 @@ object Repo {
     }
 
     // Declared before uidFlow: its listener uses them as soon as it starts.
+
     /** Names of collections that have delivered their first snapshot, so screens can show a loader instead of "empty". */
     val loaded = kotlinx.coroutines.flow.MutableStateFlow(setOf<String>())
 
@@ -761,10 +762,18 @@ object Repo {
 
     suspend fun updateProfileName(name: String) {
         // Not awaited: the name is saved on the phone at once and sent when there is internet.
-        db.collection("users").document(uid).set(mapOf("name" to name), SetOptions.merge()).watch()
+        db
+            .collection("users")
+            .document(uid)
+            .set(mapOf("name" to name), SetOptions.merge())
+            .watch()
         val code = profile.value.code.replace(" ", "")
         if (code.isNotBlank()) {
-            db.collection("userCodes").document(code).set(mapOf("uid" to uid, "name" to name)).watch()
+            db
+                .collection("userCodes")
+                .document(code)
+                .set(mapOf("uid" to uid, "name" to name))
+                .watch()
         }
     }
 
@@ -888,7 +897,15 @@ object Repo {
                                 .collection("requests")
                                 .whereEqualTo("to", u)
                                 .whereEqualTo("status", "pending")
-                                .addSnapshotListener { s, e -> if (e != null) close(e) else if (s != null) trySend(s.toObjects(FriendRequest::class.java)) }
+                                .addSnapshotListener { s, e ->
+                                    if (e !=
+                                        null
+                                    ) {
+                                        close(e)
+                                    } else if (s != null) {
+                                        trySend(s.toObjects(FriendRequest::class.java))
+                                    }
+                                }
                         awaitClose { reg.remove() }
                     }.retryWhen { cause, attempt -> retryListener(cause, attempt) }
                         .catch { }
@@ -907,7 +924,15 @@ object Repo {
                                 .collection("requests")
                                 .whereEqualTo("from", u)
                                 .whereEqualTo("status", "pending")
-                                .addSnapshotListener { s, e -> if (e != null) close(e) else if (s != null) trySend(s.toObjects(FriendRequest::class.java)) }
+                                .addSnapshotListener { s, e ->
+                                    if (e !=
+                                        null
+                                    ) {
+                                        close(e)
+                                    } else if (s != null) {
+                                        trySend(s.toObjects(FriendRequest::class.java))
+                                    }
+                                }
                         awaitClose { reg.remove() }
                     }.retryWhen { cause, attempt -> retryListener(cause, attempt) }
                         .catch { }
@@ -1364,7 +1389,15 @@ object Repo {
                     .document(chatId)
                     .collection("splits")
                     .orderBy("dateMillis", Query.Direction.DESCENDING)
-                    .addSnapshotListener { s, e -> if (e != null) close(e) else if (s != null) trySend(s.toObjects(SplitEntry::class.java)) }
+                    .addSnapshotListener { s, e ->
+                        if (e !=
+                            null
+                        ) {
+                            close(e)
+                        } else if (s != null) {
+                            trySend(s.toObjects(SplitEntry::class.java))
+                        }
+                    }
             awaitClose { reg.remove() }
         }.retryWhen { cause, attempt -> retryListener(cause, attempt) }
             .catch { emit(emptyList()) }

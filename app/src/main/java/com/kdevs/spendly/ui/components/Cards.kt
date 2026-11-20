@@ -45,7 +45,6 @@ import com.kdevs.spendly.ui.theme.Muted
 import com.kdevs.spendly.ui.theme.Primary
 import com.kdevs.spendly.ui.theme.PrimaryContainer
 import com.kdevs.spendly.ui.theme.SolidColors
-import com.kdevs.spendly.ui.theme.Surface
 import com.kdevs.spendly.ui.theme.colorSpec
 
 /** A white (or dark) rounded card. Pass onClick to make the whole card tappable; the press stays inside the corners. */

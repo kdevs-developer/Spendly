@@ -1,15 +1,6 @@
 package com.kdevs.spendly.ui.components
 
 import androidx.compose.foundation.background
-import com.kdevs.spendly.ui.theme.GlowB
-import com.kdevs.spendly.ui.theme.GlowA
-import com.kdevs.spendly.ui.theme.GlassBorder
-import com.kdevs.spendly.ui.theme.GlassBar
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.composed
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -38,17 +29,24 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.composed
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.kdevs.spendly.R
 import com.kdevs.spendly.data.str
 import com.kdevs.spendly.ui.theme.Bg
+import com.kdevs.spendly.ui.theme.GlassBar
+import com.kdevs.spendly.ui.theme.GlassBorder
+import com.kdevs.spendly.ui.theme.GlowA
+import com.kdevs.spendly.ui.theme.GlowB
 import com.kdevs.spendly.ui.theme.HeroShadow
 import com.kdevs.spendly.ui.theme.Ink
-import com.kdevs.spendly.ui.theme.Line
-import com.kdevs.spendly.ui.theme.Surface
 
 /** Soft glass backdrop: the tinted page colour with two soft glows, so the translucent cards have something to sit over. */
 fun Modifier.glassBackdrop(): Modifier =
@@ -58,8 +56,12 @@ fun Modifier.glassBackdrop(): Modifier =
         val b = GlowB
         this.background(base).drawBehind {
             val r = size.width * 0.75f
-            drawRect(Brush.radialGradient(listOf(a, Color.Transparent), center = Offset(size.width * 0.95f, size.height * 0.1f), radius = r))
-            drawRect(Brush.radialGradient(listOf(b, Color.Transparent), center = Offset(size.width * 0.05f, size.height * 0.75f), radius = r))
+            drawRect(
+                Brush.radialGradient(listOf(a, Color.Transparent), center = Offset(size.width * 0.95f, size.height * 0.1f), radius = r),
+            )
+            drawRect(
+                Brush.radialGradient(listOf(b, Color.Transparent), center = Offset(size.width * 0.05f, size.height * 0.75f), radius = r),
+            )
         }
     }
 

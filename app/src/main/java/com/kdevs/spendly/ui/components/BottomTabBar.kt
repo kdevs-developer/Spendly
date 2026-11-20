@@ -1,8 +1,6 @@
 package com.kdevs.spendly.ui.components
 
 import androidx.compose.animation.animateColorAsState
-import com.kdevs.spendly.ui.theme.GlassBorder
-import com.kdevs.spendly.ui.theme.GlassBar
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -43,12 +41,12 @@ import com.kdevs.spendly.R
 import com.kdevs.spendly.data.str
 import com.kdevs.spendly.nav.Routes
 import com.kdevs.spendly.ui.theme.Danger
+import com.kdevs.spendly.ui.theme.GlassBar
+import com.kdevs.spendly.ui.theme.GlassBorder
 import com.kdevs.spendly.ui.theme.HeroShadow
-import com.kdevs.spendly.ui.theme.Line
 import com.kdevs.spendly.ui.theme.Muted
 import com.kdevs.spendly.ui.theme.Primary
 import com.kdevs.spendly.ui.theme.PrimaryContainer
-import com.kdevs.spendly.ui.theme.Surface
 
 private data class Tab(
     val label: String,

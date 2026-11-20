@@ -393,7 +393,15 @@ object Backup {
         var skipped = 0
         for (r in rows.drop(1)) {
             val millis = parseDate(cell(r, cDate))
-            val paise = parseRupees(cell(r, cAmount).replace("₹", "").replace("Rs.", "").replace("Rs", "").trim().trimStart('-', '+'))
+            val paise =
+                parseRupees(
+                    cell(r, cAmount)
+                        .replace("₹", "")
+                        .replace("Rs.", "")
+                        .replace("Rs", "")
+                        .trim()
+                        .trimStart('-', '+'),
+                )
             if (millis == null || paise == null || paise == 0L) {
                 skipped++
                 continue
