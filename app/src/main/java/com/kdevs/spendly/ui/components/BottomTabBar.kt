@@ -1,6 +1,8 @@
 package com.kdevs.spendly.ui.components
 
 import androidx.compose.animation.animateColorAsState
+import com.kdevs.spendly.ui.theme.GlassBorder
+import com.kdevs.spendly.ui.theme.GlassBar
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -91,14 +93,16 @@ fun BottomTabBar(
 ) {
     val unread by com.kdevs.spendly.data.Inbox.unreadTotal
         .collectAsState()
+    // Floating glass pill: lifted off the screen edges instead of a full-width bar.
     Row(
         Modifier
-            .fillMaxWidth()
-            .shadow(6.dp, RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp), ambientColor = HeroShadow, spotColor = HeroShadow)
-            .background(Surface, RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
-            .border(1.dp, Line, RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
             .navigationBarsPadding()
-            .padding(horizontal = 8.dp, vertical = 8.dp),
+            .padding(horizontal = 14.dp, vertical = 10.dp)
+            .fillMaxWidth()
+            .shadow(10.dp, RoundedCornerShape(32.dp), ambientColor = HeroShadow, spotColor = HeroShadow)
+            .background(GlassBar, RoundedCornerShape(32.dp))
+            .border(1.dp, GlassBorder, RoundedCornerShape(32.dp))
+            .padding(horizontal = 6.dp, vertical = 6.dp),
     ) {
         tabs.forEach { t ->
             val on = t.route == current

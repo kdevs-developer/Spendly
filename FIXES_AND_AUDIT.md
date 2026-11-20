@@ -86,3 +86,6 @@ Product / release
 - `runCatching` replaced by `runCatchingCo` (Util.kt), which rethrows CancellationException so cancelled work stops instead of being swallowed.
 - Activity screen's export button and TypeTiles status text moved to strings.xml.
 - NOT compiled here (no Android SDK).
+
+## 5. Soft glass look, stage 1 (2026-11-20)
+Layouts and navigation unchanged. Tinted page colours (bg_light/bg_dark), translucent `Card` (Glass + GlassBorder), two soft glows behind every `ScreenScaffold` (`glassBackdrop()`), glass bottom action bar, and a floating pill tab bar. New colours are the `glass_*` and `glow_*` pairs in colors.xml and `Glass*`/`Glow*` in Theme.kt. HeroCard (balance/lock) keeps its dark gradient. NOT compiled here.

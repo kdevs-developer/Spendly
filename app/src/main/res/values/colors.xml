@@ -13,8 +13,8 @@
     <color name="primary_dark">#3CCFA5</color>
     <color name="primary_container_light">#DDEEE8</color>
     <color name="primary_container_dark">#12362D</color>
-    <color name="bg_light">#F3F4F2</color>
-    <color name="bg_dark">#0A0E13</color>
+    <color name="bg_light">#E3F1EC</color>
+    <color name="bg_dark">#08130F</color>
     <color name="surface_light">#FFFFFF</color>
     <color name="surface_dark">#131920</color>
     <color name="ink_light">#0F172A</color>
@@ -125,4 +125,15 @@
     <color name="pdf_header">#0B6B57</color>
     <color name="pdf_zebra">#F3F4F2</color>
     <color name="pdf_subtext">#374151</color>
+    <!-- Soft glass: translucent cards, their edge, the floating tab bar and the glows behind every screen -->
+    <color name="glass_light">#B8FFFFFF</color>
+    <color name="glass_dark">#B3131E1A</color>
+    <color name="glass_border_light">#D9FFFFFF</color>
+    <color name="glass_border_dark">#26FFFFFF</color>
+    <color name="glass_bar_light">#EBFFFFFF</color>
+    <color name="glass_bar_dark">#F2131E1A</color>
+    <color name="glow_a_light">#663CCFA5</color>
+    <color name="glow_a_dark">#403CCFA5</color>
+    <color name="glow_b_light">#66FAC775</color>
+    <color name="glow_b_dark">#33EF9F27</color>
 </resources>

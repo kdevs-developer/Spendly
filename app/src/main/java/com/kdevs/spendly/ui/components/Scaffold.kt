@@ -1,6 +1,15 @@
 package com.kdevs.spendly.ui.components
 
 import androidx.compose.foundation.background
+import com.kdevs.spendly.ui.theme.GlowB
+import com.kdevs.spendly.ui.theme.GlowA
+import com.kdevs.spendly.ui.theme.GlassBorder
+import com.kdevs.spendly.ui.theme.GlassBar
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.composed
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -41,6 +50,19 @@ import com.kdevs.spendly.ui.theme.Ink
 import com.kdevs.spendly.ui.theme.Line
 import com.kdevs.spendly.ui.theme.Surface
 
+/** Soft glass backdrop: the tinted page colour with two soft glows, so the translucent cards have something to sit over. */
+fun Modifier.glassBackdrop(): Modifier =
+    composed {
+        val base = Bg
+        val a = GlowA
+        val b = GlowB
+        this.background(base).drawBehind {
+            val r = size.width * 0.75f
+            drawRect(Brush.radialGradient(listOf(a, Color.Transparent), center = Offset(size.width * 0.95f, size.height * 0.1f), radius = r))
+            drawRect(Brush.radialGradient(listOf(b, Color.Transparent), center = Offset(size.width * 0.05f, size.height * 0.75f), radius = r))
+        }
+    }
+
 /** Top bar with a round back button, used by every full screen. */
 @Composable
 fun ScreenScaffold(
@@ -56,7 +78,7 @@ fun ScreenScaffold(
     content: @Composable ColumnScope.() -> Unit,
 ) {
     Box(Modifier.fillMaxSize()) {
-        Column(modifier.fillMaxSize().background(Bg).statusBarsPadding()) {
+        Column(modifier.fillMaxSize().glassBackdrop().statusBarsPadding()) {
             Row(
                 Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
@@ -103,8 +125,8 @@ fun BottomActionBar(content: @Composable ColumnScope.() -> Unit) {
         Modifier
             .fillMaxWidth()
             .shadow(6.dp, RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp), ambientColor = HeroShadow, spotColor = HeroShadow)
-            .background(Surface, RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
-            .border(1.dp, Line, RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
+            .background(GlassBar, RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
+            .border(1.dp, GlassBorder, RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp))
             .navigationBarsPadding()
             .imePadding()
             .padding(horizontal = 20.dp, vertical = 14.dp),
@@ -133,6 +155,6 @@ fun TabScreen(
             bottomBar = { BottomTabBar(current, nav) },
             content = content,
         )
-        if (fab != null) Box(Modifier.align(Alignment.BottomEnd).navigationBarsPadding().padding(end = 20.dp, bottom = 92.dp)) { fab() }
+        if (fab != null) Box(Modifier.align(Alignment.BottomEnd).navigationBarsPadding().padding(end = 20.dp, bottom = 112.dp)) { fab() }
     }
 }

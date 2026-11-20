@@ -50,6 +50,13 @@ val DangerBg: Color get() = pick(R.color.danger_bg_light, R.color.danger_bg_dark
 val Success: Color get() = pick(R.color.success_light, R.color.success_dark)
 val Warn: Color get() = pick(R.color.warn_light, R.color.warn_dark)
 
+/** Soft glass look: translucent card fill and edge, the floating tab bar, and the two glows behind every screen. */
+val Glass: Color get() = pick(R.color.glass_light, R.color.glass_dark)
+val GlassBorder: Color get() = pick(R.color.glass_border_light, R.color.glass_border_dark)
+val GlassBar: Color get() = pick(R.color.glass_bar_light, R.color.glass_bar_dark)
+val GlowA: Color get() = pick(R.color.glow_a_light, R.color.glow_a_dark)
+val GlowB: Color get() = pick(R.color.glow_b_light, R.color.glow_b_dark)
+
 /** Balance card and lock screen: a deep ink gradient. The emerald accent is kept for buttons and highlights. */
 val HeroBrush = Brush.linearGradient(listOf(clr(R.color.hero_top), clr(R.color.hero_bottom)))
 val HeroShadow = clr(R.color.hero_shadow)

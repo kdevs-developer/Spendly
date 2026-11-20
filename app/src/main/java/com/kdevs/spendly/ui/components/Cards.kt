@@ -34,6 +34,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kdevs.spendly.ui.theme.Faint
+import com.kdevs.spendly.ui.theme.Glass
+import com.kdevs.spendly.ui.theme.GlassBorder
 import com.kdevs.spendly.ui.theme.HeroBrush
 import com.kdevs.spendly.ui.theme.HeroHairline
 import com.kdevs.spendly.ui.theme.HeroShadow
@@ -59,8 +61,8 @@ fun Card(
         modifier
             .fillMaxWidth()
             .clip(shape)
-            .background(Surface)
-            .border(1.dp, Line, shape)
+            .background(Glass)
+            .border(1.dp, GlassBorder, shape)
             .let { if (onClick != null) it.clickable(onClick = onClick) else it }
             .padding(padding),
         content = content,
