@@ -241,7 +241,7 @@ object Repo {
         deleting = true
         try {
             withTimeout(120_000) { wipe(u) }
-            runCatching { FirebaseMessaging.getInstance().deleteToken().await() }
+            runCatchingCo { FirebaseMessaging.getInstance().deleteToken().await() }
             try {
                 auth.currentUser?.delete()?.await()
             } catch (e: FirebaseAuthRecentLoginRequiredException) {
@@ -262,7 +262,7 @@ object Repo {
                 .await()
                 .documents
         for (c in chatDocs) {
-            runCatching {
+            runCatchingCo {
                 FirebaseStorage
                     .getInstance()
                     .reference
@@ -326,7 +326,7 @@ object Repo {
 
     private suspend fun onSignedIn(name: String?) {
         ensureProfile(name)
-        runCatching { FirebaseMessaging.getInstance().token.await() }.getOrNull()?.let { saveToken(it) }
+        runCatchingCo { FirebaseMessaging.getInstance().token.await() }.getOrNull()?.let { saveToken(it) }
     }
 
     private val profileLock = Mutex()
@@ -519,7 +519,7 @@ object Repo {
                             if (e != null) {
                                 close(e) // a dead listener never recovers by itself; retryWhen below re-attaches it
                             } else if (s != null) {
-                                runCatching { s.toObjects(T::class.java) }.onSuccess { trySend(it) }
+                                runCatchingCo { s.toObjects(T::class.java) }.onSuccess { trySend(it) }
                                 loaded.value = loaded.value + name
                             }
                         }
@@ -1082,7 +1082,7 @@ object Repo {
     suspend fun openDirectChat(friend: Friend): String {
         val id = listOf(uid, friend.id).sorted().joinToString("_")
         val ref = db.collection("chats").document(id)
-        val existing = runCatching { ref.get().await() }.getOrNull()
+        val existing = runCatchingCo { ref.get().await() }.getOrNull()
         if (existing == null || !existing.exists()) {
             ref
                 .set(
@@ -1134,7 +1134,7 @@ object Repo {
      */
     suspend fun deleteChatForMe(chatId: String) {
         put("hiddenChats", chatId, HiddenChat(at = System.currentTimeMillis()))
-        runCatching {
+        runCatchingCo {
             db
                 .collection("chats")
                 .document(chatId)

@@ -134,7 +134,7 @@ object Backup {
 
     /** Puts a backup file's records back. Returns how many records were written. Throws if the file is not a Spendly backup. */
     suspend fun restore(json: String): Int {
-        val root = runCatching { JSONObject(json) }.getOrNull()
+        val root = runCatchingCo { JSONObject(json) }.getOrNull()
         require(root != null && root.optString("app") == "spendly") { "This is not a Spendly backup file." }
         require(root.optInt("version", 1) <= VERSION) { "This backup was made by a newer version of Spendly." }
         // Everything is read and checked first, and only then written, so a damaged file cannot restore half of itself.
@@ -297,7 +297,7 @@ object Backup {
         if (t.isEmpty()) return null
         val zone = ZoneId.systemDefault()
         for (f in dateTime) {
-            runCatching {
+            runCatchingCo {
                 return LocalDateTime
                     .parse(t, f)
                     .atZone(zone)
@@ -306,7 +306,7 @@ object Backup {
             }
         }
         for (f in dateOnly) {
-            runCatching { return LocalDate.parse(t, f).startMillis() }
+            runCatchingCo { return LocalDate.parse(t, f).startMillis() }
         }
         return null
     }

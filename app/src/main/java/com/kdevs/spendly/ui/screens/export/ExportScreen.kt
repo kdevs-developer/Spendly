@@ -361,7 +361,7 @@ fun ExportScreen(
                     Box(Modifier.weight(1f)) {
                         SecondaryButton(str(R.string.open), {
                             val i = Intent(Intent.ACTION_VIEW).setDataAndType(uri, mime).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                            runCatching { ctx.startActivity(i) }.onFailure { note = str(R.string.no_app_can_open) }
+                            runCatchingCo { ctx.startActivity(i) }.onFailure { note = str(R.string.no_app_can_open) }
                         })
                     }
                     Box(Modifier.weight(1f)) {

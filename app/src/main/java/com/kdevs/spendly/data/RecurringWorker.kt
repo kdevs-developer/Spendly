@@ -35,10 +35,10 @@ class RecurringWorker(
     override suspend fun doWork(): Result {
         // NonCancellable: the scheduler replaces this job as soon as the list changes, which must not cut the run short.
         return withContext(NonCancellable) {
-            val created = runCatching { Repo.processRecurring() }.getOrElse { return@withContext Result.retry() }
+            val created = runCatchingCo { Repo.processRecurring() }.getOrElse { return@withContext Result.retry() }
             if (created.isNotEmpty()) RecurringScheduler.notifyCreated(applicationContext, created)
-            runCatching { BillReminders.check(applicationContext) }
-            runCatching { Repo.flushWrites() }
+            runCatchingCo { BillReminders.check(applicationContext) }
+            runCatchingCo { Repo.flushWrites() }
             Result.success()
         }
     }

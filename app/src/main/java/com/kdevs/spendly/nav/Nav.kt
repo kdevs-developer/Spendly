@@ -1,6 +1,7 @@
 package com.kdevs.spendly.nav
 
 import androidx.compose.animation.*
+import com.kdevs.spendly.data.runCatchingCo
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -292,17 +293,17 @@ fun SpendlyNav() {
     }
     LaunchedEffect(uid) {
         if (uid != null) {
-            runCatching { Repo.ensureProfile() }
-            runCatching { Repo.runRecurring() }
-            runCatching { Repo.purgeLegacyTemplates() }
-            runCatching { Repo.refreshToken() } // so pushes reach this phone even after a reinstall or sign in
+            runCatchingCo { Repo.ensureProfile() }
+            runCatchingCo { Repo.runRecurring() }
+            runCatchingCo { Repo.purgeLegacyTemplates() }
+            runCatchingCo { Repo.refreshToken() } // so pushes reach this phone even after a reinstall or sign in
         }
     }
     val resumeScope = rememberCoroutineScope()
     // Coming back to the app after the due time also adds anything that is due (the launch call above only runs once).
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
         if (uid != null) {
-            resumeScope.launch { runCatching { Repo.runRecurring() } }
+            resumeScope.launch { runCatchingCo { Repo.runRecurring() } }
         }
     }
     // A tapped notification asks for a chat to open.
@@ -326,7 +327,7 @@ fun SpendlyNav() {
     // When a friend accepts, our pending request disappears from this list. That is the moment to add them.
     val outgoing by Repo.outgoingRequests.collectAsState()
     LaunchedEffect(uid, outgoing.size) {
-        if (uid != null) runCatching { Repo.syncAccepted() }
+        if (uid != null) runCatchingCo { Repo.syncAccepted() }
     }
 
     Box(Modifier.fillMaxSize()) {

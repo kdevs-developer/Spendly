@@ -131,7 +131,7 @@ object Inbox {
                     notified[c.id] = at
                     if (c.lastSenderId in blocked) continue
                     // 1. Tell the sender this phone has the message.
-                    launch { runCatching { Repo.markDelivered(c.id) } }
+                    launch { runCatchingCo { Repo.markDelivered(c.id) } }
                     // 2. Alert, unless that chat is already open on screen.
                     if (c.id == openChatId && inForeground) continue
                     val title = if (c.type == "direct") c.lastSenderName else "${c.name} · ${c.lastSenderName}"

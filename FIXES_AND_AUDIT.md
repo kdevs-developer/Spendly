@@ -80,3 +80,9 @@ Product / release
 - `parseRupees` rejects signs, exponents and amounts above 1,000 crore (CSV import still accepts negative amounts as expenses).
 - Zip no longer contains keystore.properties, debug.keystore, local.properties or .gradle/.idea caches. Change the old keystore password if you reuse it.
 - Not changed: Gradle/AGP versions, chat membership rules, multi-device FCM tokens.
+
+## 4. Fixes (2026-11-20)
+- Bottom tabs: Home tap did nothing after opening a transaction edit/detail from a tab (tab bar saved and restored the whole stack above Home). New `NavController.navigateToTab()` in BottomTabBar.kt: Home pops back to Home, other tabs open on top of Home with no saved state. Home's "See all" uses it too.
+- `runCatching` replaced by `runCatchingCo` (Util.kt), which rethrows CancellationException so cancelled work stops instead of being swallowed.
+- Activity screen's export button and TypeTiles status text moved to strings.xml.
+- NOT compiled here (no Android SDK).

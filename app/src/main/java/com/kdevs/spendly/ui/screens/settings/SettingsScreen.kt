@@ -1,6 +1,7 @@
 package com.kdevs.spendly.ui.screens.settings
 
 import androidx.compose.foundation.layout.*
+import com.kdevs.spendly.data.runCatchingCo
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.Switch
@@ -201,7 +202,7 @@ fun SettingsScreen(nav: NavController) {
                         android.content
                             .Intent(android.provider.Settings.ACTION_APP_NOTIFICATION_SETTINGS)
                             .putExtra(android.provider.Settings.EXTRA_APP_PACKAGE, ctx.packageName)
-                    runCatching { ctx.startActivity(i) }
+                    runCatchingCo { ctx.startActivity(i) }
                 },
             )
             SettingRow(

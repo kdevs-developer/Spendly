@@ -74,12 +74,11 @@ fun TypeTiles(
             TypeSpec("income", str(R.string.income), Icons.Filled.CallReceived, Success),
             TypeSpec("transfer", str(R.string.transfer), Icons.Filled.SwapHoriz, Primary),
         )
-    // TODO: move "All types included" to strings.xml.
     val status =
         if (!emptyMeansAll) {
             null
         } else if (selected.isEmpty()) {
-            "All types included"
+            str(R.string.all_types_included)
         } else {
             specs.filter { it.key in selected }.joinToString(", ") { it.label }
         }

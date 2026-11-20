@@ -123,7 +123,7 @@ fun HomeScreen(nav: NavController) {
                     Modifier
                         .clip(CircleShape)
                         .clickable {
-                            nav.navigate(Routes.ACTIVITY)
+                            nav.navigateToTab(Routes.ACTIVITY)
                         }.padding(8.dp),
             )
         }

@@ -50,7 +50,7 @@ fun parseRupees(text: String): Long? {
     // Plain digits with an optional decimal part only: no signs, no exponents like "1e20".
     if (t.isEmpty() || t.length > 15 || !t.matches(Regex("""\d*\.?\d*""")) || t == ".") return null
     val paise =
-        runCatching {
+        runCatchingCo {
             BigDecimal(t).movePointRight(2).setScale(0, RoundingMode.HALF_UP).toLong()
         }.getOrNull() ?: return null
     return paise.takeIf { it <= MAX_PAISE }
@@ -229,3 +229,16 @@ object SplitMath {
         return out
     }
 }
+
+/**
+ * Like runCatching, but a cancelled coroutine stays cancelled instead of being swallowed as an ordinary failure.
+ * Inline, so suspend calls and early returns inside the block work as before.
+ */
+inline fun <T> runCatchingCo(block: () -> T): Result<T> =
+    try {
+        Result.success(block())
+    } catch (e: kotlin.coroutines.cancellation.CancellationException) {
+        throw e
+    } catch (e: Throwable) {
+        Result.failure(e)
+    }

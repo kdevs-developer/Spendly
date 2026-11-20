@@ -63,6 +63,26 @@ private val tabs =
         Tab(str(R.string.chat), Routes.CHATS, Icons.AutoMirrored.Filled.Chat),
     )
 
+/**
+ * Switches main tab. Always lands on the tab itself with only Home underneath, so a transaction edit/detail opened
+ * from a tab is closed instead of being saved and restored (that made Home look dead until Back was pressed).
+ */
+fun NavController.navigateToTab(route: String) {
+    if (route == Routes.HOME) {
+        if (!popBackStack(Routes.HOME, false)) {
+            navigate(Routes.HOME) {
+                popUpTo(0) { inclusive = true }
+                launchSingleTop = true
+            }
+        }
+        return
+    }
+    navigate(route) {
+        popUpTo(Routes.HOME) { inclusive = false }
+        launchSingleTop = true
+    }
+}
+
 /** The five main tabs. Pass the route of the current tab. */
 @Composable
 fun BottomTabBar(
@@ -87,13 +107,7 @@ fun BottomTabBar(
                 Modifier
                     .weight(1f)
                     .pressable(RoundedCornerShape(16.dp), scaleTo = 0.92f, veil = false) {
-                        if (!on) {
-                            nav.navigate(t.route) {
-                                popUpTo(Routes.HOME) { saveState = true }
-                                launchSingleTop = true
-                                restoreState = true
-                            }
-                        }
+                        if (!on) nav.navigateToTab(t.route)
                     }.padding(vertical = 6.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {

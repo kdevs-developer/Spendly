@@ -48,7 +48,7 @@ fun AddFriendScreen(nav: NavController) {
     // An account whose code is missing (cut-short sign up) gets one now instead of showing nothing.
     val codeProblem by Repo.codeProblem.collectAsState()
     // Every visit re-checks that the code is registered for lookup. A failure is shown below, not hidden.
-    LaunchedEffect(Unit) { runCatching { Repo.ensureProfile() } }
+    LaunchedEffect(Unit) { runCatchingCo { Repo.ensureProfile() } }
     LaunchedEffect(copied) {
         if (copied) {
             delay(1600)
@@ -123,7 +123,7 @@ fun AddFriendScreen(nav: NavController) {
         }
 
         if (profile.code.isNotBlank()) {
-            val qr = remember(profile.code) { runCatching { qrImage(friendQrPayload(profile.code)) }.getOrNull() }
+            val qr = remember(profile.code) { runCatchingCo { qrImage(friendQrPayload(profile.code)) }.getOrNull() }
             if (qr != null) {
                 Card {
                     Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {

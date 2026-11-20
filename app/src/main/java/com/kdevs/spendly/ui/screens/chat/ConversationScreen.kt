@@ -82,7 +82,7 @@ fun ConversationScreen(
     LaunchedEffect(imeBottom) {
         if (imeBottom > 0 && msgs.isNotEmpty()) list.scrollToItem(list.layoutInfo.totalItemsCount - 1)
     }
-    LaunchedEffect(msgs) { runCatching { Repo.markRead(id, msgs) } }
+    LaunchedEffect(msgs) { runCatchingCo { Repo.markRead(id, msgs) } }
 
     // Typing: say "typing" while the field changes, and clear it after 3 seconds of quiet.
     LaunchedEffect(text) {
@@ -185,7 +185,7 @@ fun ConversationScreen(
                         onLong = { nav.navigate(Routes.messageActions(id, m.id)) },
                         onImage = {
                             if (m.type == "video") {
-                                runCatching {
+                                runCatchingCo {
                                     ctx.startActivity(
                                         Intent(Intent.ACTION_VIEW).setDataAndType(android.net.Uri.parse(m.imageUrl), "video/*"),
                                     )
@@ -279,7 +279,7 @@ fun ConversationScreen(
 }
 
 fun kotlinx.coroutines.CoroutineScope.launchIO(block: suspend () -> Unit) {
-    this.launch { runCatching { block() } }
+    this.launch { runCatchingCo { block() } }
 }
 
 @OptIn(ExperimentalFoundationApi::class)

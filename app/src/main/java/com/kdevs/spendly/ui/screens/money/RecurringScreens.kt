@@ -107,7 +107,7 @@ fun RecurringScreen(nav: NavController) {
                         look,
                         Modifier.weight(1f).clickable { nav.navigate(Routes.recurringEdit(r.id)) },
                     )
-                    Switch(r.active, { v -> scope.launch { runCatching { Repo.put("recurring", r.id, r.copy(active = v)) } } })
+                    Switch(r.active, { v -> scope.launch { runCatchingCo { Repo.put("recurring", r.id, r.copy(active = v)) } } })
                 }
             }
         }

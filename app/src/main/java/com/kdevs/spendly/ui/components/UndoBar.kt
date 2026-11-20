@@ -1,6 +1,7 @@
 package com.kdevs.spendly.ui.components
 
 import androidx.compose.animation.AnimatedVisibility
+import com.kdevs.spendly.data.runCatchingCo
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
@@ -94,7 +95,7 @@ fun UndoBar() {
                                     .clickable {
                                         visible = false
                                         Undo.current.value = null
-                                        scope.launch { runCatching { restore() } }
+                                        scope.launch { runCatchingCo { restore() } }
                                     }.padding(horizontal = 8.dp, vertical = 6.dp),
                         )
                     }

@@ -1,6 +1,7 @@
 package com.kdevs.spendly.ui.screens.settings
 
 import androidx.activity.compose.rememberLauncherForActivityResult
+import com.kdevs.spendly.data.runCatchingCo
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
@@ -45,7 +46,7 @@ fun BackupScreen(nav: NavController) {
             if (uri == null) return@rememberLauncherForActivityResult
             busy = true
             scope.launch {
-                runCatching {
+                runCatchingCo {
                     val json = Backup.toJson()
                     withContext(Dispatchers.IO) {
                         ctx.contentResolver.openOutputStream(uri, "wt")?.use { it.write(json.toByteArray()) }
@@ -64,7 +65,7 @@ fun BackupScreen(nav: NavController) {
             if (uri == null) return@rememberLauncherForActivityResult
             busy = true
             scope.launch {
-                runCatching {
+                runCatchingCo {
                     val text = withContext(Dispatchers.IO) { readText(uri) }
                     Backup.restore(text)
                 }.onSuccess { report(str(R.string.backup_restored, it)) }
@@ -77,7 +78,7 @@ fun BackupScreen(nav: NavController) {
             if (uri == null) return@rememberLauncherForActivityResult
             busy = true
             scope.launch {
-                runCatching {
+                runCatchingCo {
                     val text = withContext(Dispatchers.IO) { readText(uri) }
                     Backup.importCsv(text)
                 }.onSuccess { report(str(R.string.csv_imported, it.imported, it.skipped, it.newAccounts, it.newCategories)) }

@@ -52,7 +52,7 @@ object Prefs {
             )
 
         themeMode =
-            runCatching {
+            runCatchingCo {
                 ThemeMode.valueOf(
                     sp.getString("theme", ThemeMode.SYSTEM.name).orEmpty(),
                 )

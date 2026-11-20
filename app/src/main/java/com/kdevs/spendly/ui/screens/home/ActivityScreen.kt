@@ -92,7 +92,7 @@ fun ActivityScreen(nav: NavController) {
                 }
             }
             Spacer(Modifier.width(8.dp))
-            RoundIconButton(Icons.Filled.FileDownload, "Export", { nav.navigate(Routes.EXPORT) })
+            RoundIconButton(Icons.Filled.FileDownload, str(R.string.export), { nav.navigate(Routes.EXPORT) })
             Spacer(Modifier.width(8.dp))
             RoundIconButton(Icons.Filled.Checklist, str(R.string.select), { nav.navigate(Routes.SELECT) })
         },

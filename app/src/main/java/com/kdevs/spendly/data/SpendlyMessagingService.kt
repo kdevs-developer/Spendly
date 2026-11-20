@@ -23,7 +23,7 @@ class SpendlyMessagingService : FirebaseMessagingService() {
         val chatId = message.data[Inbox.EXTRA_CHAT].orEmpty()
         val title = message.notification?.title ?: message.data["title"] ?: str(R.string.spendly)
         val body = message.notification?.body ?: message.data["body"].orEmpty()
-        if (chatId.isNotBlank()) scope.launch { runCatching { Repo.markDelivered(chatId) } }
+        if (chatId.isNotBlank()) scope.launch { runCatchingCo { Repo.markDelivered(chatId) } }
         // While the app is on screen the in-app banner already handles it.
         if (Inbox.inForeground) return
         if (chatId == Inbox.openChatId) return
