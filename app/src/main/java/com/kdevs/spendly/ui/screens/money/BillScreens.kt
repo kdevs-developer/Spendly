@@ -176,7 +176,9 @@ fun BillEditScreen(
             })
         },
     ) {
-        AppTextField(name, { name = it }, str(R.string.bill_name_hint))
+        AppTextField(name, {
+            name = it
+        }, str(R.string.bill_name_hint), capitalization = androidx.compose.ui.text.input.KeyboardCapitalization.Words)
         AmountField(amount, { amount = it }, Modifier.padding(vertical = 6.dp), color = Danger)
         SectionTitle(str(R.string.repeats))
         SegmentedControl(everyKeys.map { everyLabel(it) }, everyKeys.indexOf(every).coerceAtLeast(0), { every = everyKeys[it] })

@@ -205,7 +205,11 @@ fun FilterScreen(
             }
         },
     ) {
-        AppTextField(query, { query = it }, str(R.string.search_notes_and_categories), leading = { Icon(Icons.Filled.Search, null) })
+        AppTextField(query, {
+            query = it
+        }, str(R.string.search_notes_and_categories), leading = {
+            Icon(Icons.Filled.Search, null)
+        }, capitalization = androidx.compose.ui.text.input.KeyboardCapitalization.None)
 
         // ── Type (none selected = all types) ──────────────────────────────────
         Card {

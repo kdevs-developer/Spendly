@@ -71,7 +71,11 @@ fun CategoryPickerScreen(
                 open = emptySet()
             })
         }
-        AppTextField(query, { query = it }, str(R.string.search), leading = { Icon(Icons.Filled.Search, null) })
+        AppTextField(query, {
+            query = it
+        }, str(R.string.search), leading = {
+            Icon(Icons.Filled.Search, null)
+        }, capitalization = androidx.compose.ui.text.input.KeyboardCapitalization.None)
         if (parents.isEmpty()) {
             EmptyState(
                 Icons.Filled.Category,
@@ -187,7 +191,12 @@ fun CategoryEditScreen(
         },
     ) {
         Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { IconCircle(icon, color, 84.dp) }
-        AppTextField(name, { name = it }, str(R.string.category_name))
+        AppTextField(
+            name,
+            { name = it },
+            str(R.string.category_name),
+            capitalization = androidx.compose.ui.text.input.KeyboardCapitalization.Words,
+        )
         Card(padding = 12.dp) {
             PickRowLeading(str(R.string.icon), iconLabel(icon), {
                 IconCircle(icon, color, 38.dp)
@@ -255,7 +264,9 @@ fun SubcategoryEditScreen(
         },
     ) {
         Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { IconCircle(icon, color, 84.dp) }
-        AppTextField(name, { name = it }, str(R.string.sub_category_name))
+        AppTextField(name, {
+            name = it
+        }, str(R.string.sub_category_name), capitalization = androidx.compose.ui.text.input.KeyboardCapitalization.Words)
         Card(padding = 12.dp) {
             PickRowLeading(str(R.string.icon), iconLabel(icon), {
                 IconCircle(icon, color, 38.dp)

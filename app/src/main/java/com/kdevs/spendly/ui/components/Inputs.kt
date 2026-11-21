@@ -36,6 +36,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntOffset
@@ -60,6 +61,10 @@ fun AppTextField(
     error: String? = null,
     leading: (@Composable () -> Unit)? = null,
     minLines: Int = 1,
+    // Notes and descriptions start each sentence with a capital by default; names pass Words;
+    // email, numbers, search and codes are never auto-capitalised.
+    capitalization: KeyboardCapitalization =
+        if (keyboard == KeyboardType.Text) KeyboardCapitalization.Sentences else KeyboardCapitalization.None,
 ) {
     OutlinedTextField(
         value = value,
@@ -68,7 +73,7 @@ fun AppTextField(
         modifier = modifier.fillMaxWidth(),
         singleLine = singleLine,
         minLines = minLines,
-        keyboardOptions = KeyboardOptions(keyboardType = keyboard),
+        keyboardOptions = KeyboardOptions(capitalization = capitalization, keyboardType = keyboard),
         isError = error != null,
         supportingText = error?.let { { Text(it) } },
         leadingIcon = leading,

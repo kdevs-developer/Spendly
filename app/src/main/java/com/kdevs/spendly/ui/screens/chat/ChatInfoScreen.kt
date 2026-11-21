@@ -68,7 +68,9 @@ fun ChatInfoScreen(
             }
         }
         if (!direct) {
-            AppTextField(rename, { rename = it }, str(R.string.group_name))
+            AppTextField(rename, {
+                rename = it
+            }, str(R.string.group_name), capitalization = androidx.compose.ui.text.input.KeyboardCapitalization.Words)
             if (rename.trim() != c.name && rename.isNotBlank()) {
                 PrimaryButton(str(R.string.save_name), {
                     saver.run(scope, {}) { Repo.renameChat(id, rename.trim()) }

@@ -92,6 +92,11 @@ fun EditNameScreen(nav: NavController) {
         )
     }) {
         Hint(str(R.string.this_is_the_name_your_friends))
-        AppTextField(name, { name = it }, str(R.string.display_name))
+        AppTextField(
+            name,
+            { name = it },
+            str(R.string.display_name),
+            capitalization = androidx.compose.ui.text.input.KeyboardCapitalization.Words,
+        )
     }
 }

@@ -101,7 +101,12 @@ fun AccountEditScreen(
         },
     ) {
         Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { IconCircle(icon, color, 84.dp) }
-        AppTextField(name, { name = it }, str(R.string.account_name))
+        AppTextField(
+            name,
+            { name = it },
+            str(R.string.account_name),
+            capitalization = androidx.compose.ui.text.input.KeyboardCapitalization.Words,
+        )
         AppTextField(
             opening,
             { v ->

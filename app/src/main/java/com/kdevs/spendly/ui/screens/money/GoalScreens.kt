@@ -114,7 +114,12 @@ fun GoalEditScreen(
         },
     ) {
         Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { IconCircle(icon, color, 84.dp) }
-        AppTextField(name, { name = it }, str(R.string.goal_name))
+        AppTextField(
+            name,
+            { name = it },
+            str(R.string.goal_name),
+            capitalization = androidx.compose.ui.text.input.KeyboardCapitalization.Words,
+        )
         AppTextField(
             target,
             { v -> if (v.all { it.isDigit() || it == '.' }) target = v },

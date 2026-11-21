@@ -87,7 +87,11 @@ fun RequestsScreen(nav: NavController) {
                 if (friends.size >
                     5
                 ) {
-                    AppTextField(query, { query = it }, str(R.string.search_friends), leading = { Icon(Icons.Filled.Search, null) })
+                    AppTextField(query, {
+                        query = it
+                    }, str(R.string.search_friends), leading = {
+                        Icon(Icons.Filled.Search, null)
+                    }, capitalization = androidx.compose.ui.text.input.KeyboardCapitalization.None)
                 }
                 if (friends.isEmpty()) {
                     EmptyState(Icons.Filled.People, str(R.string.no_friends_yet), str(R.string.share_code_or_scan))

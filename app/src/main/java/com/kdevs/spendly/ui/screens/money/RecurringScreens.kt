@@ -223,7 +223,9 @@ fun RecurringEditScreen(
             catId = ""
             subId = ""
         })
-        AppTextField(name, { name = it }, str(R.string.name_for_example_rent))
+        AppTextField(name, {
+            name = it
+        }, str(R.string.name_for_example_rent), capitalization = androidx.compose.ui.text.input.KeyboardCapitalization.Words)
         AmountField(amount, { amount = it }, Modifier.padding(vertical = 6.dp), color = if (kind == "income") Success else Danger)
         SectionTitle(str(R.string.repeats))
         RepeatsSection(

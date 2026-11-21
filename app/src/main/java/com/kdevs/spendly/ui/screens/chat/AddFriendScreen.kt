@@ -151,7 +151,7 @@ fun AddFriendScreen(nav: NavController) {
                     .filter { c ->
                         c.isLetterOrDigit() || c == ' '
                     }.take(9)
-        }, str(R.string.text_8_letters_and_numbers))
+        }, str(R.string.text_8_letters_and_numbers), capitalization = androidx.compose.ui.text.input.KeyboardCapitalization.Characters)
         msg?.let { Text(it, color = if (ok) Success else Danger, fontWeight = FontWeight.SemiBold) }
         PrimaryButton(
             str(R.string.send_request),

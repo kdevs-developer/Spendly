@@ -61,7 +61,16 @@ fun AuthScreen(nav: NavController) {
             note = null
             saver.error = null
         })
-        if (mode == 1) AppTextField(name, { name = it }, str(R.string.your_name))
+        if (mode ==
+            1
+        ) {
+            AppTextField(
+                name,
+                { name = it },
+                str(R.string.your_name),
+                capitalization = androidx.compose.ui.text.input.KeyboardCapitalization.Words,
+            )
+        }
         AppTextField(email, { email = it }, str(R.string.email), keyboard = KeyboardType.Email)
         var show by remember { mutableStateOf(false) }
         androidx.compose.material3.OutlinedTextField(

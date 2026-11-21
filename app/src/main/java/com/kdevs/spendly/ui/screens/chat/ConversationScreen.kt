@@ -256,6 +256,10 @@ fun ConversationScreen(
                     placeholder = { Text(str(R.string.message)) },
                     shape = RoundedCornerShape(24.dp),
                     maxLines = 4,
+                    keyboardOptions =
+                        androidx.compose.foundation.text.KeyboardOptions(
+                            capitalization = androidx.compose.ui.text.input.KeyboardCapitalization.Sentences,
+                        ),
                     colors =
                         androidx.compose.material3.OutlinedTextFieldDefaults.colors(
                             focusedContainerColor = Bg,

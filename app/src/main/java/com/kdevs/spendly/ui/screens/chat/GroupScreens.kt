@@ -36,7 +36,12 @@ fun CreateGroupScreen(nav: NavController) {
     }) {
         SegmentedControl(listOf(str(R.string.chat_group), str(R.string.expense_split)), split, { split = it })
         Hint(if (split == 1) str(R.string.chat_plus_a_shared_ledger_add) else str(R.string.group_chat_hint))
-        AppTextField(name, { name = it }, str(R.string.group_name))
+        AppTextField(
+            name,
+            { name = it },
+            str(R.string.group_name),
+            capitalization = androidx.compose.ui.text.input.KeyboardCapitalization.Words,
+        )
         SectionTitle(str(R.string.add_members, picked.size))
         if (friends.isEmpty()) Hint(str(R.string.add_friends_first_from_the_chat))
         Card(padding = 12.dp) {
